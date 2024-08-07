@@ -10,11 +10,14 @@ import lombok.Data;
 public class CustomTargetGroupEntity {
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
+  @Column(name = "id", columnDefinition = "BIGINT")
   private Long id;
+  @Column(name = "receiver_id", nullable = false, columnDefinition = "BIGINT")
   private Long sendTo;
+  @Column(name = "receiver_type", nullable = false, columnDefinition = "ENUM('DEPARTMENT', 'COMPANY', 'EMPLOYEE', 'CUSTOM')")
   private ReceiverType receiverType;
 
   @ManyToOne(cascade = CascadeType.MERGE)
-  @JoinColumn(name = "custom_group", nullable = false)
+  @JoinColumn(name = "custom_group_id", nullable = false)
   private CustomTargetGroup customTargetGroup;
 }
