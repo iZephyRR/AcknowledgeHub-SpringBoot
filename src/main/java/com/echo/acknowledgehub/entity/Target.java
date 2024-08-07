@@ -11,14 +11,15 @@ public class Target {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
+  @Column(name = "id", columnDefinition = "BIGINT")
   private Long id;
-
+  @Column(name = "receiver_type",nullable = false,columnDefinition = "ENUM('DEPARTMENT', 'COMPANY', 'EMPLOYEE', 'CUSTOM')")
   private ReceiverType receiverType;
-
+  @Column(name = "receiver_id", nullable = false, columnDefinition = "BIGINT")
   private Long sendTo;
 
   @ManyToOne(cascade = CascadeType.MERGE)
-  @JoinColumn(name = "announcement" ,nullable = false)
+  @JoinColumn(name = "announcement_id" ,nullable = false)
   private Announcement announcement;
 
 
