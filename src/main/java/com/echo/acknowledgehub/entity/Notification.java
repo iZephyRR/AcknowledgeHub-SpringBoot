@@ -11,17 +11,20 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "notification")
 public class Notification {
+  @Column(name = "notice_at", columnDefinition = "TIMESTAMP")
   private LocalDateTime noticeAt;
+  @Column(name = "status", nullable = false, columnDefinition = "ENUM('SEND', 'NOTED', 'DELETED') DEFAULT 'SEND'")
   private NotificationStatus status;
+  @Column(name = "type", nullable = false, columnDefinition = "ENUM('REQUESTED', 'APPROVED', 'DECLINED', 'RECEIVED')")
   private NotificationType type;
 
   @Id
   @ManyToOne(cascade = CascadeType.MERGE)
-  @JoinColumn(name = "employee", nullable = false)
+  @JoinColumn(name = "employee_id", nullable = false)
   private Employee employee;
 
   @Id
   @ManyToOne(cascade = CascadeType.MERGE)
-  @JoinColumn(name = "announcement", nullable = false)
+  @JoinColumn(name = "announcement_id", nullable = false)
   private Announcement announcement;
 }

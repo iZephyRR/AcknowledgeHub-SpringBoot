@@ -9,10 +9,12 @@ import lombok.Data;
 public class CustomTargetGroup {
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
+  @Column(name = "id", columnDefinition = "BIGINT")
   private Long id;
+  @Column(name = "title", nullable = false, columnDefinition = "VARCHAR(45)")
   private String title;
 
   @ManyToOne(cascade = CascadeType.MERGE)
-  @JoinColumn(name = "employee", nullable = false)
+  @JoinColumn(name = "hr_id", nullable = false)
   private Employee employee;
 }
