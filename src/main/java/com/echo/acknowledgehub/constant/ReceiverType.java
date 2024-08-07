@@ -1,8 +1,5 @@
 package com.echo.acknowledgehub.constant;
 
 public enum ReceiverType {
-  DEPARTMENT,
-  COMPANY,
-  EMPLOYEE,
-  CUSTOM;
+  DEPARTMENT, COMPANY, EMPLOYEE, CUSTOM;
 }

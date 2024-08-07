@@ -9,6 +9,8 @@ import lombok.Data;
 public class Company {
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
+  @Column(name = "id", columnDefinition = "BIGINT")
   private Long id;
+  @Column(name = "name", unique = true, nullable = false, columnDefinition = "VARCHAR(45)")
   private String name;
 }
