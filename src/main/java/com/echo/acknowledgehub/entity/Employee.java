@@ -7,6 +7,7 @@ import jakarta.persistence.*;
 import lombok.Data;
 
 import java.time.LocalDate;
+import java.util.Date;
 
 @Data
 @Entity
@@ -30,20 +31,20 @@ public class Employee {
   private String name;
   @Column(name = "password", nullable = false, columnDefinition = "VARCHAR(200)")
   private String password;
-  @Column(name = "role", nullable = false, columnDefinition = "ENUM('ADMIN', 'MAIN_HR', 'MAIN_HR_ASSISTANCE', 'HR', 'HR_ASSISTANCE')")
+  @Column(name = "role", nullable = false, columnDefinition = "ENUM('ADMIN', 'MAIN_HR', 'MAIN_HR_ASSISTANCE', 'HR', 'HR_ASSISTANCE', 'STUFF')")
   private EmployeeRole role;
   @Column(name = "status", nullable = false, columnDefinition = "ENUM('ACTIVATED', 'DEACTIVATED', 'DEPARTED') DEFAULT 'ACTIVATED'")
   private EmployeeStatus status;
-  @Column(name = "gender", nullable = false, columnDefinition = "ENUM('MALE', 'FEMALE')")
+  @Column(name = "gender", nullable = false, columnDefinition = "ENUM('MALE', 'FEMALE', 'CUSTOM')")
   private Gender gender;
-  @Column(name = "dob", nullable = false, columnDefinition = "VARCHAR(45)")
-  private String dob;
+  @Column(name = "dob", nullable = false, columnDefinition = "DATE")
+  private Date dob;
   @Column(name = "photo_link", columnDefinition = "VARCHAR(125)")
   private String photoLink;
   @Column(name = "address", columnDefinition = "VARCHAR(125)")
   private String address;
-  @Column(name = "work_entry_date", nullable = false,columnDefinition = "VARCHAR(20)")
-  private String workEntryDate;
+  @Column(name = "work_entry_date", nullable = false,columnDefinition = "DATE")
+  private Date workEntryDate;
 
   @ManyToOne(cascade = CascadeType.MERGE)
   @JoinColumn(name = "department", nullable = false)
