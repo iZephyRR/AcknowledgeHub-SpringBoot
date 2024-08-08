@@ -7,6 +7,7 @@ import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFPictureData;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.modelmapper.ModelMapper;
+import org.springframework.stereotype.Component;
 
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -17,6 +18,7 @@ import java.util.List;
 import java.util.logging.Logger;
 import java.util.stream.IntStream;
 
+@Component
 public class ExcelReader {
     private static final Logger LOGGER = Logger.getLogger(ExcelReader.class.getName());
     private final ModelMapper MAPPER;
