@@ -1,11 +1,15 @@
 package com.echo.acknowledgehub.util;
 
-import com.echo.acknowledgehub.CustomException.EmailSenderException;
-import com.echo.acknowledgehub.controller.HomeController;
+import com.echo.acknowledgehub.custom_exception.EmailSenderException;
 import com.echo.acknowledgehub.dto.EmailDTO;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
+import java.util.HashSet;
 import java.util.Properties;
+import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.logging.Logger;
 import javax.mail.Message;
 import javax.mail.MessagingException;
@@ -16,11 +20,26 @@ import javax.mail.internet.AddressException;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
 
-@Component
+@Service
 public class EmailSender {
     private static final Logger LOGGER = Logger.getLogger(EmailSender.class.getName());
+    private static final Set<String> ALLOWED_DOMAINS = new HashSet<>();
 
-    public void sendEmail(EmailDTO email) {
+    static {
+        ALLOWED_DOMAINS.add("@gmail.com");
+        ALLOWED_DOMAINS.add("@yahoo.com");
+        ALLOWED_DOMAINS.add("@outlook.com");
+        ALLOWED_DOMAINS.add("@hotmail.com");
+        ALLOWED_DOMAINS.add("@aol.com");
+        ALLOWED_DOMAINS.add("@icloud.com");
+        ALLOWED_DOMAINS.add("@protonmail.com");
+        ALLOWED_DOMAINS.add("@yandex.com");
+        ALLOWED_DOMAINS.add("@mail.com");
+        ALLOWED_DOMAINS.add("@zoho.com");
+    }
+    @Async
+    public CompletableFuture<String> sendEmail(EmailDTO email) {
+
         Properties props = new Properties();
         props.put("mail.smtp.auth", "true");
         props.put("mail.smtp.starttls.enable", "true");
@@ -34,17 +53,24 @@ public class EmailSender {
                     }
                 });
         try {
-            Message message = new MimeMessage(session);
-            message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(email.getAddress()));
-            message.setSubject(email.getSubject());
-            message.setText(email.getMessage());
-            Transport.send(message);
-        } catch (AddressException e) {
-            LOGGER.severe("Address Exception : "+e);
-            throw new EmailSenderException("Invalid email address.");
+            if (isDomainAvailable(email.getAddress())) {
+                Message message = new MimeMessage(session);
+                message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(email.getAddress()));
+                message.setSubject(email.getSubject());
+                message.setText(email.getMessage());
+                Transport.send(message);
+                return CompletableFuture.completedFuture("Send an email to "+email.getAddress());
+            } else {
+                LOGGER.warning("Invalid email address.");
+                throw new EmailSenderException("Invalid email address.");
+            }
         } catch (MessagingException e) {
-            LOGGER.severe("MessagingException : "+e);
+            LOGGER.severe("MessagingException : " + e);
             throw new EmailSenderException("Could not send email.");
         }
+    }
+    @Async
+    public boolean isDomainAvailable(String domain) {
+        return ALLOWED_DOMAINS.stream().anyMatch(domain::endsWith);
     }
 }

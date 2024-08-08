@@ -14,3 +14,9 @@ spring:
         callable: false
     hibernate:
       ddl-auto: update
+
+server:
+  port: 8080
+  error:
+    include-message: always
+    include-binding-errors: always
