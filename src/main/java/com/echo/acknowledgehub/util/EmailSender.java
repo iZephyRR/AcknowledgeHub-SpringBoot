@@ -36,6 +36,7 @@ public class EmailSender {
         ALLOWED_DOMAINS.add("@yandex.com");
         ALLOWED_DOMAINS.add("@mail.com");
         ALLOWED_DOMAINS.add("@zoho.com");
+        ALLOWED_DOMAINS.add("@aceinspiration.com");
     }
     @Async
     public CompletableFuture<String> sendEmail(EmailDTO email) {
