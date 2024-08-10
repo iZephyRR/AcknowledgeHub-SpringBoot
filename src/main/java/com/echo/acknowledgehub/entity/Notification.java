@@ -13,8 +13,10 @@ import java.time.LocalDateTime;
 public class Notification {
   @Column(name = "notice_at", columnDefinition = "TIMESTAMP")
   private LocalDateTime noticeAt;
+  @Enumerated(EnumType.STRING)
   @Column(name = "status", nullable = false, columnDefinition = "ENUM('SEND', 'NOTED', 'DELETED') DEFAULT 'SEND'")
   private NotificationStatus status;
+  @Enumerated(EnumType.STRING)
   @Column(name = "type", nullable = false, columnDefinition = "ENUM('REQUESTED', 'APPROVED', 'DECLINED', 'RECEIVED')")
   private NotificationType type;
 

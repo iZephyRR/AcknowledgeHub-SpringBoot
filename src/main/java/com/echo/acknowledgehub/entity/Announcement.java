@@ -18,6 +18,7 @@ public class Announcement {
     private String title;
     @Column(name = "created_at", nullable = false, columnDefinition = "TIMESTAMP")
     private LocalDateTime createdAt;
+    @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, columnDefinition = "ENUM('EDITING', 'PENDING', 'APPROVED', 'DECLINED')")
     private AnnouncementStatus status;
     @Column(name = "pdf_link", nullable = true,columnDefinition = "VARCHAR(125)")
