@@ -1,9 +1,9 @@
-package com.echo.acknowledgehub.custom_exception;
+package com.echo.acknowledgehub.exception_handler;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
-@ResponseStatus(HttpStatus.BAD_REQUEST)
+
 public class EmailSenderException extends RuntimeException{
     public EmailSenderException(String message){
         super(message);

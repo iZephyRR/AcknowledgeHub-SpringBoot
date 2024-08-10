@@ -13,6 +13,7 @@ public class Target {
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   @Column(name = "id", columnDefinition = "BIGINT")
   private Long id;
+  @Enumerated(EnumType.STRING)
   @Column(name = "receiver_type",nullable = false,columnDefinition = "ENUM('DEPARTMENT', 'COMPANY', 'EMPLOYEE', 'CUSTOM')")
   private ReceiverType receiverType;
   @Column(name = "receiver_id", nullable = false, columnDefinition = "BIGINT")
