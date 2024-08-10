@@ -15,6 +15,6 @@ public class Department {
   private String name;
 
   @ManyToOne(cascade = CascadeType.MERGE)
-  @JoinColumn(name = "company", nullable = false)
+  @JoinColumn(name = "company_id", nullable = false)
   private Company company;
 }
