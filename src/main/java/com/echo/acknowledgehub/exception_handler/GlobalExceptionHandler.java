@@ -10,6 +10,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Logger;
@@ -29,6 +30,7 @@ public class GlobalExceptionHandler {
         STATUS_MAP.put(UserRegistrationException.class, new ErrorResponseDTO(HttpStatus.BAD_REQUEST.value(), null));
         STATUS_MAP.put(ConfigurationException.class, new ErrorResponseDTO(HttpStatus.BAD_REQUEST.value(), "Failed to map object."));
         STATUS_MAP.put(DataIntegrityViolationException.class, new ErrorResponseDTO(HttpStatus.NOT_ACCEPTABLE.value(), "Incorrect input."));
+        STATUS_MAP.put(IOException.class, new ErrorResponseDTO(HttpStatus.NOT_ACCEPTABLE.value(), "Incorrect input."));
     }
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponseDTO> handleException(Exception ex) {

@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -30,7 +31,7 @@ public class XlsxReader {
     private final ModelMapper MAPPER;
 
    // @Async
-    public CompletableFuture<List<Employee>> getEmployees(FileInputStream xlsxFile) {
+    public CompletableFuture<List<Employee>> getEmployees(InputStream xlsxFile) {
         LOGGER.info("Starting xlsx convertor...");
         List<Employee> employees = new ArrayList<>();
         try (Workbook workbook = new XSSFWorkbook(xlsxFile)) {

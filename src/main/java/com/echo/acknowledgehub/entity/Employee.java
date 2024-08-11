@@ -9,11 +9,13 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.*;
+import java.util.logging.Logger;
 
 @Data
 @Entity
 @Table(name = "employee")
 public class Employee implements UserDetails {
+    private static final Logger LOGGER = Logger.getLogger(Employee.class.getName());
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", columnDefinition = "BIGINT")
@@ -67,9 +69,7 @@ public class Employee implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        Collection<GrantedAuthority> authorities = Collections.singleton(new SimpleGrantedAuthority(this.getRole().name()));
-        System.out.println("Granted Authorities: " + authorities);
-        return authorities;
+        return Collections.singleton(new SimpleGrantedAuthority(this.getRole().name()));
     }
 
 
