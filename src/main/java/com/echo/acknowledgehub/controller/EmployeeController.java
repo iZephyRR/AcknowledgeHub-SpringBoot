@@ -12,7 +12,11 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.logging.Logger;
@@ -33,19 +37,25 @@ public class EmployeeController {
         AUTHENTICATION_MANAGER.authenticate(new UsernamePasswordAuthenticationToken(login.getEmail(), login.getPassword()));
         final UserDetails USER_DETAILS = USER_DETAILS_SERVICE.loadUserByUsername(login.getEmail());
         LOGGER.info("username " + USER_DETAILS.getUsername());
-        final String TOKEN = JWT_SERVICE.generateToken(USER_DETAILS.getUsername());
-        LOGGER.info("Token : " + TOKEN);
-        return new JWTToken(TOKEN);
+        final String JWT_TOKEN = JWT_SERVICE.generateToken(USER_DETAILS.getUsername());
+        LOGGER.info("Token : " + JWT_TOKEN);
+        return new JWTToken(JWT_TOKEN);
     }
 
     @PostMapping("/ad/add-user")
     private CompletableFuture<Employee> register(@RequestBody UserDTO user) {
-        LOGGER.info("Adding user...");
+        LOGGER.info("Adding a user...");
         return EMPLOYEE_SERVICE.save(user);
     }
 
     @PostMapping("/ad/add-users")
     private CompletableFuture<List<Employee>> register(@RequestBody List<UserDTO> users) {
+        LOGGER.info("Adding users...");
+        return EMPLOYEE_SERVICE.saveAll(users);
+    }
+
+    @PostMapping("/ad/add-excel-users")
+    private CompletableFuture<List<Employee>> register(@RequestBody MultipartFile users) throws IOException {
         LOGGER.info("Adding users...");
         return EMPLOYEE_SERVICE.saveAll(users);
     }

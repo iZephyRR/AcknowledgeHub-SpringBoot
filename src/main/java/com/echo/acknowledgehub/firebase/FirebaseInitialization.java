@@ -1,4 +1,4 @@
-package com.echo.acknowledgehub.Firebase;
+package com.echo.acknowledgehub.firebase;
 
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.firebase.FirebaseApp;
