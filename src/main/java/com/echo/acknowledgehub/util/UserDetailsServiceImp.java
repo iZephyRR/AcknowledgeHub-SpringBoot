@@ -9,13 +9,14 @@ import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.logging.Logger;
 
-@Service
+@Component
 @AllArgsConstructor
 public class UserDetailsServiceImp implements UserDetailsService {
     private static final Logger LOGGER = Logger.getLogger(UserDetailsServiceImp.class.getName());
@@ -33,8 +34,8 @@ public class UserDetailsServiceImp implements UserDetailsService {
             throw new UsernameNotFoundException("User not found by : "+ input);
         }else {
             List<GrantedAuthority> authorities = List.of(new SimpleGrantedAuthority("ROLE_" + optionalEmployee.get().getRole()));
-            LOGGER.info("Authority : "+authorities);
-            return new User(optionalEmployee.get().getUsername(),optionalEmployee.get().getPassword(),authorities);
+            //LOGGER.info("Authority : "+authorities);
+            return new User(optionalEmployee.get().getEmail(),optionalEmployee.get().getPassword(),authorities);
         }
     }
 

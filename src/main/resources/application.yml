@@ -25,9 +25,10 @@ server:
 
 app:
   api:
-    base-url: /api/v1
+    base-url: /api/v1 #Format is /*/*
 
-logging:
-  level:
-    org.springframework.security: DEBUG
+#if u need to debug spring security u can use this property.
+#logging:
+#  level:
+#    org.springframework.security: DEBUG
 

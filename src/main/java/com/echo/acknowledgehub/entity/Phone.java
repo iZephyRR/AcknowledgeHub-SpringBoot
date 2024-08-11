@@ -1,5 +1,6 @@
 package com.echo.acknowledgehub.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -13,6 +14,7 @@ public class Phone {
     @Column(name = "count",nullable = false, columnDefinition = "TINYINT")
     private Byte count;
 
+    @JsonIgnore
     @ManyToOne(cascade = CascadeType.MERGE)
     @JoinColumn(nullable = false,name = "employee_id")
     private Employee employee;
