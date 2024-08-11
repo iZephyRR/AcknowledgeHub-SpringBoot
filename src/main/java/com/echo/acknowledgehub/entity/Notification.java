@@ -2,6 +2,7 @@ package com.echo.acknowledgehub.entity;
 
 import com.echo.acknowledgehub.constant.NotificationStatus;
 import com.echo.acknowledgehub.constant.NotificationType;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -21,11 +22,13 @@ public class Notification {
   private NotificationType type;
 
   @Id
+  @JsonIgnore
   @ManyToOne(cascade = CascadeType.MERGE)
   @JoinColumn(name = "employee_id", nullable = false)
   private Employee employee;
 
   @Id
+  @JsonIgnore
   @ManyToOne(cascade = CascadeType.MERGE)
   @JoinColumn(name = "announcement_id", nullable = false)
   private Announcement announcement;

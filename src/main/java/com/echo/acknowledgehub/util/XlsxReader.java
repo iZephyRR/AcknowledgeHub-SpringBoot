@@ -10,6 +10,7 @@ import org.apache.poi.xssf.usermodel.XSSFPictureData;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.modelmapper.ModelMapper;
 import org.springframework.scheduling.annotation.Async;
+import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -23,7 +24,7 @@ import java.util.logging.Logger;
 import java.util.stream.IntStream;
 
 @AllArgsConstructor
-@Service
+@Component
 public class XlsxReader {
     private static final Logger LOGGER = Logger.getLogger(XlsxReader.class.getName());
     private final ModelMapper MAPPER;

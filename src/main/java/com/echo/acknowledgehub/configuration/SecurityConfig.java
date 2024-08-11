@@ -7,6 +7,7 @@ import lombok.AllArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authorization.AuthorizationDecision;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -23,20 +24,20 @@ import java.util.logging.Logger;
 @Configuration
 @EnableWebSecurity
 @AllArgsConstructor
-public class SecurityConfig{
+public class SecurityConfig {
     private static final Logger LOGGER = Logger.getLogger(SecurityConfig.class.getName());
     private final UserDetailsService USER_DETAILS_SERVICE;
     private final JWTAuthenticationFilter JWT_AUTHENTICATION_FILTER;
     private final BaseURL BASE_URL;
 
     @Bean
-    public PasswordEncoder passwordEncoder (){
+    public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
     @Bean
-    public AuthenticationManager authenticationManager (AuthenticationConfiguration authenticationConfiguration) throws Exception {
-        return  authenticationConfiguration.getAuthenticationManager();
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
+        return authenticationConfiguration.getAuthenticationManager();
     }
 
 
@@ -46,13 +47,38 @@ public class SecurityConfig{
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(
                         request -> request
-                                .requestMatchers(BASE_URL+"/test", BASE_URL+"/login").permitAll()
-                                .requestMatchers(BASE_URL+"/ad/add-user").hasRole("ADMIN")
-                                .requestMatchers(BASE_URL+"/mr/**").hasAuthority(EmployeeRole.MAIN_HR.name())
-                                .requestMatchers(BASE_URL+"/ma/**").hasAuthority(EmployeeRole.MAIN_HR_ASSISTANCE.name())
-                                .requestMatchers(BASE_URL+"/hr/**").hasAuthority(EmployeeRole.HR.name())
-                                .requestMatchers(BASE_URL+"/ha/**").hasAuthority(EmployeeRole.HR_ASSISTANCE.name())
-                                .requestMatchers(BASE_URL+"/sf/**").hasAuthority(EmployeeRole.STUFF.name())
+                                .requestMatchers(BASE_URL + "/test", BASE_URL + "/login").permitAll()
+                                .requestMatchers(BASE_URL + "/ad/**").access((authentication, requestContext) ->
+                                        new AuthorizationDecision(
+                                                authentication.get().getAuthorities().stream()
+                                                        .noneMatch(grantedAuthority -> grantedAuthority.getAuthority().equals(EmployeeRole.ADMIN.name()))
+                                        )
+                                ).requestMatchers(BASE_URL + "/mr/**").access((authentication, requestContext) ->
+                                        new AuthorizationDecision(
+                                                authentication.get().getAuthorities().stream()
+                                                        .noneMatch(grantedAuthority -> grantedAuthority.getAuthority().equals(EmployeeRole.ADMIN.name()))
+                                        )
+                                ).requestMatchers(BASE_URL + "/ma/**").access((authentication, requestContext) ->
+                                        new AuthorizationDecision(
+                                                authentication.get().getAuthorities().stream()
+                                                        .noneMatch(grantedAuthority -> grantedAuthority.getAuthority().equals(EmployeeRole.ADMIN.name()))
+                                        )
+                                ).requestMatchers(BASE_URL + "/hr/**").access((authentication, requestContext) ->
+                                        new AuthorizationDecision(
+                                                authentication.get().getAuthorities().stream()
+                                                        .noneMatch(grantedAuthority -> grantedAuthority.getAuthority().equals(EmployeeRole.ADMIN.name()))
+                                        )
+                                ).requestMatchers(BASE_URL + "/ha/**").access((authentication, requestContext) ->
+                                        new AuthorizationDecision(
+                                                authentication.get().getAuthorities().stream()
+                                                        .noneMatch(grantedAuthority -> grantedAuthority.getAuthority().equals(EmployeeRole.ADMIN.name()))
+                                        )
+                                ).requestMatchers(BASE_URL + "/sf/**").access((authentication, requestContext) ->
+                                        new AuthorizationDecision(
+                                                authentication.get().getAuthorities().stream()
+                                                        .noneMatch(grantedAuthority -> grantedAuthority.getAuthority().equals(EmployeeRole.ADMIN.name()))
+                                        )
+                                )
                                 .anyRequest().authenticated()
 
                 )
@@ -61,5 +87,4 @@ public class SecurityConfig{
                 .addFilterBefore(JWT_AUTHENTICATION_FILTER, UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
-
 }

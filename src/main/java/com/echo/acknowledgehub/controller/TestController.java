@@ -1,9 +1,12 @@
 package com.echo.acknowledgehub.controller;
 
+import com.echo.acknowledgehub.exception_handler.EmailSenderException;
+import com.echo.acknowledgehub.exception_handler.XlsxReaderException;
 import com.echo.acknowledgehub.util.JWTService;
 import com.echo.acknowledgehub.util.BaseURL;
 import com.echo.acknowledgehub.util.XlsxReader;
 import lombok.AllArgsConstructor;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.annotation.*;
 import java.util.logging.Logger;
 
@@ -27,8 +30,8 @@ public class TestController {
 //            throw new XlsxReaderException();
 //        }
 //    }
-    @PostMapping("/admin/test")
+    @PostMapping("/test")
     public void test() {
-        throw new NullPointerException();
+        throw new XlsxReaderException();
     }
 }
