@@ -2,7 +2,7 @@ package com.echo.acknowledgehub.util;
 
 import com.echo.acknowledgehub.constant.EmployeeRole;
 import com.echo.acknowledgehub.constant.Gender;
-import com.echo.acknowledgehub.custom_exception.XlsxReaderException;
+import com.echo.acknowledgehub.exception_handler.XlsxReaderException;
 import com.echo.acknowledgehub.entity.Employee;
 import lombok.AllArgsConstructor;
 import org.apache.poi.ss.usermodel.*;
@@ -10,10 +10,12 @@ import org.apache.poi.xssf.usermodel.XSSFPictureData;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.modelmapper.ModelMapper;
 import org.springframework.scheduling.annotation.Async;
+import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -23,25 +25,29 @@ import java.util.logging.Logger;
 import java.util.stream.IntStream;
 
 @AllArgsConstructor
-@Service
+@Component
 public class XlsxReader {
     private static final Logger LOGGER = Logger.getLogger(XlsxReader.class.getName());
     private final ModelMapper MAPPER;
 
-    @Async
-    public CompletableFuture<List<Employee>> getEmployees(FileInputStream xlsxFile) {
+   // @Async
+    public CompletableFuture<List<Employee>> getEmployees(InputStream xlsxFile) {
+        LOGGER.info("Starting xlsx convertor...");
         List<Employee> employees = new ArrayList<>();
         try (Workbook workbook = new XSSFWorkbook(xlsxFile)) {
+            LOGGER.info("Got workbook..");
             AtomicReference<List<String>> columnNames = new AtomicReference<>();
             Sheet sheet = workbook.getSheetAt(0); // Get the first sheet
+            LOGGER.info("Got first sheet..");
             for (Row row : sheet) {
+                //LOGGER.info("Ok rows..");
                 if (row == sheet.getRow(0)) {
                     CompletableFuture<List<Object>> futureObjects = printCellValue(row);
                     futureObjects.thenAccept(objects -> {
                         columnNames.set(objects.stream().map(source -> this.MAPPER.map(source, String.class)).toList());
                     }).exceptionally(ex -> {
                         LOGGER.warning(ex.getMessage());
-                        return null;
+                        throw new XlsxReaderException();
                     });
                 } else {
                     List<String> finalColumnNames = columnNames.get();
@@ -101,15 +107,19 @@ public class XlsxReader {
                                 });
                     }).exceptionally(ex -> {
                         LOGGER.warning(ex.getMessage());
-                        return null;
+                        throw new XlsxReaderException();
                     });
                     employees.add(finalEmployee);
                 }
             }
+            LOGGER.info("Finished process...");
             return CompletableFuture.completedFuture(employees);
         } catch (IOException e) {
             LOGGER.severe("xlsx to users converter error" + e.getMessage());
-            throw new XlsxReaderException("An error occurred when converting the .xlsx to java object.");
+            throw new XlsxReaderException();
+        }catch (Exception e){
+            LOGGER.severe("Global exception : "+e);
+            throw new XlsxReaderException();
         }
     }
 

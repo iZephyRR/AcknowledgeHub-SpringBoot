@@ -1,6 +1,8 @@
 spring:
   application:
     name: acknowledgehub
+  main:
+    allow-circular-references: true
 
   datasource:
     url: jdbc:mysql://localhost:3306/acknowledge_hub_db
@@ -20,3 +22,13 @@ server:
   error:
     include-message: always
     include-binding-errors: always
+
+app:
+  api:
+    base-url: /api/v1 #Format is /*/*
+
+#if u need to debug spring security u can use this property.
+#logging:
+#  level:
+#    org.springframework.security: DEBUG
+

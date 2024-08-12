@@ -1,6 +1,6 @@
 package com.echo.acknowledgehub.util;
 
-import com.echo.acknowledgehub.custom_exception.EmailSenderException;
+import com.echo.acknowledgehub.exception_handler.EmailSenderException;
 import com.echo.acknowledgehub.dto.EmailDTO;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
@@ -16,11 +16,10 @@ import javax.mail.MessagingException;
 import javax.mail.PasswordAuthentication;
 import javax.mail.Session;
 import javax.mail.Transport;
-import javax.mail.internet.AddressException;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
 
-@Service
+@Component
 public class EmailSender {
     private static final Logger LOGGER = Logger.getLogger(EmailSender.class.getName());
     private static final Set<String> ALLOWED_DOMAINS = new HashSet<>();
@@ -69,6 +68,7 @@ public class EmailSender {
             LOGGER.severe("MessagingException : " + e);
             throw new EmailSenderException("Could not send email.");
         }
+
     }
     @Async
     public boolean isDomainAvailable(String domain) {
