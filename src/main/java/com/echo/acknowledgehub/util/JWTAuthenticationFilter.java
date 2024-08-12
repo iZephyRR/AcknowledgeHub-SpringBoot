@@ -39,8 +39,8 @@ public class JWTAuthenticationFilter extends OncePerRequestFilter {
 
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             UserDetails userDetails = USER_DETAILS_SERVICE.loadUserByUsername(username);
-            LOGGER.info("Authorities : "+userDetails.getAuthorities());
-            LOGGER.info("Expire date : "+JWT_SERVICE.extractExpiration(token));
+//            LOGGER.info("Authorities : "+userDetails.getAuthorities());
+//            LOGGER.info("Expire date : "+JWT_SERVICE.extractExpiration(token));
             if (JWT_SERVICE.isValid(token, userDetails)) {
                 UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                         userDetails, null, userDetails.getAuthorities()

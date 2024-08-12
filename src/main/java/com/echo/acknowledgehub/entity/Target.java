@@ -1,6 +1,7 @@
 package com.echo.acknowledgehub.entity;
 
 import com.echo.acknowledgehub.constant.ReceiverType;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -19,6 +20,7 @@ public class Target {
   @Column(name = "receiver_id", nullable = false, columnDefinition = "BIGINT")
   private Long sendTo;
 
+  @JsonIgnore
   @ManyToOne(cascade = CascadeType.MERGE)
   @JoinColumn(name = "announcement_id" ,nullable = false)
   private Announcement announcement;

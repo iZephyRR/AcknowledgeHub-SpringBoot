@@ -1,4 +1,4 @@
-package com.echo.acknowledgehub.Firebase;
+package com.echo.acknowledgehub.firebase;
 
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.firebase.FirebaseApp;
@@ -17,7 +17,7 @@ public class FirebaseInitialization {
         FileInputStream serviceAccount =
                 null;
         try {
-            serviceAccount = new FileInputStream("C:\\Users\\jps\\Desktop\\Final Project\\AcknowledgeHub\\src\\main\\resources\\serviceAccountKey.json");
+            serviceAccount = new FileInputStream("C:/OJT-14/Final Project/AcknowledgeHub/src/main/resources/serviceAccountKey.json");
 
             FirebaseOptions options = new FirebaseOptions.Builder()
                     .setCredentials(GoogleCredentials.fromStream(serviceAccount))

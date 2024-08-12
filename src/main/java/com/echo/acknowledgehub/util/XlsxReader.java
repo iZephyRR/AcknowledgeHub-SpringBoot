@@ -10,10 +10,12 @@ import org.apache.poi.xssf.usermodel.XSSFPictureData;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.modelmapper.ModelMapper;
 import org.springframework.scheduling.annotation.Async;
+import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -23,13 +25,13 @@ import java.util.logging.Logger;
 import java.util.stream.IntStream;
 
 @AllArgsConstructor
-@Service
+@Component
 public class XlsxReader {
     private static final Logger LOGGER = Logger.getLogger(XlsxReader.class.getName());
     private final ModelMapper MAPPER;
 
    // @Async
-    public CompletableFuture<List<Employee>> getEmployees(FileInputStream xlsxFile) {
+    public CompletableFuture<List<Employee>> getEmployees(InputStream xlsxFile) {
         LOGGER.info("Starting xlsx convertor...");
         List<Employee> employees = new ArrayList<>();
         try (Workbook workbook = new XSSFWorkbook(xlsxFile)) {
