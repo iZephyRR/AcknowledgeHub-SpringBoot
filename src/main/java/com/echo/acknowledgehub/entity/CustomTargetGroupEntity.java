@@ -1,6 +1,7 @@
 package com.echo.acknowledgehub.entity;
 
 import com.echo.acknowledgehub.constant.ReceiverType;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -14,9 +15,11 @@ public class CustomTargetGroupEntity {
   private Long id;
   @Column(name = "receiver_id", nullable = false, columnDefinition = "BIGINT")
   private Long sendTo;
+  @Enumerated(EnumType.STRING)
   @Column(name = "receiver_type", nullable = false, columnDefinition = "ENUM('DEPARTMENT', 'COMPANY', 'EMPLOYEE', 'CUSTOM')")
   private ReceiverType receiverType;
 
+  @JsonIgnore
   @ManyToOne(cascade = CascadeType.MERGE)
   @JoinColumn(name = "custom_group_id", nullable = false)
   private CustomTargetGroup customTargetGroup;
