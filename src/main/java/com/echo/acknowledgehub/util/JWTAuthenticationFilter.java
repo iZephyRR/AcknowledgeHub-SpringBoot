@@ -23,7 +23,7 @@ import java.util.logging.Logger;
 public class JWTAuthenticationFilter extends OncePerRequestFilter {
     private static final Logger LOGGER = Logger.getLogger(JWTAuthenticationFilter.class.getName());
     private final JWTService JWT_SERVICE;
-    private final UserDetailsService USER_DETAILS_SERVICE;
+    private final UserDetailsServiceImp USER_DETAILS_SERVICE;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {

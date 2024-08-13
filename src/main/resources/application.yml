@@ -9,6 +9,7 @@ spring:
     username: root
     password: root
 
+
   jpa:
     properties:
       hibernate:
@@ -16,6 +17,10 @@ spring:
         callable: false
     hibernate:
       ddl-auto: update
+      format_sql: true
+    slow-sql: true
+
+
 
 server:
   port: 8080
@@ -27,8 +32,13 @@ app:
   api:
     base-url: /api/v1 #Format is /*/*
 
+telegram:
+  bot:
+    username: echofive_14_bot
+    token: 7408765661:AAHTCb7W_QXCeP9GZjpkol1ly_qBeXf4u9Y
+
 #if u need to debug spring security u can use this property.
-#logging:
-#  level:
-#    org.springframework.security: DEBUG
+logging:
+  level:
+    org.springframework.security: DEBUG
 

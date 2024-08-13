@@ -22,8 +22,8 @@ public class Employee implements UserDetails {
     private Long id;
     @Column(name = "telegram_username", unique = true, columnDefinition = "VARCHAR(25)")
     private String telegramUsername;
-    @Column(name = "telegram_user_id", unique = true, columnDefinition = "VARCHAR(25)")
-    private String telegramUserId;
+    @Column(name = "telegram_user_id", unique = true, columnDefinition = "BIGINT")
+    private Long telegramUserId;
     @Column(name = "email", unique = true, nullable = false, columnDefinition = "VARCHAR(100)")
     private String email;
     @Column(name = "stuff_id", unique = true, columnDefinition = "VARCHAR(12)")
