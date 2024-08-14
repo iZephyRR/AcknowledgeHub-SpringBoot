@@ -1,5 +1,6 @@
 package com.echo.acknowledgehub.util;
 
+import com.echo.acknowledgehub.bean.CheckingBean;
 import com.echo.acknowledgehub.entity.Employee;
 import com.echo.acknowledgehub.repository.EmployeeRepository;
 import lombok.AllArgsConstructor;
@@ -10,7 +11,6 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Component;
-import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
@@ -21,6 +21,7 @@ import java.util.logging.Logger;
 public class UserDetailsServiceImp implements UserDetailsService {
     private static final Logger LOGGER = Logger.getLogger(UserDetailsServiceImp.class.getName());
     private final EmployeeRepository EMPLOYEE_REPOSITORY;
+    private final CheckingBean CHECKING_BEAN;
 
     @Override
     public UserDetails loadUserByUsername(String input) throws UsernameNotFoundException {
@@ -35,7 +36,9 @@ public class UserDetailsServiceImp implements UserDetailsService {
         }else {
             List<GrantedAuthority> authorities = List.of(new SimpleGrantedAuthority("ROLE_" + optionalEmployee.get().getRole()));
             //LOGGER.info("Authority : "+authorities);
-            return new User(optionalEmployee.get().getEmail(),optionalEmployee.get().getPassword(),authorities);
+            CHECKING_BEAN.setRole(optionalEmployee.get().getRole());
+            CHECKING_BEAN.setStatus(optionalEmployee.get().getStatus());
+            return new User(optionalEmployee.get().getId().toString(),optionalEmployee.get().getPassword(),authorities);
         }
     }
 

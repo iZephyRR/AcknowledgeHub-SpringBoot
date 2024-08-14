@@ -3,6 +3,7 @@ package com.echo.acknowledgehub.controller;
 import com.echo.acknowledgehub.dto.JWTToken;
 import com.echo.acknowledgehub.dto.LoginDTO;
 import com.echo.acknowledgehub.dto.UserDTO;
+import com.echo.acknowledgehub.dto.UsersDTO;
 import com.echo.acknowledgehub.entity.Employee;
 import com.echo.acknowledgehub.service.EmployeeService;
 import com.echo.acknowledgehub.util.JWTService;
@@ -12,11 +13,8 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.logging.Logger;
@@ -55,8 +53,8 @@ public class EmployeeController {
     }
 
     @PostMapping("/ad/add-excel-users")
-    private CompletableFuture<List<Employee>> register(@RequestBody MultipartFile users) throws IOException {
+    private CompletableFuture<List<Employee>> register(@RequestBody UsersDTO users) throws IOException {
         LOGGER.info("Adding users...");
-        return EMPLOYEE_SERVICE.saveAll(users);
+        return EMPLOYEE_SERVICE.saveAll(null);
     }
 }
