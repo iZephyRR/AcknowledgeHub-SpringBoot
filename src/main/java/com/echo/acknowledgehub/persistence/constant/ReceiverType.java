@@ -1,4 +1,4 @@
-package com.echo.acknowledgehub.constant;
+package com.echo.acknowledgehub.persistence.constant;
 
 public enum ReceiverType {
   DEPARTMENT, COMPANY, EMPLOYEE, CUSTOM;

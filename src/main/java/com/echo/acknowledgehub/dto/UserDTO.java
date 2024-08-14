@@ -1,6 +1,7 @@
 package com.echo.acknowledgehub.dto;
 
-import com.echo.acknowledgehub.constant.*;
+import com.echo.acknowledgehub.persistence.constant.EmployeeRole;
+import com.echo.acknowledgehub.persistence.constant.Gender;
 import lombok.Data;
 
 import java.util.Date;

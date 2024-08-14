@@ -1,4 +1,4 @@
-package com.echo.acknowledgehub.constant;
+package com.echo.acknowledgehub.persistence.constant;
 
 public enum NotificationType {
   REQUESTED, APPROVED, DECLINED, RECEIVED;

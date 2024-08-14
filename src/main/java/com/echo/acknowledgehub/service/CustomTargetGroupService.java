@@ -1,6 +1,6 @@
 package com.echo.acknowledgehub.service;
 
-import com.echo.acknowledgehub.repository.CustomTargetGroupRepository;
+import com.echo.acknowledgehub.persistence.repository.CustomTargetGroupRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 

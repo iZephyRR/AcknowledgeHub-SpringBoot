@@ -1,6 +1,6 @@
-package com.echo.acknowledgehub.entity;
+package com.echo.acknowledgehub.persistence.entity;
 
-import com.echo.acknowledgehub.constant.ReceiverType;
+import com.echo.acknowledgehub.persistence.constant.ReceiverType;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
