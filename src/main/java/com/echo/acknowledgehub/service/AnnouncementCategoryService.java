@@ -8,6 +8,7 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.logging.Logger;
 
@@ -30,5 +31,9 @@ public class AnnouncementCategoryService {
     @Async
     public CompletableFuture<List<AnnouncementCategory>> findAll(){
         return CompletableFuture.completedFuture(ANNOUNCEMENT_CATEGORY_REPOSITORY.findAll());
+    }
+
+    public Optional<AnnouncementCategory> findById(Long id){
+        return ANNOUNCEMENT_CATEGORY_REPOSITORY.findById(id);
     }
 }
