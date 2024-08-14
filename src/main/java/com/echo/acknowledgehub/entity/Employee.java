@@ -1,6 +1,8 @@
 package com.echo.acknowledgehub.entity;
 
-import com.echo.acknowledgehub.constant.*;
+import com.echo.acknowledgehub.constant.EmployeeRole;
+import com.echo.acknowledgehub.constant.EmployeeStatus;
+import com.echo.acknowledgehub.constant.Gender;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;

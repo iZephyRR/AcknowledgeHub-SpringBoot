@@ -1,7 +1,6 @@
 package com.echo.acknowledgehub.service;
 
 import com.echo.acknowledgehub.entity.Company;
-import com.echo.acknowledgehub.entity.Department;
 import com.echo.acknowledgehub.repository.CompanyRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.scheduling.annotation.Async;
@@ -20,5 +19,15 @@ public class CompanyService {
     @Async
     public CompletableFuture<Optional<Company>> findById(Long id){
         return CompletableFuture.completedFuture(COMPANY_REPOSITORY.findById(id));
+    }
+
+    @Async
+    public CompletableFuture<Company> save(Company company){
+        return CompletableFuture.completedFuture(COMPANY_REPOSITORY.save(company));
+    }
+
+    @Async
+    public CompletableFuture<Optional<Company>> findByName(String name){
+        return CompletableFuture.completedFuture(COMPANY_REPOSITORY.findByName(name));
     }
 }

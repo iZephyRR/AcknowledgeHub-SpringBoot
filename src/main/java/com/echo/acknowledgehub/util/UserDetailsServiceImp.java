@@ -10,7 +10,6 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Component;
-import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
@@ -35,7 +34,7 @@ public class UserDetailsServiceImp implements UserDetailsService {
         }else {
             List<GrantedAuthority> authorities = List.of(new SimpleGrantedAuthority("ROLE_" + optionalEmployee.get().getRole()));
             //LOGGER.info("Authority : "+authorities);
-            return new User(optionalEmployee.get().getEmail(),optionalEmployee.get().getPassword(),authorities);
+            return new User(optionalEmployee.get().getId().toString(),optionalEmployee.get().getPassword(),authorities);
         }
     }
 

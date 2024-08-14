@@ -9,7 +9,6 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
-import java.util.logging.Logger;
 
 @Repository
 public interface TelegramGroupRepository extends JpaRepository<TelegramGroup, Long> {
