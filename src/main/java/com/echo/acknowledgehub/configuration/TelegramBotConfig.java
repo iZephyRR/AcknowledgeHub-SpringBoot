@@ -1,6 +1,8 @@
 package com.echo.acknowledgehub.configuration;
 
 import com.echo.acknowledgehub.service.EmployeeService;
+
+import com.echo.acknowledgehub.service.TelegramGroupService;
 import com.echo.acknowledgehub.service.TelegramService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -11,6 +13,7 @@ import org.telegram.telegrambots.updatesreceivers.DefaultBotSession;
 
 @Configuration
 public class TelegramBotConfig {
+
     @Value("${telegram.bot.username}")
     private String botUsername;
 
@@ -25,7 +28,7 @@ public class TelegramBotConfig {
     }
 
     @Bean
-    public TelegramService telegramService(EmployeeService employeeService) {
-        return new TelegramService(botUsername, botToken, employeeService);
+    public TelegramService telegramService(EmployeeService employeeService, TelegramGroupService telegramGroupService) {
+        return new TelegramService(botUsername, botToken , employeeService, telegramGroupService);
     }
 }

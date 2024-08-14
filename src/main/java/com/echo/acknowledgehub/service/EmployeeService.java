@@ -14,6 +14,8 @@ import org.modelmapper.ModelMapper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.transaction.annotation.Transactional;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -128,6 +130,21 @@ public class EmployeeService {
     @Async
     public CompletableFuture<List<Employee>> findAll() {
         return CompletableFuture.completedFuture(EMPLOYEE_REPOSITORY.findAll());
+    }
+
+    @Transactional
+    public Employee findByTelegramUsername(String username) {
+        return EMPLOYEE_REPOSITORY.findByTelegramUsername(username);
+    }
+
+    @Transactional
+    public int updateTelegramUserId(Long telegramChatId, String telegramUsername) {
+        return EMPLOYEE_REPOSITORY.updateTelegramUserId(telegramChatId, telegramUsername);
+    }
+
+    @Transactional
+    public Long getChatIdByUsername(String username){
+        return EMPLOYEE_REPOSITORY.getTelegramChatId(username);
     }
 
     @Transactional
