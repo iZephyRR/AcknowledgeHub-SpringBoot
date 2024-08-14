@@ -1,13 +1,13 @@
-package com.echo.acknowledgehub.dto;
+package com.echo.acknowledgehub.bean;
 
 import com.echo.acknowledgehub.constant.EmployeeRole;
 import com.echo.acknowledgehub.constant.EmployeeStatus;
-import lombok.AllArgsConstructor;
 import lombok.Data;
+import org.springframework.stereotype.Component;
 
 @Data
-@AllArgsConstructor
-public class CheckingDTO {
+@Component
+public class CheckingBean {
     private EmployeeStatus status;
     private EmployeeRole role;
 }
