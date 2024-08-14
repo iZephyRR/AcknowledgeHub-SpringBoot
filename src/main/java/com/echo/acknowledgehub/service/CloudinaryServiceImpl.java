@@ -23,7 +23,7 @@ public class CloudinaryServiceImpl implements CloudinaryService {
     }
 
     @Override
-    public Map<String, Object> upload(MultipartFile file) throws IOException {
+    public Map<String, String> upload(MultipartFile file) throws IOException {
         // Handle different file types correctly
         String folder = file.getContentType().startsWith("image/") ? "images/" : "pdfs/";
 
