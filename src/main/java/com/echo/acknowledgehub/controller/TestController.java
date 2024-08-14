@@ -20,6 +20,7 @@ public class TestController {
     private static final Logger LOGGER = Logger.getLogger(TestController.class.getName());
     private final JWTService JWT_SERVICE;
     private final EmployeeService EMPLOYEE_SERVICE;
+    private final CheckingBean CHECKING_BEAN;
 
 //@GetMapping(value = "/test", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
 //    LOGGER.info("Starting request...");//public Flux<CheckingBean> streamEvents(@RequestHeader("Authorization") String token) {
@@ -43,6 +44,9 @@ public class TestController {
 //                    )
 //            );
 //}
-
+@GetMapping("test")
+    private void test(){
+    LOGGER.info("Checking : "+CHECKING_BEAN);
+}
 
 }

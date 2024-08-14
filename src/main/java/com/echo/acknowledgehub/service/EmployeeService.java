@@ -139,19 +139,4 @@ public class EmployeeService {
         return EMPLOYEE_REPOSITORY.getTelegramChatId(username);
     }
 
-    @Transactional
-    public Employee findByTelegramUsername(String username) {
-        return EMPLOYEE_REPOSITORY.findByTelegramUsername(username);
-    }
-
-    @Transactional
-    public int updateTelegramUserId(Long telegramChatId, String telegramUsername) {
-        return EMPLOYEE_REPOSITORY.updateTelegramUserId(telegramChatId, telegramUsername);
-    }
-
-    @Transactional
-    public Long getChatIdByUsername(String username){
-        return EMPLOYEE_REPOSITORY.getTelegramChatId(username);
-    }
-
 }
