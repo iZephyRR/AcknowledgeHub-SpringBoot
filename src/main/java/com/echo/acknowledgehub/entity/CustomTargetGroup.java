@@ -1,5 +1,6 @@
 package com.echo.acknowledgehub.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -14,6 +15,7 @@ public class CustomTargetGroup {
   @Column(name = "title", nullable = false, columnDefinition = "VARCHAR(45)")
   private String title;
 
+  @JsonIgnore
   @ManyToOne(cascade = CascadeType.MERGE)
   @JoinColumn(name = "hr_id", nullable = false)
   private Employee employee;

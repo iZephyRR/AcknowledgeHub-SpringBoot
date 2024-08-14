@@ -1,6 +1,7 @@
 package com.echo.acknowledgehub.entity;
 
 import com.echo.acknowledgehub.constant.AnnouncementStatus;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -18,15 +19,18 @@ public class Announcement {
     private String title;
     @Column(name = "created_at", nullable = false, columnDefinition = "TIMESTAMP")
     private LocalDateTime createdAt;
+    @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, columnDefinition = "ENUM('EDITING', 'PENDING', 'APPROVED', 'DECLINED')")
     private AnnouncementStatus status;
     @Column(name = "pdf_link", nullable = true,columnDefinition = "VARCHAR(125)")
     private String pdfLink;
 
+    @JsonIgnore
     @ManyToOne(cascade = CascadeType.MERGE)
     @JoinColumn(name = "hr_id" ,nullable = false)
     private Employee employee;
 
+    @JsonIgnore
     @ManyToOne(cascade = CascadeType.MERGE)
     @JoinColumn(name = "category_id" ,nullable = false)
     private AnnouncementCategory category;

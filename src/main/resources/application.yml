@@ -1,0 +1,38 @@
+spring:
+  application:
+    name: acknowledgehub
+  main:
+    allow-circular-references: true
+  datasource:
+    url: jdbc:mysql://localhost:3306/acknowledge_hub_db
+    username: root
+    password: root
+
+  jpa:
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL8Dialect
+        callable: false
+    hibernate:
+      ddl-auto: update
+
+server:
+  port: 8080
+  error:
+    include-message: always
+    include-binding-errors: always
+
+app:
+  api:
+    base-url: /api/v1 #Format is /*/*
+
+telegram:
+  bot:
+    username: echofive_14_bot
+    token: 7408765661:AAHTCb7W_QXCeP9GZjpkol1ly_qBeXf4u9Y
+
+#if u need to debug spring security u can use this property.
+logging:
+  level:
+    org.springframework.security: DEBUG
+

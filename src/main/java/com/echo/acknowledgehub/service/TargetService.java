@@ -1,15 +1,14 @@
 package com.echo.acknowledgehub.service;
 
-import com.echo.acknowledgehub.repository.AnnouncementRepository;
 import com.echo.acknowledgehub.repository.TargetRepository;
+import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.logging.Logger;
+
 @Service
-
+@AllArgsConstructor
 public class TargetService {
-    private final TargetRepository targetRepository;
-    private TargetService(TargetRepository targetRepository){
-        this.targetRepository=targetRepository;
-
-    }
+    private static final Logger LOGGER = Logger.getLogger(TargetService.class.getName());
+    private final TargetRepository TARGET_REPOSITORY;
 }
