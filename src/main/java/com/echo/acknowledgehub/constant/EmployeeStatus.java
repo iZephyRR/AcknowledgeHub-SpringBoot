@@ -1,4 +1,4 @@
-package com.echo.acknowledgehub.persistence.constant;
+package com.echo.acknowledgehub.constant;
 
 public enum EmployeeStatus {
     ACTIVATED, DEACTIVATED, DEPARTED;

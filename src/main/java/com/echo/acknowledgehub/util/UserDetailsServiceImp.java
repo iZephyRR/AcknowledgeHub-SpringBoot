@@ -1,7 +1,7 @@
 package com.echo.acknowledgehub.util;
 
-import com.echo.acknowledgehub.persistence.entity.Employee;
-import com.echo.acknowledgehub.persistence.repository.EmployeeRepository;
+import com.echo.acknowledgehub.entity.Employee;
+import com.echo.acknowledgehub.repository.EmployeeRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;

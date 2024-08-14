@@ -1,6 +1,6 @@
 package com.echo.acknowledgehub.configuration;
 
-import com.echo.acknowledgehub.persistence.constant.EmployeeRole;
+import com.echo.acknowledgehub.constant.EmployeeRole;
 import com.echo.acknowledgehub.util.BaseURL;
 import com.echo.acknowledgehub.util.JWTAuthenticationFilter;
 import lombok.AllArgsConstructor;

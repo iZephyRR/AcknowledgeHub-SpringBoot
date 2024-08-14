@@ -1,7 +1,7 @@
-package com.echo.acknowledgehub.persistence.repository;
+package com.echo.acknowledgehub.repository;
 
-import com.echo.acknowledgehub.persistence.constant.AnnouncementCategoryStatus;
-import com.echo.acknowledgehub.persistence.entity.AnnouncementCategory;
+import com.echo.acknowledgehub.constant.AnnouncementCategoryStatus;
+import com.echo.acknowledgehub.entity.AnnouncementCategory;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;

@@ -1,6 +1,6 @@
-package com.echo.acknowledgehub.persistence.entity;
+package com.echo.acknowledgehub.entity;
 
-import com.echo.acknowledgehub.persistence.constant.AnnouncementCategoryStatus;
+import com.echo.acknowledgehub.constant.AnnouncementCategoryStatus;
 import jakarta.persistence.*;
 import lombok.Data;
 

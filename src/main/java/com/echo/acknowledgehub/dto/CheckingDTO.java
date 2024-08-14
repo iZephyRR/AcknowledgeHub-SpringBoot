@@ -1,7 +1,7 @@
 package com.echo.acknowledgehub.dto;
 
-import com.echo.acknowledgehub.persistence.constant.EmployeeRole;
-import com.echo.acknowledgehub.persistence.constant.EmployeeStatus;
+import com.echo.acknowledgehub.constant.EmployeeRole;
+import com.echo.acknowledgehub.constant.EmployeeStatus;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 

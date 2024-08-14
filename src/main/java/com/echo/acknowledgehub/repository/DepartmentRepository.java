@@ -1,6 +1,6 @@
-package com.echo.acknowledgehub.persistence.repository;
+package com.echo.acknowledgehub.repository;
 
-import com.echo.acknowledgehub.persistence.entity.Department;
+import com.echo.acknowledgehub.entity.Department;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;

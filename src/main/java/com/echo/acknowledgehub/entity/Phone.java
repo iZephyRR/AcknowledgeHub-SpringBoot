@@ -1,4 +1,4 @@
-package com.echo.acknowledgehub.persistence.entity;
+package com.echo.acknowledgehub.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;

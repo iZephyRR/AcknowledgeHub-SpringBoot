@@ -1,8 +1,8 @@
 package com.echo.acknowledgehub.service;
 
-import com.echo.acknowledgehub.persistence.constant.AnnouncementCategoryStatus;
-import com.echo.acknowledgehub.persistence.entity.AnnouncementCategory;
-import com.echo.acknowledgehub.persistence.repository.AnnouncementCategoryRepository;
+import com.echo.acknowledgehub.constant.AnnouncementCategoryStatus;
+import com.echo.acknowledgehub.entity.AnnouncementCategory;
+import com.echo.acknowledgehub.repository.AnnouncementCategoryRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;

@@ -1,27 +1,19 @@
 package com.echo.acknowledgehub.service;
 
 import com.echo.acknowledgehub.dto.UserDTO;
-import com.echo.acknowledgehub.dto.UsersDTO;
-import com.echo.acknowledgehub.exception_handler.UserRegistrationException;
-import com.echo.acknowledgehub.exception_handler.XlsxReaderException;
-import com.echo.acknowledgehub.persistence.entity.Company;
-import com.echo.acknowledgehub.persistence.entity.Department;
-import com.echo.acknowledgehub.persistence.entity.Employee;
-import com.echo.acknowledgehub.persistence.repository.EmployeeRepository;
+import com.echo.acknowledgehub.entity.Employee;
+import com.echo.acknowledgehub.repository.EmployeeRepository;
 import com.echo.acknowledgehub.util.XlsxReader;
 import lombok.AllArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.multipart.MultipartFile;
-import org.springframework.transaction.annotation.Transactional;
-import java.io.IOException;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
 import java.util.logging.Logger;
 
 @Service

@@ -1,11 +1,9 @@
 package com.echo.acknowledgehub.util;
 
-import com.echo.acknowledgehub.persistence.constant.EmployeeRole;
-import com.echo.acknowledgehub.persistence.constant.Gender;
+import com.echo.acknowledgehub.constant.EmployeeRole;
+import com.echo.acknowledgehub.constant.Gender;
 import com.echo.acknowledgehub.exception_handler.XlsxReaderException;
-import com.echo.acknowledgehub.persistence.entity.Company;
-import com.echo.acknowledgehub.persistence.entity.Department;
-import com.echo.acknowledgehub.persistence.entity.Employee;
+import com.echo.acknowledgehub.entity.Employee;
 import lombok.AllArgsConstructor;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFPictureData;

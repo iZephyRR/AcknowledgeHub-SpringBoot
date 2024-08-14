@@ -1,4 +1,4 @@
-package com.echo.acknowledgehub.persistence.entity;
+package com.echo.acknowledgehub.entity;
 
 import jakarta.persistence.*;
 import lombok.Data;

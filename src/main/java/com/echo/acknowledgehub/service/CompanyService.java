@@ -1,7 +1,7 @@
 package com.echo.acknowledgehub.service;
 
-import com.echo.acknowledgehub.persistence.entity.Company;
-import com.echo.acknowledgehub.persistence.repository.CompanyRepository;
+import com.echo.acknowledgehub.entity.Company;
+import com.echo.acknowledgehub.repository.CompanyRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;

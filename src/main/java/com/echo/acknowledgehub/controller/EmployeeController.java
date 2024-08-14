@@ -4,7 +4,7 @@ import com.echo.acknowledgehub.dto.JWTToken;
 import com.echo.acknowledgehub.dto.LoginDTO;
 import com.echo.acknowledgehub.dto.UserDTO;
 import com.echo.acknowledgehub.dto.UsersDTO;
-import com.echo.acknowledgehub.persistence.entity.Employee;
+import com.echo.acknowledgehub.entity.Employee;
 import com.echo.acknowledgehub.service.EmployeeService;
 import com.echo.acknowledgehub.util.JWTService;
 import lombok.AllArgsConstructor;
@@ -13,7 +13,6 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.List;

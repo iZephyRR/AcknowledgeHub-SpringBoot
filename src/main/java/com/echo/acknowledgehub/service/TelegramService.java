@@ -1,6 +1,6 @@
 package com.echo.acknowledgehub.service;
 
-import com.echo.acknowledgehub.persistence.entity.Employee;
+import com.echo.acknowledgehub.entity.Employee;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;

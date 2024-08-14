@@ -1,7 +1,7 @@
-package com.echo.acknowledgehub.persistence.entity;
+package com.echo.acknowledgehub.entity;
 
-import com.echo.acknowledgehub.persistence.constant.NotificationStatus;
-import com.echo.acknowledgehub.persistence.constant.NotificationType;
+import com.echo.acknowledgehub.constant.NotificationStatus;
+import com.echo.acknowledgehub.constant.NotificationType;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
