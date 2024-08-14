@@ -1,7 +1,5 @@
 package com.echo.acknowledgehub.util;
 
-import com.echo.acknowledgehub.service.EmployeeService;
-import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -17,13 +15,14 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.logging.Logger;
-
-@AllArgsConstructor
 @Component
+@AllArgsConstructor
 public class JWTAuthenticationFilter extends OncePerRequestFilter {
     private static final Logger LOGGER = Logger.getLogger(JWTAuthenticationFilter.class.getName());
     private final JWTService JWT_SERVICE;
     private final UserDetailsServiceImp USER_DETAILS_SERVICE;
+
+
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {

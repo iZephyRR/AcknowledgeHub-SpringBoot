@@ -20,4 +20,14 @@ public class DepartmentService {
     public CompletableFuture<Optional<Department>> findById(Long id){
         return CompletableFuture.completedFuture(DEPARTMENT_REPOSITORY.findById(id));
     }
+
+    @Async
+    public CompletableFuture<Optional<Department>> findByName(String name){
+        return CompletableFuture.completedFuture(DEPARTMENT_REPOSITORY.findByName(name));
+    }
+
+    @Async
+    public CompletableFuture<Department> save(Department department){
+        return CompletableFuture.completedFuture(DEPARTMENT_REPOSITORY.save(department));
+    }
 }

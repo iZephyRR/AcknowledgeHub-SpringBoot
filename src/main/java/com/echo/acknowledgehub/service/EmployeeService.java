@@ -9,8 +9,7 @@ import org.modelmapper.ModelMapper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.multipart.MultipartFile;
-import java.io.IOException;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -24,6 +23,8 @@ public class EmployeeService {
     private final EmployeeRepository EMPLOYEE_REPOSITORY;
     private final XlsxReader XLSX_READER;
     private final ModelMapper MAPPER;
+    private final CompanyService COMPANY_SERVICE;
+    private final DepartmentService DEPARTMENT_SERVICE;
 
     @Async
     public CompletableFuture<Optional<Employee>> findById(Long id) {
@@ -52,13 +53,71 @@ public class EmployeeService {
         users.forEach(user-> this.save(user).thenAccept(employees::add));
         return CompletableFuture.completedFuture(employees);
     }
-    @Async
-    public CompletableFuture<List<Employee>> saveAll(MultipartFile users) throws IOException {
-        return XLSX_READER.getEmployees(users.getInputStream()).thenApply(employees -> {
-            EMPLOYEE_REPOSITORY.saveAll(employees);
-            return employees;
-        });
-    }
+//    @Async
+//    public CompletableFuture<List<Employee>> saveAll(MultipartFile users) throws IOException {
+//        return XLSX_READER.getEmployees(users.getInputStream()).thenApply(employees -> {
+//            EMPLOYEE_REPOSITORY.saveAll(employees);
+//            return employees;
+//        });
+//    }
+//@Async
+//public CompletableFuture<List<Employee>> saveAll(UsersDTO users) throws IOException {
+//    CompletableFuture<Optional<Company>> company = COMPANY_SERVICE.findByName(users.getCompany());
+//    CompletableFuture<Optional<Department>> department = DEPARTMENT_SERVICE.findByName(users.getDepartment());
+//    return XLSX_READER.getEmployees(users.getXlsx().getInputStream()).thenApply(employees -> {
+//        employees.forEach(employee -> {
+//            employee.getDepartment().setId(department.thenApply(finalDepartment -> {
+//                if(finalDepartment.isPresent()){
+//                    return finalDepartment.get().getId();
+//                }else{
+//                    throw new UserRegistrationException();
+//                }
+//            }));
+//            employee.getCompany().setId(company.thenApply(finalCompany ->{
+//                if(finalCompany.isPresent()){
+//                    return finalCompany.get().getId();
+//                }else {
+//                    throw new UserRegistrationException();
+//                }
+//            }));
+//        });
+//        return CompletableFuture.completedFuture(EMPLOYEE_REPOSITORY.saveAll(employees));
+//    });
+//}
+//@Async
+//public CompletableFuture<List<Employee>> saveAll(UsersDTO users)  {
+//    CompletableFuture<Optional<Company>> companyFuture = COMPANY_SERVICE.findByName(users.getCompany());
+//    CompletableFuture<Optional<Department>> departmentFuture = DEPARTMENT_SERVICE.findByName(users.getDepartment());
+//
+//    return companyFuture.thenCombine(departmentFuture, (companyOpt, departmentOpt) -> {
+//                if (companyOpt.isEmpty()) {
+//                    CompletableFuture<Company> companyFuture2 = COMPANY_SERVICE.save(new Company(users.getCompany()));
+//                    companyFuture2.thenCompose(savedCompany ->
+//                            departmentOpt.<CompletionStage<Department>>map(CompletableFuture::completedFuture)
+//                                    .orElseGet(() ->
+//                                            DEPARTMENT_SERVICE.save(new Department(users.getDepartment(), savedCompany.getId()))));
+//                }
+//
+//                Company company = companyOpt.get();
+//                Department department = departmentOpt.get();
+//
+//                try {
+//                    return XLSX_READER.getEmployees(users.getXlsx().getInputStream())
+//                            .thenApply(employees -> {
+//                                employees.forEach(employee -> {
+//                                    employee.getCompany().setId(company.getId());
+//                                    employee.getDepartment().setId(department.getId());
+//                                });
+//                                return employees;
+//                            });
+//                } catch (IOException e) {
+//                    LOGGER.severe("Error "+e);
+//                    throw new XlsxReaderException(); // Wrap and propagate the IOException
+//                }
+//            }).thenCompose(employeesFuture -> employeesFuture)
+//            .thenApply(EMPLOYEE_REPOSITORY::saveAll);
+//}
+
 
     @Async
     public CompletableFuture<List<Employee>> findAll() {

@@ -3,12 +3,10 @@ spring:
     name: acknowledgehub
   main:
     allow-circular-references: true
-
   datasource:
     url: jdbc:mysql://localhost:3306/acknowledge_hub_db
     username: root
     password: root
-
 
   jpa:
     properties:
@@ -17,10 +15,6 @@ spring:
         callable: false
     hibernate:
       ddl-auto: update
-      format_sql: true
-    slow-sql: true
-
-
 
 server:
   port: 8080
