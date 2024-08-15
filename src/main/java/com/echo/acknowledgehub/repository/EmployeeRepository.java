@@ -21,4 +21,7 @@ public interface EmployeeRepository extends JpaRepository <Employee,Long>{
    @Modifying
    @Query ("update Employee em set em.telegramUserId= :telegramUserId where em.telegramUsername= :telegramUsername")
    int updateTelegramUserId(@Param("telegramUserId")Long telegramUserId,@Param("telegramUsername") String telegramUsername);
+
+   @Query("SELECT em.password from Employee em where em.id= :id")
+   String getPasswordById(@Param("id") Long id);
 }
