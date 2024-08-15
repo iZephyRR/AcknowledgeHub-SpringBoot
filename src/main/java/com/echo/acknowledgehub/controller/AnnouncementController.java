@@ -52,7 +52,7 @@ public class AnnouncementController {
         if (optionalAnnouncementCategory.isPresent()) {
             category = optionalAnnouncementCategory.get();
         }
-        if(CHECKING_BEAN.getRole() == EmployeeRole.MAIN_HR || CHECKING_BEAN.getRole() == EmployeeRole.ADMIN){
+        if (CHECKING_BEAN.getRole() == EmployeeRole.MAIN_HR || CHECKING_BEAN.getRole() == EmployeeRole.ADMIN) {
             announcementDTO.setStatus("APPROVED");
         } else {
             announcementDTO.setStatus("PENDING");
