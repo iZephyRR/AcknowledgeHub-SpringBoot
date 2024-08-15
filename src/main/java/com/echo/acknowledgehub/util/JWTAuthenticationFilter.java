@@ -20,15 +20,16 @@ import java.util.logging.Logger;
 public class JWTAuthenticationFilter extends OncePerRequestFilter {
     private static final Logger LOGGER = Logger.getLogger(JWTAuthenticationFilter.class.getName());
     private final JWTService JWT_SERVICE;
-    private final UserDetailsServiceImp USER_DETAILS_SERVICE;
+    private final UserDetailsService USER_DETAILS_SERVICE;
 
 
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         String authHeader = request.getHeader("Authorization");
+        LOGGER.info("Token : "+authHeader);
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            LOGGER.warning("Unauthorized request.");
+            LOGGER.warning("Unauthorized request for : "+authHeader);
             filterChain.doFilter(request, response);
             return;
         }

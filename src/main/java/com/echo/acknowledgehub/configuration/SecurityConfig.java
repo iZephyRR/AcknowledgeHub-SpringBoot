@@ -47,7 +47,8 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(
                         request -> request
-                                .requestMatchers(BASE_URL + "/test", BASE_URL + "/login").permitAll()
+                                .requestMatchers(BASE_URL + "/test", BASE_URL + "/auth/**").permitAll()
+          
                                 .requestMatchers(BASE_URL + "/ad/**", BASE_URL + "/announcement/create").access((authentication, requestContext) ->
                                         new AuthorizationDecision(
                                                 authentication.get().getAuthorities().stream()

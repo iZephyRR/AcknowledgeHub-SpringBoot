@@ -14,7 +14,7 @@ public class Department {
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   @Column(name = "id", columnDefinition = "BIGINT")
   private Long id;
-  @Column(name = "name", unique = true, nullable = false, columnDefinition = "VARCHAR(45)")
+  @Column(name = "name", nullable = false, columnDefinition = "VARCHAR(45)")
   private String name;
 
   @JsonIgnore
