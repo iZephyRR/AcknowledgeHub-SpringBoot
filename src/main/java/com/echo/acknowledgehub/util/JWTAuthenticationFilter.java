@@ -55,6 +55,7 @@ public class JWTAuthenticationFilter extends OncePerRequestFilter {
                 } else {
                     CHECKING_BEAN.refresh();
                 }
+
             }
         } catch (ExpiredJwtException e) {
             LOGGER.severe(e.getMessage());
