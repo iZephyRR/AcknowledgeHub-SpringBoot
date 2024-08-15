@@ -23,7 +23,6 @@ public interface EmployeeRepository extends JpaRepository <Employee,Long>{
    @Query ("update Employee em set em.telegramUserId= :telegramUserId where em.telegramUsername= :telegramUsername")
    int updateTelegramUserId(@Param("telegramUserId")Long telegramUserId,@Param("telegramUsername") String telegramUsername);
 
-
    @Query("select em.telegramUserId from Employee em")
    List<Long> getAllChatId();
 
