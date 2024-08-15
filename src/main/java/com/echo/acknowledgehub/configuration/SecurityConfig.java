@@ -47,7 +47,7 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(
                         request -> request
-                                .requestMatchers(BASE_URL + "/test", BASE_URL + "/login").permitAll()
+                                .requestMatchers(BASE_URL + "/test", BASE_URL + "/auth/**").permitAll()
                                 .requestMatchers(BASE_URL + "/ad/**").access((authentication, requestContext) ->
                                         new AuthorizationDecision(
                                                 authentication.get().getAuthorities().stream()
@@ -56,27 +56,27 @@ public class SecurityConfig {
                                 ).requestMatchers(BASE_URL + "/mr/**").access((authentication, requestContext) ->
                                         new AuthorizationDecision(
                                                 authentication.get().getAuthorities().stream()
-                                                        .noneMatch(grantedAuthority -> grantedAuthority.getAuthority().equals(EmployeeRole.ADMIN.name()))
+                                                        .noneMatch(grantedAuthority -> grantedAuthority.getAuthority().equals(EmployeeRole.MAIN_HR.name()))
                                         )
                                 ).requestMatchers(BASE_URL + "/ma/**").access((authentication, requestContext) ->
                                         new AuthorizationDecision(
                                                 authentication.get().getAuthorities().stream()
-                                                        .noneMatch(grantedAuthority -> grantedAuthority.getAuthority().equals(EmployeeRole.ADMIN.name()))
+                                                        .noneMatch(grantedAuthority -> grantedAuthority.getAuthority().equals(EmployeeRole.MAIN_HR_ASSISTANCE.name()))
                                         )
                                 ).requestMatchers(BASE_URL + "/hr/**").access((authentication, requestContext) ->
                                         new AuthorizationDecision(
                                                 authentication.get().getAuthorities().stream()
-                                                        .noneMatch(grantedAuthority -> grantedAuthority.getAuthority().equals(EmployeeRole.ADMIN.name()))
+                                                        .noneMatch(grantedAuthority -> grantedAuthority.getAuthority().equals(EmployeeRole.HR.name()))
                                         )
                                 ).requestMatchers(BASE_URL + "/ha/**").access((authentication, requestContext) ->
                                         new AuthorizationDecision(
                                                 authentication.get().getAuthorities().stream()
-                                                        .noneMatch(grantedAuthority -> grantedAuthority.getAuthority().equals(EmployeeRole.ADMIN.name()))
+                                                        .noneMatch(grantedAuthority -> grantedAuthority.getAuthority().equals(EmployeeRole.HR_ASSISTANCE.name()))
                                         )
                                 ).requestMatchers(BASE_URL + "/sf/**").access((authentication, requestContext) ->
                                         new AuthorizationDecision(
                                                 authentication.get().getAuthorities().stream()
-                                                        .noneMatch(grantedAuthority -> grantedAuthority.getAuthority().equals(EmployeeRole.ADMIN.name()))
+                                                        .noneMatch(grantedAuthority -> grantedAuthority.getAuthority().equals(EmployeeRole.STUFF.name()))
                                         )
                                 )
                                 .anyRequest().authenticated()

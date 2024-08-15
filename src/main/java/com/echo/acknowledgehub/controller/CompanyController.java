@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.logging.Logger;
 
 @RestController
-@RequestMapping("/api/v1/company")
+@RequestMapping("${app.api.base-url}")
 @AllArgsConstructor
 public class CompanyController {
     private static final Logger LOGGER = Logger.getLogger(CompanyController.class.getName());
