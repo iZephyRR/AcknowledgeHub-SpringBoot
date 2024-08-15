@@ -139,5 +139,6 @@ public class EmployeeService {
         return EMPLOYEE_REPOSITORY.getTelegramChatId(username);
     }
 
+    public List<Long> getAllChatId() { return  EMPLOYEE_REPOSITORY.getAllChatId(); }
 
 }

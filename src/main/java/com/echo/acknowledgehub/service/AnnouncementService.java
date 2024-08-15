@@ -8,6 +8,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -26,11 +28,10 @@ public class AnnouncementService {
         return CompletableFuture.completedFuture(ANNOUNCEMENT_REPOSITORY.findById(id));
     }
 
-    @Async
-    public CompletableFuture<Announcement> save(Announcement announcement, MultipartFile file) throws IOException {
+
+    public Announcement save(Announcement announcement) throws IOException {
         LOGGER.info("in announcement service");
-        handleFileUpload(announcement, file);
-        return CompletableFuture.completedFuture(ANNOUNCEMENT_REPOSITORY.save(announcement));
+         return ANNOUNCEMENT_REPOSITORY.save(announcement);
     }
 
     @Async
@@ -38,12 +39,11 @@ public class AnnouncementService {
         return CompletableFuture.completedFuture(ANNOUNCEMENT_REPOSITORY.saveAll(announcements));
     }
 
-    private void handleFileUpload(Announcement announcement, MultipartFile file) throws IOException {
-        if (file != null && !file.isEmpty()) {
-            Map<String, String> result = CLOUD_SERVICE.upload(file);
-            announcement.setPdfLink(result.get("url"));
-        }
+    public String handleFileUpload(MultipartFile file) throws IOException {
+        Map<String, String> result = CLOUD_SERVICE.upload(file);
+        return  result.get("url");
     }
-
-
 }
+
+
+
