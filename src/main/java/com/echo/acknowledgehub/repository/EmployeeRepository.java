@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 @Repository
 public interface EmployeeRepository extends JpaRepository <Employee,Long>{
@@ -22,6 +23,11 @@ public interface EmployeeRepository extends JpaRepository <Employee,Long>{
    @Query ("update Employee em set em.telegramUserId= :telegramUserId where em.telegramUsername= :telegramUsername")
    int updateTelegramUserId(@Param("telegramUserId")Long telegramUserId,@Param("telegramUsername") String telegramUsername);
 
+
+   @Query("select em.telegramUserId from Employee em")
+   List<Long> getAllChatId();
+
    @Query("SELECT em.password from Employee em where em.id= :id")
    String getPasswordById(@Param("id") Long id);
+
 }

@@ -14,23 +14,27 @@ import java.util.logging.Logger;
 public class TelegramGroupService {
 
     private static final Logger LOGGER = Logger.getLogger(TelegramGroupService.class.getName());
-    public final TelegramGroupRepository telegramGroupRepository;
+    public final TelegramGroupRepository TELEGRAM_GROUP_REPOSITORY;
 
 
-    public Optional<TelegramGroup> findByGroupName(String groupName) {
-        LOGGER.info("Group title : "+ groupName);
-        return telegramGroupRepository.findByGroupName(groupName);
+    public TelegramGroup findByGroupName(String groupName) {
+        Optional<TelegramGroup> optionalTelegramGroup = TELEGRAM_GROUP_REPOSITORY.findByGroupName(groupName);
+        TelegramGroup telegramGroup = new TelegramGroup();
+        if(optionalTelegramGroup.isPresent()) {
+            telegramGroup = optionalTelegramGroup.get();
+        }
+        return telegramGroup;
     }
 
     @Transactional
     public Long getGroupChatId(String groupName) {
-        return telegramGroupRepository.getGroupChatId(groupName);
+        return TELEGRAM_GROUP_REPOSITORY.getGroupChatId(groupName);
     }
 
     @Transactional
     public int updateGroupChatId(Long chatId , String groupName) {
         LOGGER.info("in update group chat : " + chatId);
-        return telegramGroupRepository.updateGroupChatId(chatId, groupName);
+        return TELEGRAM_GROUP_REPOSITORY.updateGroupChatId(chatId, groupName);
     }
 
 }
