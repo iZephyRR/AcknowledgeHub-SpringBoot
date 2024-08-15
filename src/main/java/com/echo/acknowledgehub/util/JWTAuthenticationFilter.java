@@ -1,5 +1,6 @@
 package com.echo.acknowledgehub.util;
 
+import com.echo.acknowledgehub.bean.CheckingBean;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -21,6 +22,7 @@ public class JWTAuthenticationFilter extends OncePerRequestFilter {
     private static final Logger LOGGER = Logger.getLogger(JWTAuthenticationFilter.class.getName());
     private final JWTService JWT_SERVICE;
     private final UserDetailsService USER_DETAILS_SERVICE;
+    private final CheckingBean CHECKING_BEAN;
     private final BaseURL BASE_URL;
 
 
@@ -29,10 +31,10 @@ public class JWTAuthenticationFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         String authHeader = request.getHeader("Authorization");
         //LOGGER.info("Token : "+authHeader.substring(7));
-
         LOGGER.info("BaseUrl : "+BASE_URL);
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             LOGGER.warning("Unauthorized request for : "+authHeader);
+            CHECKING_BEAN.refresh();
             filterChain.doFilter(request, response);
             return;
         }
@@ -42,8 +44,6 @@ public class JWTAuthenticationFilter extends OncePerRequestFilter {
 
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             UserDetails userDetails = USER_DETAILS_SERVICE.loadUserByUsername(username);
-//            LOGGER.info("Authorities : "+userDetails.getAuthorities());
-//            LOGGER.info("Expire date : "+JWT_SERVICE.extractExpiration(token));
             if (JWT_SERVICE.isValid(token, userDetails)) {
                 UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                         userDetails, null, userDetails.getAuthorities()
@@ -51,6 +51,9 @@ public class JWTAuthenticationFilter extends OncePerRequestFilter {
                 authToken.setDetails(
                         new WebAuthenticationDetailsSource().buildDetails(request)
                 );
+            }
+            else{
+                CHECKING_BEAN.refresh();
             }
         }
         filterChain.doFilter(request, response);

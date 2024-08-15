@@ -10,4 +10,9 @@ import org.springframework.stereotype.Component;
 public class CheckingBean {
     private EmployeeStatus status;
     private EmployeeRole role;
+
+    public void refresh(){
+        this.status=null;
+        this.role=null;
+    }
 }
