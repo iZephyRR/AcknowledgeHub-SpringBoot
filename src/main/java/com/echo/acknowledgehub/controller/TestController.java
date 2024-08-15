@@ -1,12 +1,9 @@
 package com.echo.acknowledgehub.controller;
 
-import com.echo.acknowledgehub.exception_handler.EmailSenderException;
-import com.echo.acknowledgehub.exception_handler.XlsxReaderException;
+import com.echo.acknowledgehub.bean.CheckingBean;
+import com.echo.acknowledgehub.service.EmployeeService;
 import com.echo.acknowledgehub.util.JWTService;
-import com.echo.acknowledgehub.util.BaseURL;
-import com.echo.acknowledgehub.util.XlsxReader;
 import lombok.AllArgsConstructor;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.annotation.*;
 import java.util.logging.Logger;
 
@@ -16,22 +13,35 @@ import java.util.logging.Logger;
 public class TestController {
 
     private static final Logger LOGGER = Logger.getLogger(TestController.class.getName());
-    private final XlsxReader XLSX_READER;
-    private final BaseURL BASE_URL;
     private final JWTService JWT_SERVICE;
+    private final EmployeeService EMPLOYEE_SERVICE;
+    private final CheckingBean CHECKING_BEAN;
 
-//    @PostMapping("/test")
-//    public CompletableFuture<List<Employee>> sendXlsx() {
-//        LOGGER.info("Base URl "+BASE_URL);
-//        try {
-//           // CompletableFuture<List<Employee>> futureEmployees = XLSX_READER.getEmployees(new FileInputStream("C:/OJT-14/Final Project/excel_import_test.xlsx"));
-//           return XLSX_READER.getEmployees(new FileInputStream("C:/OJT-14/Final Project/excel_import_test.xlsx"));
-//        } catch (IOException e) {
-//            throw new XlsxReaderException();
-//        }
-//    }
-    @PostMapping("/test")
-    public void test() {
-        throw new XlsxReaderException();
-    }
+//@GetMapping(value = "/test", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+//    LOGGER.info("Starting request...");//public Flux<CheckingBean> streamEvents(@RequestHeader("Authorization") String token) {
+//    Long id = Long.parseLong(JWT_SERVICE.extractId(token.substring(7)));
+//    return Mono.fromFuture(EMPLOYEE_SERVICE.findById(id))
+//            .flatMapMany(data -> {
+//                return data.map(employee -> Flux.interval(Duration.ofSeconds(5))
+//                        .map(sequence -> new CheckingBean(employee.getStatus(), employee.getRole()))).orElseGet(Flux::empty);
+//            });
+//}
+//@GetMapping(value = "/test", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+//public Flux<CheckingBean> streamEvents(@RequestHeader("Authorization") String token) {
+//    LOGGER.info("Starting request...");
+//    Long id = Long.parseLong(JWT_SERVICE.extractId(token.substring(7)));
+//
+//    return Flux.interval(Duration.ofSeconds(5))
+//            .flatMap(sequence -> Mono.fromFuture(EMPLOYEE_SERVICE.findById(id))
+//                    .flatMapMany(data -> data.map(employee ->
+//                                    Flux.just(new CheckingBean(employee.getStatus(), employee.getRole())))
+//                            .orElseGet(Flux::empty)
+//                    )
+//            );
+//}
+@GetMapping("test")
+    private void test(){
+    LOGGER.info("Checking : "+CHECKING_BEAN);
+}
+
 }

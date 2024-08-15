@@ -1,7 +1,5 @@
 package com.echo.acknowledgehub.util;
 
-import com.echo.acknowledgehub.service.EmployeeService;
-import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -17,25 +15,30 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.logging.Logger;
-
-@AllArgsConstructor
 @Component
+@AllArgsConstructor
 public class JWTAuthenticationFilter extends OncePerRequestFilter {
     private static final Logger LOGGER = Logger.getLogger(JWTAuthenticationFilter.class.getName());
     private final JWTService JWT_SERVICE;
     private final UserDetailsService USER_DETAILS_SERVICE;
+    private final BaseURL BASE_URL;
+
+
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         String authHeader = request.getHeader("Authorization");
+        //LOGGER.info("Token : "+authHeader.substring(7));
+
+        LOGGER.info("BaseUrl : "+BASE_URL);
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            LOGGER.warning("Unauthorized request.");
+            LOGGER.warning("Unauthorized request for : "+authHeader);
             filterChain.doFilter(request, response);
             return;
         }
 
         String token = authHeader.substring(7);
-        String username = JWT_SERVICE.extractId(token);
+        String username = String.valueOf(JWT_SERVICE.extractId(token));
 
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             UserDetails userDetails = USER_DETAILS_SERVICE.loadUserByUsername(username);
