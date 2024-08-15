@@ -68,7 +68,7 @@ public class TelegramService extends TelegramLongPollingBot {
     public CompletableFuture<Void> registerTelegram(Update updateInfo) throws TelegramApiException {
         if (updateInfo.hasMessage()) {
             Message message = updateInfo.getMessage();
-            System.out.println(message.getReplyToMessage().getText());
+           // System.out.println(message.getReplyToMessage().getText());
             Long chatId = message.getChatId();
             if (message.getChat().isGroupChat() || message.getChat().isSuperGroupChat()) {
                 String groupTitle = message.getChat().getTitle();
