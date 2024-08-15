@@ -1,6 +1,7 @@
 package com.echo.acknowledgehub.controller;
 
 import com.echo.acknowledgehub.bean.CheckingBean;
+import com.echo.acknowledgehub.constant.EmployeeRole;
 import com.echo.acknowledgehub.dto.JWTToken;
 import com.echo.acknowledgehub.dto.LoginDTO;
 import com.echo.acknowledgehub.service.EmployeeService;
@@ -38,12 +39,12 @@ public class AuthController {
     }
 
     @GetMapping("/check")
-    private CheckingBean check(){
+    private CheckingBean check() {
         return this.CHECKING_BEAN;
     }
 
     @GetMapping("/is-first")
-    private CompletableFuture<Boolean> isFirstLogin(@RequestBody String email){
+    private CompletableFuture<Boolean> isFirstLogin(@RequestBody String email) {
         return EMPLOYEE_SERVICE.isFirstTime(email);
     }
 }

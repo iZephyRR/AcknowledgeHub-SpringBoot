@@ -48,7 +48,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(
                         request -> request
                                 .requestMatchers(BASE_URL + "/test", BASE_URL + "/auth/**").permitAll()
-          
+
                                 .requestMatchers(BASE_URL + "/ad/**", BASE_URL + "/announcement/create").access((authentication, requestContext) ->
                                         new AuthorizationDecision(
                                                 authentication.get().getAuthorities().stream()
@@ -69,7 +69,7 @@ public class SecurityConfig {
                                                 authentication.get().getAuthorities().stream()
                                                         .noneMatch(grantedAuthority -> grantedAuthority.getAuthority().equals(EmployeeRole.HR.name()))
                                         )
-                                ).requestMatchers(BASE_URL + "/ha/**" ,BASE_URL + "/announcement/create").access((authentication, requestContext) ->
+                                ).requestMatchers(BASE_URL + "/ha/**", BASE_URL + "/announcement/create").access((authentication, requestContext) ->
                                         new AuthorizationDecision(
                                                 authentication.get().getAuthorities().stream()
                                                         .noneMatch(grantedAuthority -> grantedAuthority.getAuthority().equals(EmployeeRole.HR_ASSISTANCE.name()))
@@ -81,7 +81,6 @@ public class SecurityConfig {
                                         )
                                 )
                                 .anyRequest().authenticated()
-
                 )
                 .userDetailsService(USER_DETAILS_SERVICE)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

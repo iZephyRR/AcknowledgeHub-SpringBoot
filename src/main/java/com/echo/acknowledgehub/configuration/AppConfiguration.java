@@ -10,7 +10,7 @@ public class AppConfiguration {
 
     @Bean
     public ModelMapper modelMapper() {
-        final ModelMapper MAPPER= new ModelMapper();
+        final ModelMapper MAPPER = new ModelMapper();
         MAPPER.getConfiguration()
                 .setMatchingStrategy(MatchingStrategies.STRICT)
                 .setFieldMatchingEnabled(true)

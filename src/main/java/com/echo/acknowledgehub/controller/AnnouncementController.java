@@ -16,6 +16,7 @@ import org.modelmapper.ModelMapper;
 import org.springframework.http.MediaType;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.web.bind.annotation.*;
+
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.NoSuchElementException;
@@ -48,7 +49,7 @@ public class AnnouncementController {
         if (optionalAnnouncementCategory.isPresent()) {
             category = optionalAnnouncementCategory.get();
         }
-        if(CHECKING_BEAN.getRole() == EmployeeRole.MAIN_HR || CHECKING_BEAN.getRole() == EmployeeRole.ADMIN){
+        if (CHECKING_BEAN.getRole() == EmployeeRole.MAIN_HR || CHECKING_BEAN.getRole() == EmployeeRole.ADMIN) {
             announcementDTO.setStatus("APPROVED");
         } else {
             announcementDTO.setStatus("PENDING");
@@ -58,7 +59,7 @@ public class AnnouncementController {
         entity.setEmployee(conFuEmployee.join());
         entity.setCategory(category);
         entity.setCreatedAt(LocalDateTime.now());
-        ANNOUNCEMENT_SERVICE.save(entity,announcementDTO.getFile());
+        ANNOUNCEMENT_SERVICE.save(entity, announcementDTO.getFile());
 
 
     }
