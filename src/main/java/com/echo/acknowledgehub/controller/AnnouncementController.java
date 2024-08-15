@@ -70,6 +70,5 @@ public class AnnouncementController {
         TARGET_SERVICE.insertTarget(targetList);
         List<Long> chatIdsList = EMPLOYEE_SERVICE.getAllChatId();
         TELEGRAM_SERVICE.sendReportsInBatches(chatIdsList,announcement.getPdfLink(), announcement.getTitle(),announcement.getEmployee().getName() );
-
     }
 }
