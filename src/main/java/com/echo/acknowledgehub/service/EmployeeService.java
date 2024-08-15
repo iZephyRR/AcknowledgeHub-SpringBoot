@@ -46,7 +46,7 @@ public class EmployeeService {
         LOGGER.info("Mapped employee : "+employee);
         return CompletableFuture.completedFuture(EMPLOYEE_REPOSITORY.save(employee));
     }
-
+//Not finish yet!
     @Async
     public CompletableFuture<List<Employee>> saveAll(List<UserDTO> users) {
         List<Employee> employees = new ArrayList<>();
@@ -139,19 +139,5 @@ public class EmployeeService {
         return EMPLOYEE_REPOSITORY.getTelegramChatId(username);
     }
 
-    @Transactional
-    public Employee findByTelegramUsername(String username) {
-        return EMPLOYEE_REPOSITORY.findByTelegramUsername(username);
-    }
-
-    @Transactional
-    public int updateTelegramUserId(Long telegramChatId, String telegramUsername) {
-        return EMPLOYEE_REPOSITORY.updateTelegramUserId(telegramChatId, telegramUsername);
-    }
-
-    @Transactional
-    public Long getChatIdByUsername(String username){
-        return EMPLOYEE_REPOSITORY.getTelegramChatId(username);
-    }
 
 }
