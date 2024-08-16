@@ -32,6 +32,8 @@ public class GlobalExceptionHandler {
         STATUS_MAP.put(ConfigurationException.class, new ErrorResponseDTO(HttpStatus.BAD_REQUEST.value(), "Failed to map object."));
         STATUS_MAP.put(DataIntegrityViolationException.class, new ErrorResponseDTO(HttpStatus.NOT_ACCEPTABLE.value(), "Incorrect input."));
         STATUS_MAP.put(IOException.class, new ErrorResponseDTO(HttpStatus.NOT_ACCEPTABLE.value(), "Incorrect input."));
+        STATUS_MAP.put(SessionExpireException.class, new ErrorResponseDTO(HttpStatus.NOT_ACCEPTABLE.value(), null));
+
     }
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponseDTO> handleException(Exception ex) {
