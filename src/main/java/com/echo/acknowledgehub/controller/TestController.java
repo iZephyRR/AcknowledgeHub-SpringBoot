@@ -39,9 +39,9 @@ public class TestController {
 //                    )
 //            );
 //}
-@GetMapping("test")
-    private void test(){
-    LOGGER.info("Checking : "+CHECKING_BEAN);
-}
+//@GetMapping("test")
+//    private void test(){
+//    LOGGER.info("Checking : "+CHECKING_BEAN);
+//}
 
 }
