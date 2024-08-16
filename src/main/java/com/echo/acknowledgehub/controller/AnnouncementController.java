@@ -34,7 +34,7 @@ public class AnnouncementController {
     private final ModelMapper MODEL_MAPPER;
     private final EmployeeService EMPLOYEE_SERVICE;
     private final AnnouncementCategoryService ANNOUNCEMENT_CATEGORY_SERVICE;
-    private final TelegramService TELEGRAM_SERVICE;
+    //private final TelegramService TELEGRAM_SERVICE;
     private final CloudinaryServiceImpl CLOUDINARY_SERVICE_IMP;
     private final TargetService TARGET_SERVICE;
 
@@ -69,6 +69,6 @@ public class AnnouncementController {
         for (Target target : targetList){ target.setAnnouncement(announcement); }
         TARGET_SERVICE.insertTarget(targetList);
         List<Long> chatIdsList = EMPLOYEE_SERVICE.getAllChatId();
-        TELEGRAM_SERVICE.sendReportsInBatches(chatIdsList,announcement.getPdfLink(), announcement.getTitle(),announcement.getEmployee().getName() );
+        //TELEGRAM_SERVICE.sendReportsInBatches(chatIdsList,announcement.getPdfLink(), announcement.getTitle(),announcement.getEmployee().getName() );
     }
 }
