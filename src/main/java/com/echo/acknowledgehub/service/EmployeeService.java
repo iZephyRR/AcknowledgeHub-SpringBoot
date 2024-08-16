@@ -3,10 +3,13 @@ package com.echo.acknowledgehub.service;
 import com.echo.acknowledgehub.dto.UserDTO;
 import com.echo.acknowledgehub.entity.Employee;
 import com.echo.acknowledgehub.repository.EmployeeRepository;
+import com.echo.acknowledgehub.util.JWTService;
 import com.echo.acknowledgehub.util.XlsxReader;
 import lombok.AllArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.scheduling.annotation.Async;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,10 +24,10 @@ import java.util.logging.Logger;
 public class EmployeeService {
     private static final Logger LOGGER = Logger.getLogger(EmployeeService.class.getName());
     private final EmployeeRepository EMPLOYEE_REPOSITORY;
-    private final XlsxReader XLSX_READER;
     private final ModelMapper MAPPER;
-    private final CompanyService COMPANY_SERVICE;
-    private final DepartmentService DEPARTMENT_SERVICE;
+    private final UserDetailsService USER_DETAILS_SERVICE;
+    private final JWTService JWT_SERVICE;
+    private final PasswordEncoder PASSWORD_ENCODER;
 
     @Async
     public CompletableFuture<Optional<Employee>> findById(Long id) {
@@ -43,15 +46,22 @@ public class EmployeeService {
             mapper.map(UserDTO::getCompanyId, (Employee e, Long id) -> e.getCompany().setId(id));
         });
         Employee employee = MAPPER.map(user, Employee.class);
-        LOGGER.info("Mapped employee : "+employee);
+        employee.setPassword(PASSWORD_ENCODER.encode("root"));
+        LOGGER.info("Mapped employee : " + employee);
         return CompletableFuture.completedFuture(EMPLOYEE_REPOSITORY.save(employee));
     }
-//Not finish yet!
+
+    //Not finish yet!
     @Async
     public CompletableFuture<List<Employee>> saveAll(List<UserDTO> users) {
         List<Employee> employees = new ArrayList<>();
-        users.forEach(user-> this.save(user).thenAccept(employees::add));
+        users.forEach(user -> this.save(user).thenAccept(employees::add));
         return CompletableFuture.completedFuture(employees);
+    }
+
+    @Async
+    public CompletableFuture<Boolean> isFirstTime(String email) {
+        return CompletableFuture.completedFuture(PASSWORD_ENCODER.matches("root",EMPLOYEE_REPOSITORY.getPasswordById(Long.parseLong(USER_DETAILS_SERVICE.loadUserByUsername(email).getUsername()))));
     }
 //    @Async
 //    public CompletableFuture<List<Employee>> saveAll(MultipartFile users) throws IOException {
@@ -135,9 +145,10 @@ public class EmployeeService {
     }
 
     @Transactional
-    public Long getChatIdByUsername(String username){
+    public Long getChatIdByUsername(String username) {
         return EMPLOYEE_REPOSITORY.getTelegramChatId(username);
     }
 
+    public List<Long> getAllChatId() { return  EMPLOYEE_REPOSITORY.getAllChatId(); }
 
 }

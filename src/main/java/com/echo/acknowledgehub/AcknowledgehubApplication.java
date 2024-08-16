@@ -8,6 +8,7 @@ import org.springframework.scheduling.annotation.EnableAsync;
 
 @SpringBootApplication
 @EnableAsync(proxyTargetClass = true)
+//@EnableAsync
 public class AcknowledgehubApplication {
 
 	public static void main(String[] args) {
