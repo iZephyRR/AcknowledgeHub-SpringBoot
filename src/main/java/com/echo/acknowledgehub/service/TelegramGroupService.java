@@ -16,7 +16,6 @@ public class TelegramGroupService {
     private static final Logger LOGGER = Logger.getLogger(TelegramGroupService.class.getName());
     public final TelegramGroupRepository TELEGRAM_GROUP_REPOSITORY;
 
-
     public TelegramGroup findByGroupName(String groupName) {
         Optional<TelegramGroup> optionalTelegramGroup = TELEGRAM_GROUP_REPOSITORY.findByGroupName(groupName);
         TelegramGroup telegramGroup = new TelegramGroup();

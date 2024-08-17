@@ -7,5 +7,4 @@ public class TargetDTO {
     private Long id;
     private String receiverType;
     private Long sendTo;
-
 }
