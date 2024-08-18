@@ -1,98 +1,95 @@
-////package com.echo.acknowledgehub.service;
-////
-////import com.echo.acknowledgehub.entity.Employee;
-////import com.echo.acknowledgehub.entity.TelegramGroup;
-////import org.glassfish.jersey.internal.Errors;
-////import org.springframework.scheduling.annotation.Async;
-////import org.springframework.stereotype.Service;
-////import org.telegram.telegrambots.bots.TelegramLongPollingBot;
-////import org.telegram.telegrambots.meta.api.methods.groupadministration.SetChatPhoto;
-////import org.telegram.telegrambots.meta.api.methods.polls.SendPoll;
-////import org.telegram.telegrambots.meta.api.methods.send.*;
-////import org.telegram.telegrambots.meta.api.objects.InputFile;
-////import org.telegram.telegrambots.meta.api.objects.Message;
-////import org.telegram.telegrambots.meta.api.objects.Update;
-////import org.telegram.telegrambots.meta.api.objects.polls.PollAnswer;
-////import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
-////
-////import java.io.File;
-////import java.util.Arrays;
-////import java.util.List;
-////import java.util.concurrent.CompletableFuture;
-////import java.util.concurrent.Executors;
-////import java.util.concurrent.ScheduledExecutorService;
-////import java.util.concurrent.TimeUnit;
-////import java.util.logging.Logger;
-////
-////@Service
-////public class TelegramService extends TelegramLongPollingBot {
-////
-////    private static final Logger LOGGER = Logger.getLogger(TelegramService.class.getName());
-////    private final String BOT_USERNAME;
-////    private final String BOT_TOKEN;
-////    private final EmployeeService EMPLOYEE_SERVICE;
-////    private final TelegramGroupService TELEGRAM_GROUP_SERVICE;
-////
-////    public TelegramService(String botUsername, String botToken, EmployeeService employeeService, TelegramGroupService telegramGroupService) {
-////        this.BOT_USERNAME = botUsername;
-////        this.BOT_TOKEN = botToken;
-////        this.EMPLOYEE_SERVICE = employeeService;
-////        this.TELEGRAM_GROUP_SERVICE = telegramGroupService;
-////    }
-////
-////    @Override
-////    public String getBotUsername() {
-////        return BOT_USERNAME;
-////    }
-////
-////    @Override
-////    public String getBotToken() {
-////        return BOT_TOKEN;
-////    }
-////
-////    @Async
-////    @Override
-////    public void onUpdateReceived(Update updateInfo) {
-////       if (updateInfo.hasMessage()) {
-////           try {
-////               registerTelegram(updateInfo);
-////           } catch (TelegramApiException e) {
-////               throw new RuntimeException(e);
-////           }
-////       } else if (updateInfo.hasPollAnswer()) {
-////           handlePollAnswer(updateInfo.getPollAnswer());
-////       }
-////    }
-////
-////    @Async
-////    public CompletableFuture<Void> registerTelegram(Update updateInfo) throws TelegramApiException {
-////        if (updateInfo.hasMessage()) {
-////            Message message = updateInfo.getMessage();
-////           // System.out.println(message.getReplyToMessage().getText());
-////            Long chatId = message.getChatId();
-////            if (message.getChat().isGroupChat() || message.getChat().isSuperGroupChat()) {
-////                String groupTitle = message.getChat().getTitle();
-////                TelegramGroup telegramGroup = TELEGRAM_GROUP_SERVICE.findByGroupName(groupTitle);
-////                if (telegramGroup.getGroupName().equals(groupTitle) && telegramGroup.getGroupChatId() == null) {
-////                    int updateResult = TELEGRAM_GROUP_SERVICE.updateGroupChatId(chatId, groupTitle);
-////                    sendMessage(chatId, "Hello Everyone.");
-////                }
-////            } else if (message.getChat().isUserChat()) {
-////                String username = message.getChat().getUserName();
-////                Employee telegramUser = EMPLOYEE_SERVICE.findByTelegramUsername(username);
-////                if (telegramUser.getUsername().equals(username) && telegramUser.getTelegramUserId() == null) {
-////                    int updateResult = EMPLOYEE_SERVICE.updateTelegramUserId(chatId, username);
-////                    LOGGER.info("Update result : " + updateResult);
-////                    sendMessage(chatId, "Hello");
-////                }
-////            }
-////        }
-////        return CompletableFuture.completedFuture(null);
-////    }
-////
-////    public Long getChatIdByUsername(String username) {
-////        return EMPLOYEE_SERVICE.getChatIdByUsername(username);
-////    }
+//package com.echo.acknowledgehub.service;
+//
+//import com.echo.acknowledgehub.entity.Employee;
+//import com.echo.acknowledgehub.entity.TelegramGroup;
+//import org.springframework.scheduling.annotation.Async;
+//import org.springframework.stereotype.Service;
+//import org.telegram.telegrambots.bots.TelegramLongPollingBot;
+//import org.telegram.telegrambots.meta.api.methods.groupadministration.SetChatPhoto;
+//import org.telegram.telegrambots.meta.api.methods.polls.SendPoll;
+//import org.telegram.telegrambots.meta.api.methods.send.*;
+//import org.telegram.telegrambots.meta.api.objects.InputFile;
+//import org.telegram.telegrambots.meta.api.objects.Message;
+//import org.telegram.telegrambots.meta.api.objects.Update;
+//import org.telegram.telegrambots.meta.api.objects.polls.PollAnswer;
+//import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
+//import java.util.Arrays;
+//import java.util.List;
+//import java.util.concurrent.CompletableFuture;
+//import java.util.concurrent.Executors;
+//import java.util.concurrent.ScheduledExecutorService;
+//import java.util.concurrent.TimeUnit;
+//import java.util.logging.Logger;
+//
+//@Service
+//public class TelegramService extends TelegramLongPollingBot {
+//
+//    private static final Logger LOGGER = Logger.getLogger(TelegramService.class.getName());
+//    private final String BOT_USERNAME;
+//    private final String BOT_TOKEN;
+//    private final EmployeeService EMPLOYEE_SERVICE;
+//    private final TelegramGroupService TELEGRAM_GROUP_SERVICE;
+//
+//    public TelegramService(String botUsername, String botToken, EmployeeService employeeService, TelegramGroupService telegramGroupService) {
+//        this.BOT_USERNAME = botUsername;
+//        this.BOT_TOKEN = botToken;
+//        this.EMPLOYEE_SERVICE = employeeService;
+//        this.TELEGRAM_GROUP_SERVICE = telegramGroupService;
+//    }
+//
+//    @Override
+//    public String getBotUsername() {
+//        return BOT_USERNAME;
+//    }
+//
+//    @Override
+//    public String getBotToken() {
+//        return BOT_TOKEN;
+//    }
+//
+//    @Async
+//    @Override
+//    public void onUpdateReceived(Update updateInfo) {
+//       if (updateInfo.hasMessage()) {
+//           try {
+//               registerTelegram(updateInfo);
+//           } catch (TelegramApiException e) {
+//               throw new RuntimeException(e);
+//           }
+//       } else if (updateInfo.hasPollAnswer()) {
+//           handlePollAnswer(updateInfo.getPollAnswer());
+//       }
+//    }
+//
+//    @Async
+//    public CompletableFuture<Void> registerTelegram(Update updateInfo) throws TelegramApiException {
+//        if (updateInfo.hasMessage()) {
+//            Message message = updateInfo.getMessage();
+//           // System.out.println(message.getReplyToMessage().getText());
+//            Long chatId = message.getChatId();
+//            if (message.getChat().isGroupChat() || message.getChat().isSuperGroupChat()) {
+//                String groupTitle = message.getChat().getTitle();
+//                TelegramGroup telegramGroup = TELEGRAM_GROUP_SERVICE.findByGroupName(groupTitle);
+//                if (telegramGroup.getGroupName().equals(groupTitle) && telegramGroup.getGroupChatId() == null) {
+//                    int updateResult = TELEGRAM_GROUP_SERVICE.updateGroupChatId(chatId, groupTitle);
+//                    sendMessage(chatId, "Hello Everyone.");
+//                }
+//            } else if (message.getChat().isUserChat()) {
+//                String username = message.getChat().getUserName();
+//                Employee telegramUser = EMPLOYEE_SERVICE.findByTelegramUsername(username);
+//                if (telegramUser.getUsername().equals(username) && telegramUser.getTelegramUserId() == null) {
+//                    int updateResult = EMPLOYEE_SERVICE.updateTelegramUserId(chatId, username);
+//                    LOGGER.info("Update result : " + updateResult);
+//                    sendMessage(chatId, "Hello");
+//                }
+//            }
+//        }
+//        return CompletableFuture.completedFuture(null);
+//    }
+//
+//    public Long getChatIdByUsername(String username) {
+//        return EMPLOYEE_SERVICE.getChatIdByUsername(username);
+//    }
 //
 //    // handle Poll Answer
 //    private void handlePollAnswer(PollAnswer pollAnswer) {

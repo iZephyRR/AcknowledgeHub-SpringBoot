@@ -45,6 +45,15 @@ public class EmployeeService {
     public CompletableFuture<Optional<Employee>> findByEmail(String email) {
         return CompletableFuture.completedFuture(EMPLOYEE_REPOSITORY.findByEmail(email));
     }
+    @Async
+    public CompletableFuture<List<Long>> findByDepartmentId(Long departmentId) {
+        return CompletableFuture.completedFuture(EMPLOYEE_REPOSITORY.findByDepartmentId(departmentId));
+    }
+    @Async
+    public CompletableFuture<List<Long>> findByCompanyId(Long companyId) {
+        return CompletableFuture.completedFuture(EMPLOYEE_REPOSITORY.findByCompanyId(companyId));
+    }
+
 
     @Async
     public CompletableFuture<Employee> save(UserDTO user) {
