@@ -41,7 +41,7 @@ public class AnnouncementController {
     private final ModelMapper MODEL_MAPPER;
     private final EmployeeService EMPLOYEE_SERVICE;
     private final AnnouncementCategoryService ANNOUNCEMENT_CATEGORY_SERVICE;
-    private final TelegramService TELEGRAM_SERVICE;
+    //private final TelegramService TELEGRAM_SERVICE;
     private final CloudinaryServiceImpl CLOUDINARY_SERVICE_IMP;
     private final TargetService TARGET_SERVICE;
     private final NotificationController NOTIFICATION_CONTROLLER;  // Inject NotificationController
@@ -107,6 +107,9 @@ public class AnnouncementController {
             NOTIFICATION_CONTROLLER.sendNotification(notificationDTO, loggedInId);
         }
         List<Long> chatIdsList = EMPLOYEE_SERVICE.getAllChatId();
+
         TELEGRAM_SERVICE.sendReportsInBatches(chatIdsList, announcement.getPdfLink(), announcement.getTitle(), announcement.getEmployee().getName());
+
+
     }
 }
