@@ -1,6 +1,7 @@
 package com.echo.acknowledgehub.util;
 
 import com.echo.acknowledgehub.bean.CheckingBean;
+import com.echo.acknowledgehub.exception_handler.SessionExpireException;
 import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -59,6 +60,7 @@ public class JWTAuthenticationFilter extends OncePerRequestFilter {
             }
         } catch (ExpiredJwtException e) {
             LOGGER.severe(e.getMessage());
+            throw new SessionExpireException();
         }
         filterChain.doFilter(request, response);
     }
