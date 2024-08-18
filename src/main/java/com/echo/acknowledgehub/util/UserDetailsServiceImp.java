@@ -1,7 +1,9 @@
 package com.echo.acknowledgehub.util;
 
 import com.echo.acknowledgehub.bean.CheckingBean;
+import com.echo.acknowledgehub.constant.EmployeeStatus;
 import com.echo.acknowledgehub.entity.Employee;
+import com.echo.acknowledgehub.exception_handler.UserDeactivatedException;
 import com.echo.acknowledgehub.repository.EmployeeRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
@@ -26,27 +28,29 @@ public class UserDetailsServiceImp implements UserDetailsService {
     @Override
     public UserDetails loadUserByUsername(String input) throws UsernameNotFoundException {
         Optional<Employee> optionalEmployee;
-        if(isEmail(input)){
+        if (isEmail(input)) {
             optionalEmployee = EMPLOYEE_REPOSITORY.findByEmail(input);
-        }else {
+        } else {
             optionalEmployee = EMPLOYEE_REPOSITORY.findById(Long.parseLong(input));
         }
         if (optionalEmployee.isEmpty()) {
-            throw new UsernameNotFoundException("User not found by : "+ input);
-        }else {
+            throw new UsernameNotFoundException("User not found by : " + input);
+        } else if (optionalEmployee.get().getStatus() != EmployeeStatus.ACTIVATED) {
+            throw new UserDeactivatedException("This account has been " + optionalEmployee.get().getStatus().name() + ".");
+        } else {
             List<GrantedAuthority> authorities = List.of(new SimpleGrantedAuthority("ROLE_" + optionalEmployee.get().getRole()));
             //LOGGER.info("Authority : "+authorities);
             CHECKING_BEAN.setRole(optionalEmployee.get().getRole());
             CHECKING_BEAN.setStatus(optionalEmployee.get().getStatus());
-            return new User(optionalEmployee.get().getId().toString(),optionalEmployee.get().getPassword(),authorities);
+            return new User(optionalEmployee.get().getId().toString(), optionalEmployee.get().getPassword(), authorities);
         }
     }
 
-    private boolean isEmail(String input){
-        try{
+    private boolean isEmail(String input) {
+        try {
             Long.parseLong(input);
             return false;
-        }catch (NumberFormatException e){
+        } catch (NumberFormatException e) {
             return true;
         }
     }
