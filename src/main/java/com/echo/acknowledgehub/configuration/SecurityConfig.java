@@ -49,32 +49,32 @@ public class SecurityConfig {
                         request -> request
                                 .requestMatchers(BASE_URL + "/test", BASE_URL + "/auth/**", BASE_URL+"/get-company").permitAll()
 
-                                .requestMatchers(BASE_URL + "/ad/**", BASE_URL + "/announcement/create").access((authentication, requestContext) ->
+                                .requestMatchers(BASE_URL + "/ad/**", BASE_URL + "/announcement/create",BASE_URL+"/get-user/{id}").access((authentication, requestContext) ->
                                         new AuthorizationDecision(
                                                 authentication.get().getAuthorities().stream()
                                                         .noneMatch(grantedAuthority -> grantedAuthority.getAuthority().equals(EmployeeRole.ADMIN.name()))
                                         )
-                                ).requestMatchers(BASE_URL + "/mr/**", BASE_URL + "/announcement/create").access((authentication, requestContext) ->
+                                ).requestMatchers(BASE_URL + "/mr/**", BASE_URL + "/announcement/create",BASE_URL+"/get-user/{id}").access((authentication, requestContext) ->
                                         new AuthorizationDecision(
                                                 authentication.get().getAuthorities().stream()
                                                         .noneMatch(grantedAuthority -> grantedAuthority.getAuthority().equals(EmployeeRole.MAIN_HR.name()))
                                         )
-                                ).requestMatchers(BASE_URL + "/ma/**", BASE_URL + "/announcement/create").access((authentication, requestContext) ->
+                                ).requestMatchers(BASE_URL + "/ma/**", BASE_URL + "/announcement/create",BASE_URL+"/get-user/{id}").access((authentication, requestContext) ->
                                         new AuthorizationDecision(
                                                 authentication.get().getAuthorities().stream()
                                                         .noneMatch(grantedAuthority -> grantedAuthority.getAuthority().equals(EmployeeRole.MAIN_HR_ASSISTANCE.name()))
                                         )
-                                ).requestMatchers(BASE_URL + "/hr/**", BASE_URL + "/announcement/create").access((authentication, requestContext) ->
+                                ).requestMatchers(BASE_URL + "/hr/**", BASE_URL + "/announcement/create",BASE_URL+"/get-user/{id}").access((authentication, requestContext) ->
                                         new AuthorizationDecision(
                                                 authentication.get().getAuthorities().stream()
                                                         .noneMatch(grantedAuthority -> grantedAuthority.getAuthority().equals(EmployeeRole.HR.name()))
                                         )
-                                ).requestMatchers(BASE_URL + "/ha/**", BASE_URL + "/announcement/create").access((authentication, requestContext) ->
+                                ).requestMatchers(BASE_URL + "/ha/**", BASE_URL + "/announcement/create",BASE_URL+"/get-user/{id}").access((authentication, requestContext) ->
                                         new AuthorizationDecision(
                                                 authentication.get().getAuthorities().stream()
                                                         .noneMatch(grantedAuthority -> grantedAuthority.getAuthority().equals(EmployeeRole.HR_ASSISTANCE.name()))
                                         )
-                                ).requestMatchers(BASE_URL + "/sf/**").access((authentication, requestContext) ->
+                                ).requestMatchers(BASE_URL + "/sf/**",BASE_URL+"/get-user/{id}").access((authentication, requestContext) ->
                                         new AuthorizationDecision(
                                                 authentication.get().getAuthorities().stream()
                                                         .noneMatch(grantedAuthority -> grantedAuthority.getAuthority().equals(EmployeeRole.STUFF.name()))
