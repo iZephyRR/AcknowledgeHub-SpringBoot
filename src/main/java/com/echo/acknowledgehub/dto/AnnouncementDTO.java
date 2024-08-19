@@ -1,5 +1,7 @@
 package com.echo.acknowledgehub.dto;
 
+import com.echo.acknowledgehub.constant.AnnouncementStatus;
+import com.echo.acknowledgehub.constant.NotificationType;
 import lombok.Data;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -15,5 +17,8 @@ public class AnnouncementDTO {
     private Long categoryId;
     private String categoryName;
     private String createdBy;
-    private String status;
+    private AnnouncementStatus status;
+
+
+
 }

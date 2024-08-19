@@ -12,6 +12,8 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "notification")
 public class Notification {
+
+
   @Column(name = "notice_at", columnDefinition = "TIMESTAMP")
   private LocalDateTime noticeAt;
   @Enumerated(EnumType.STRING)
@@ -32,4 +34,6 @@ public class Notification {
   @ManyToOne(cascade = CascadeType.MERGE)
   @JoinColumn(name = "announcement_id", nullable = false)
   private Announcement announcement;
+
+
 }

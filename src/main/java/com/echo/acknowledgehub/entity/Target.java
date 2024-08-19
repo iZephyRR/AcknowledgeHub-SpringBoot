@@ -7,7 +7,9 @@ import lombok.Data;
 
 @Data
 @Entity
-@Table(name = "target")
+@Table(name = "target", uniqueConstraints = {
+        @UniqueConstraint(columnNames = {"announcement_id", "receiver_type", "receiver_id"})
+})
 public class Target {
 
   @Id
