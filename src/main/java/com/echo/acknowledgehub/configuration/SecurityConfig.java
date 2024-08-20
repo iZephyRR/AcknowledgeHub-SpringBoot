@@ -66,6 +66,7 @@ public class SecurityConfig {
                                         .requestMatchers(BASE_URL + "/sf/**").hasRole(EmployeeRole.STAFF.name())
                                         // Configure routes to allow access for main HR & 'company/HR' subdirectory.
                                         .requestMatchers(BASE_URL + "/mhr/**").hasAnyRole(EmployeeRole.MAIN_HR.name(), EmployeeRole.HR.name())
+
                 )
                 .userDetailsService(USER_DETAILS_SERVICE)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

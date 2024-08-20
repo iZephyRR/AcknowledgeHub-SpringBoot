@@ -54,12 +54,12 @@ public class Employee implements UserDetails {
     @Column(name = "work_entry_date", columnDefinition = "DATE")
     private Date workEntryDate;
 
-    @JsonIgnore
+//    @JsonIgnore
     @ManyToOne(cascade = CascadeType.MERGE)
     @JoinColumn(name = "department_id")
     private Department department;
 
-    @JsonIgnore
+//    @JsonIgnore
     @ManyToOne(cascade = CascadeType.MERGE)
     @JoinColumn(name = "company_id")
     private Company company;
