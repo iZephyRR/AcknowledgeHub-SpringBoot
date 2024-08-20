@@ -48,7 +48,6 @@ public class SecurityConfig {
                 .authorizeHttpRequests(
                         request -> request
                                 .requestMatchers(BASE_URL + "/test", BASE_URL + "/auth/**", BASE_URL+"/get-company").permitAll()
-
                                 .requestMatchers(BASE_URL + "/ad/**", BASE_URL + "/announcement/create").access((authentication, requestContext) ->
                                         new AuthorizationDecision(
                                                 authentication.get().getAuthorities().stream()

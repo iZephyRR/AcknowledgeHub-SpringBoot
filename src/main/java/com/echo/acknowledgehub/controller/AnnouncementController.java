@@ -19,7 +19,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.AllArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -45,19 +44,16 @@ public class AnnouncementController {
     //private final TelegramService TELEGRAM_SERVICE;
     private final CloudinaryServiceImpl CLOUDINARY_SERVICE_IMP;
     private final TargetService TARGET_SERVICE;
-    private final NotificationController NOTIFICATION_CONTROLLER;  // Inject NotificationController
-
-
+    private final NotificationController NOTIFICATION_CONTROLLER;
 
 
     @PostMapping(value = "/create", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-                                                    public void createAnnouncement(
-            @ModelAttribute AnnouncementDTO announcementDTO,
-            @RequestPart("targetDTO") String targetDTOJson,
-            @RequestHeader("Authorization") String authHeader) throws IOException {
+    public void createAnnouncement(
+                    @ModelAttribute AnnouncementDTO announcementDTO,
+                    @RequestHeader("Authorization") String authHeader) throws IOException {
 
         ObjectMapper objectMapper = new ObjectMapper();
-        List<TargetDTO> targetDTO = objectMapper.readValue(targetDTOJson, new TypeReference<List<TargetDTO>>() {});
+        List<TargetDTO> targetDTOList = objectMapper.readValue(announcementDTO.getTarget(), new TypeReference<List<TargetDTO>>() {});
 
         String token = authHeader.substring(7);
         Long loggedInId = Long.parseLong(JWT_SERVICE.extractId(token));
@@ -68,7 +64,7 @@ public class AnnouncementController {
         Optional<AnnouncementCategory> optionalAnnouncementCategory = ANNOUNCEMENT_CATEGORY_SERVICE.findById(announcementDTO.getCategoryId());
         AnnouncementCategory category = optionalAnnouncementCategory.orElse(null);
 
-        if (CHECKING_BEAN.getRole() == EmployeeRole.MAIN_HR || CHECKING_BEAN.getRole() == EmployeeRole.ADMIN) {
+        if (CHECKING_BEAN.getRole() == EmployeeRole.MAIN_HR || CHECKING_BEAN.getRole() == EmployeeRole.HR) {
             announcementDTO.setStatus(AnnouncementStatus.APPROVED);
         } else {
             announcementDTO.setStatus(AnnouncementStatus.PENDING);
@@ -83,16 +79,17 @@ public class AnnouncementController {
         String url = ANNOUNCEMENT_SERVICE.handleFileUpload(announcementDTO.getFile());
         entity.setPdfLink(url);
 
-        Announcement announcement = ANNOUNCEMENT_SERVICE.save(entity);
-        TARGET_SERVICE.insertTargetWithNotifications(targetDTO, announcement);
-
-        List<Target> targetList = targetDTO.stream()
-                .map(dto -> MODEL_MAPPER.map(dto, Target.class))
+        Announcement announcement = ANNOUNCEMENT_SERVICE.save(entity); // ann save
+        LOGGER.info("after saving announcement");
+        List<Target> targetList = targetDTOList.stream()
+                .map(dto -> {
+                    Target target = MODEL_MAPPER.map(dto, Target.class);
+                    target.setAnnouncement(announcement); // Set the announcement
+                    return target;
+                })
                 .toList();
-
-        for (Target target : targetList) {
-            target.setAnnouncement(announcement);
-        }
+        LOGGER.info("getting target entity list");
+        TARGET_SERVICE.insertTargetWithNotifications(targetList, announcement);
 
         for (Target target : targetList) {
             target.setAnnouncement(announcement);
@@ -109,10 +106,11 @@ public class AnnouncementController {
             notificationDTO.setTitle(announcement.getTitle());
             NOTIFICATION_CONTROLLER.sendNotification(notificationDTO, loggedInId);
         }
+
         List<Long> chatIdsList = EMPLOYEE_SERVICE.getAllChatId();
+        LOGGER.info("Last LOGGER");
 
-        TELEGRAM_SERVICE.sendReportsInBatches(chatIdsList, announcement.getPdfLink(), announcement.getTitle(), announcement.getEmployee().getName());
-
+        //TELEGRAM_SERVICE.sendReportsInBatches(chatIdsList, announcement.getPdfLink(), announcement.getTitle(), announcement.getEmployee().getName());
 
     }
 }
