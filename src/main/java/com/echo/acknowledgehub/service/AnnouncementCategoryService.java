@@ -28,9 +28,8 @@ public class AnnouncementCategoryService {
         return CompletableFuture.completedFuture(ANNOUNCEMENT_CATEGORY_REPOSITORY.softDeleteById(id, AnnouncementCategoryStatus.SOFT_DELETE));
     }
 
-    @Async
-    public CompletableFuture<List<AnnouncementCategory>> findAll(){
-        return CompletableFuture.completedFuture(ANNOUNCEMENT_CATEGORY_REPOSITORY.findAll());
+    public List<AnnouncementCategory> findAll(){
+        return ANNOUNCEMENT_CATEGORY_REPOSITORY.findAll();
     }
 
     public Optional<AnnouncementCategory> findById(Long id){

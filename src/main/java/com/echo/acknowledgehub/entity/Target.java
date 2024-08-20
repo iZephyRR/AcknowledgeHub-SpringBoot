@@ -7,9 +7,7 @@ import lombok.Data;
 
 @Data
 @Entity
-@Table(name = "target", uniqueConstraints = {
-        @UniqueConstraint(columnNames = {"announcement_id", "receiver_type", "receiver_id"})
-})
+@Table(name = "target")
 public class Target {
 
   @Id
@@ -27,5 +25,11 @@ public class Target {
   @JoinColumn(name = "announcement_id" ,nullable = false)
   private Announcement announcement;
 
-
+  @Override
+  public String toString() {
+    return "Target{" +
+            "sendTo=" + sendTo +
+            ", receiverType=" + receiverType +
+            '}';
+  }
 }

@@ -6,6 +6,7 @@ import lombok.AllArgsConstructor;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.logging.Logger;
@@ -29,5 +30,9 @@ public class DepartmentService {
     @Async
     public CompletableFuture<Department> save(Department department){
         return CompletableFuture.completedFuture(DEPARTMENT_REPOSITORY.save(department));
+    }
+
+    public List<Department> getAll() {
+        return DEPARTMENT_REPOSITORY.findAll();
     }
 }

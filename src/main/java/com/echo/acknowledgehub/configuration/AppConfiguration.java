@@ -26,4 +26,5 @@ public class AppConfiguration implements WebMvcConfigurer {
         configure.setDefaultTimeout(60000);
     }
 
+
 }
