@@ -23,7 +23,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.logging.Logger;
 
 @RestController
-@RequestMapping("${app.api.base-url}")
+@RequestMapping("${app.api.base-url}/auth")
 @AllArgsConstructor
 public class AuthController {
     private static final Logger LOGGER = Logger.getLogger(AuthController.class.getName());

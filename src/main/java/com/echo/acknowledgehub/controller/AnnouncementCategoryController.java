@@ -15,23 +15,23 @@ import java.util.concurrent.CompletableFuture;
 @AllArgsConstructor
 public class AnnouncementCategoryController {
 
-    private final AnnouncementCategoryService announcementCategoryService;
+    private final AnnouncementCategoryService ANNOUCEMENT_CATEGORY_SERVICE;
 
     @PostMapping("/mr/create-category")
     public CompletableFuture<ResponseEntity<AnnouncementCategory>> createCategory(@RequestBody AnnouncementCategory category) {
-        return announcementCategoryService.save(category)
+        return ANNOUCEMENT_CATEGORY_SERVICE.save(category)
                 .thenApply(savedCategory -> new ResponseEntity<>(savedCategory, HttpStatus.CREATED));
     }
 
     @GetMapping("/mr/get-categories")
-    public CompletableFuture<ResponseEntity<List<AnnouncementCategory>>> getAllCategories() {
-        return announcementCategoryService.findAll()
-                .thenApply(categories -> new ResponseEntity<>(categories, HttpStatus.OK));
+    public ResponseEntity<List<AnnouncementCategory>> getAllCategories() {
+        return ResponseEntity.ok(ANNOUCEMENT_CATEGORY_SERVICE.findAll());
+
     }
 
     @PutMapping("/{id}/soft-delete")
     public CompletableFuture<ResponseEntity<Void>> softDeleteCategory(@PathVariable Long id) {
-        return announcementCategoryService.softDelete(id)
+        return ANNOUCEMENT_CATEGORY_SERVICE.softDelete(id)
                 .thenApply(result -> new ResponseEntity<>(HttpStatus.NO_CONTENT));
     }
 }
