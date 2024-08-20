@@ -13,7 +13,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.logging.Logger;
 
 @RestController
-@RequestMapping("/api/v1")
+@RequestMapping("${app.api.base-url}")
 @AllArgsConstructor
 public class EmployeeController {
     private static final Logger LOGGER = Logger.getLogger(EmployeeController.class.getName());

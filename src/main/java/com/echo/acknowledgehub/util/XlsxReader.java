@@ -79,7 +79,7 @@ public class XlsxReader {
                                                         case "mainhrassistance" -> EmployeeRole.MAIN_HR_ASSISTANCE;
                                                         case "hr" -> EmployeeRole.HR;
                                                         case "hrassistance" -> EmployeeRole.HR_ASSISTANCE;
-                                                        default -> EmployeeRole.STUFF;
+                                                        default -> EmployeeRole.STAFF;
                                                     }
                                             );
                                             break;
