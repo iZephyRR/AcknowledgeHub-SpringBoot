@@ -37,7 +37,7 @@ public class Employee implements UserDetails {
     @Column(name = "password", columnDefinition = "VARCHAR(200)")
     private String password;
     @Enumerated(EnumType.STRING)
-    @Column(name = "role", nullable = false, columnDefinition = "ENUM('ADMIN', 'MAIN_HR', 'MAIN_HR_ASSISTANCE', 'HR', 'HR_ASSISTANCE', 'STUFF')")
+    @Column(name = "role", nullable = false, columnDefinition = "ENUM('ADMIN', 'MAIN_HR', 'MAIN_HR_ASSISTANCE', 'HR', 'HR_ASSISTANCE', 'STAFF')")
     private EmployeeRole role;
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, columnDefinition = "ENUM('ACTIVATED', 'DEACTIVATED', 'DEPARTED')")
@@ -54,12 +54,12 @@ public class Employee implements UserDetails {
     @Column(name = "work_entry_date", columnDefinition = "DATE")
     private Date workEntryDate;
 
-    @JsonIgnore
+//    @JsonIgnore
     @ManyToOne(cascade = CascadeType.MERGE)
     @JoinColumn(name = "department_id")
     private Department department;
 
-    @JsonIgnore
+//    @JsonIgnore
     @ManyToOne(cascade = CascadeType.MERGE)
     @JoinColumn(name = "company_id")
     private Company company;

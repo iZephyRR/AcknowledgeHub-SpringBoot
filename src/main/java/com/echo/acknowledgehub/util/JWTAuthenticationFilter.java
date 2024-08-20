@@ -26,7 +26,6 @@ public class JWTAuthenticationFilter extends OncePerRequestFilter {
     private final JWTService JWT_SERVICE;
     private final UserDetailsService USER_DETAILS_SERVICE;
     private final CheckingBean CHECKING_BEAN;
-    private final BaseURL BASE_URL;
 
 
     @Override
@@ -53,6 +52,7 @@ public class JWTAuthenticationFilter extends OncePerRequestFilter {
                     authToken.setDetails(
                             new WebAuthenticationDetailsSource().buildDetails(request)
                     );
+                    SecurityContextHolder.getContext().setAuthentication(authToken);
                 } else {
                     CHECKING_BEAN.refresh();
                 }

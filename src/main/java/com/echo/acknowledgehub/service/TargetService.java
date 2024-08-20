@@ -1,3 +1,4 @@
+
 package com.echo.acknowledgehub.service;
 
 import com.echo.acknowledgehub.constant.NotificationStatus;
@@ -109,6 +110,5 @@ public class TargetService {
     public void saveTargets(List<Target> entityList) {
         TARGET_REPOSITORY.saveAll(entityList);
     }
-
 
 }

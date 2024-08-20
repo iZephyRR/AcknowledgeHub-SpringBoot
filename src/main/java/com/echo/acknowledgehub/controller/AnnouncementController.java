@@ -106,10 +106,8 @@ public class AnnouncementController {
             notificationDTO.setTitle(announcement.getTitle());
             NOTIFICATION_CONTROLLER.sendNotification(notificationDTO, loggedInId);
         }
-
         List<Long> chatIdsList = EMPLOYEE_SERVICE.getAllChatId();
         LOGGER.info("Last LOGGER");
-
         //TELEGRAM_SERVICE.sendReportsInBatches(chatIdsList, announcement.getPdfLink(), announcement.getTitle(), announcement.getEmployee().getName());
 
     }
