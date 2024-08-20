@@ -39,7 +39,7 @@ public class UserDetailsServiceImp implements UserDetailsService {
             throw new UserDeactivatedException("This account has been " + optionalEmployee.get().getStatus().name() + ".");
         } else {
             List<GrantedAuthority> authorities = List.of(new SimpleGrantedAuthority("ROLE_" + optionalEmployee.get().getRole()));
-            //LOGGER.info("Authority : "+authorities);
+            LOGGER.info("Authority : "+authorities);
             CHECKING_BEAN.setRole(optionalEmployee.get().getRole());
             CHECKING_BEAN.setStatus(optionalEmployee.get().getStatus());
             return new User(optionalEmployee.get().getId().toString(), optionalEmployee.get().getPassword(), authorities);

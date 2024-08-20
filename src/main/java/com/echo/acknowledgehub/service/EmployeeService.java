@@ -27,8 +27,6 @@ public class EmployeeService {
     private static final Logger LOGGER = Logger.getLogger(EmployeeService.class.getName());
     private final EmployeeRepository EMPLOYEE_REPOSITORY;
     private final ModelMapper MAPPER;
-    private final UserDetailsService USER_DETAILS_SERVICE;
-    private final JWTService JWT_SERVICE;
     private final PasswordEncoder PASSWORD_ENCODER;
 
     @Async
@@ -75,10 +73,6 @@ public class EmployeeService {
         return CompletableFuture.completedFuture(employees);
     }
 
-    @Async
-    public CompletableFuture<Boolean> isFirstTime(String email) {
-        return CompletableFuture.completedFuture(PASSWORD_ENCODER.matches("root",EMPLOYEE_REPOSITORY.getPasswordById(Long.parseLong(USER_DETAILS_SERVICE.loadUserByUsername(email).getUsername()))));
-    }
 //    @Async
 //    public CompletableFuture<List<Employee>> saveAll(MultipartFile users) throws IOException {
 //        return XLSX_READER.getEmployees(users.getInputStream()).thenApply(employees -> {

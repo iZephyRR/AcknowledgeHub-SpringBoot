@@ -38,7 +38,7 @@ public class EmailSender {
         ALLOWED_DOMAINS.add("@aceinspiration.com");
     }
     @Async
-    public CompletableFuture<String> sendEmail(EmailDTO email) {
+    public CompletableFuture<Void> sendEmail(EmailDTO email) {
 
         Properties props = new Properties();
         props.put("mail.smtp.auth", "true");
@@ -59,7 +59,7 @@ public class EmailSender {
                 message.setSubject(email.getSubject());
                 message.setText(email.getMessage());
                 Transport.send(message);
-                return CompletableFuture.completedFuture("Send an email to "+email.getAddress());
+                return CompletableFuture.completedFuture(null);
             } else {
                 LOGGER.warning("Invalid email address.");
                 throw new EmailSenderException("Invalid email address.");
