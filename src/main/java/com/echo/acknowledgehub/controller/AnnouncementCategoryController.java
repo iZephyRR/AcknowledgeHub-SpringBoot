@@ -9,29 +9,40 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.logging.Logger;
 
 @RestController
 @RequestMapping("${app.api.base-url}")
 @AllArgsConstructor
 public class AnnouncementCategoryController {
 
-    private final AnnouncementCategoryService ANNOUCEMENT_CATEGORY_SERVICE;
+    private static final Logger LOGGER = Logger.getLogger(AnnouncementCategoryController.class.getName());
+
+    private final AnnouncementCategoryService ANNOUNCEMENT_CATEGORY_SERVICE;
 
     @PostMapping("/mr/create-category")
     public CompletableFuture<ResponseEntity<AnnouncementCategory>> createCategory(@RequestBody AnnouncementCategory category) {
-        return ANNOUCEMENT_CATEGORY_SERVICE.save(category)
+        return ANNOUNCEMENT_CATEGORY_SERVICE.save(category)
                 .thenApply(savedCategory -> new ResponseEntity<>(savedCategory, HttpStatus.CREATED));
     }
 
     @GetMapping("/mr/get-categories")
     public ResponseEntity<List<AnnouncementCategory>> getAllCategories() {
-        return ResponseEntity.ok(ANNOUCEMENT_CATEGORY_SERVICE.findAll());
+        return ResponseEntity.ok(ANNOUNCEMENT_CATEGORY_SERVICE.getAllCategoriesDESC());
+    }
+
+    @PutMapping("/mr/soft-delete/{id}")
+    public CompletableFuture<Integer> softDeleteCategory(@PathVariable("id") Long id) {
+    LOGGER.info("Id : "+id);
+        return ANNOUNCEMENT_CATEGORY_SERVICE.softDelete(id);
+
+
+    }
+    @PutMapping("/mr/undelete-category/{id}")
+    public CompletableFuture<Integer> softUndeleteCategory(@PathVariable("id") Long id) {
+      return  ANNOUNCEMENT_CATEGORY_SERVICE.softUndelete(id);  // Implement soft undelete logic
+
 
     }
 
-    @PutMapping("/{id}/soft-delete")
-    public CompletableFuture<ResponseEntity<Void>> softDeleteCategory(@PathVariable Long id) {
-        return ANNOUCEMENT_CATEGORY_SERVICE.softDelete(id)
-                .thenApply(result -> new ResponseEntity<>(HttpStatus.NO_CONTENT));
-    }
 }
