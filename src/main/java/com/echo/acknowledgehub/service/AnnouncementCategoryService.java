@@ -42,6 +42,10 @@ public class AnnouncementCategoryService {
         return CompletableFuture.completedFuture(category);
     }
 
+    public List<AnnouncementCategory> findAll(){
+        return ANNOUNCEMENT_CATEGORY_REPOSITORY.findAll();
+    }
+
     public List<AnnouncementCategory> getAllCategoriesDESC(){
         return ANNOUNCEMENT_CATEGORY_REPOSITORY.getAllCategories();
 
