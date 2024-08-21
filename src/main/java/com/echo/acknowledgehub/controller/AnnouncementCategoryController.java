@@ -12,7 +12,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.logging.Logger;
 
 @RestController
-@RequestMapping("${app.api.base-url}")
+@RequestMapping("${app.api.base-url}/mr/category")
 @AllArgsConstructor
 public class AnnouncementCategoryController {
 
@@ -20,11 +20,17 @@ public class AnnouncementCategoryController {
 
     private final AnnouncementCategoryService ANNOUNCEMENT_CATEGORY_SERVICE;
 
-    @PostMapping("/mr/create-category")
-    public CompletableFuture<ResponseEntity<AnnouncementCategory>> createCategory(@RequestBody AnnouncementCategory category) {
-        return ANNOUNCEMENT_CATEGORY_SERVICE.save(category)
-                .thenApply(savedCategory -> new ResponseEntity<>(savedCategory, HttpStatus.CREATED));
-    }
+
+    @PostMapping("/create-category")
+    public AnnouncementCategory createCategory(@RequestBody AnnouncementCategory category) {
+        return announcementCategoryService.save(category).join();
+
+  //  @PostMapping("/mr/create-category")
+   // public CompletableFuture<ResponseEntity<AnnouncementCategory>> createCategory(@RequestBody AnnouncementCategory category) {
+   //     return ANNOUNCEMENT_CATEGORY_SERVICE.save(category)
+    //            .thenApply(savedCategory -> new ResponseEntity<>(savedCategory, HttpStatus.CREATED));
+
+  //  }
 
     @GetMapping("/mr/get-categories")
     public ResponseEntity<List<AnnouncementCategory>> getAllCategories() {
