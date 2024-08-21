@@ -12,6 +12,7 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -41,15 +42,14 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception {
+
         return httpSecurity
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(
                         request ->
                                 request
                                         // Configure routes to allow access for all users.
-                                        .requestMatchers(BASE_URL + "/check", BASE_URL + "/test", BASE_URL + "/send-email").permitAll()
-                                        // Configure routes to allow access for anonymous users.
-                                        .requestMatchers(BASE_URL + "/login").anonymous()
+                                        .requestMatchers(BASE_URL + "auth/**", BASE_URL + "/test").permitAll()
                                         // Configure routes to allow access for all authenticated users.
                                         .requestMatchers(BASE_URL + "/user/**").authenticated()
                                         // Configure routes to allow access only for system admin.

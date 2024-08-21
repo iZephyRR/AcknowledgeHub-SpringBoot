@@ -42,6 +42,8 @@ public class UserDetailsServiceImp implements UserDetailsService {
             LOGGER.info("Authority : "+authorities);
             CHECKING_BEAN.setRole(optionalEmployee.get().getRole());
             CHECKING_BEAN.setStatus(optionalEmployee.get().getStatus());
+            CHECKING_BEAN.setName(optionalEmployee.get().getName());
+            CHECKING_BEAN.setId(optionalEmployee.get().getId());
             return new User(optionalEmployee.get().getId().toString(), optionalEmployee.get().getPassword(), authorities);
         }
     }

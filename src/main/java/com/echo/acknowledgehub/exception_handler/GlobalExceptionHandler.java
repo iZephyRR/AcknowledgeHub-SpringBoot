@@ -42,7 +42,8 @@ public class GlobalExceptionHandler {
         STATUS_MAP.put(InternalAuthenticationServiceException.class, new ErrorResponseDTO(HttpStatus.UNAUTHORIZED.value(), null));
         STATUS_MAP.put(NoResourceFoundException.class, new ErrorResponseDTO(HttpStatus.NOT_FOUND.value(), "This rout cannot be reach."));
         STATUS_MAP.put(HttpRequestMethodNotSupportedException.class, new ErrorResponseDTO(HttpStatus.METHOD_NOT_ALLOWED.value(), null));
-        //Can add more exception that you want to handle.
+        STATUS_MAP.put(UpdatePasswordException.class, new ErrorResponseDTO(HttpStatus.BAD_REQUEST.value(), null));
+//Can add more exception that you want to handle.
     }
 
     @ExceptionHandler(Exception.class)
@@ -57,7 +58,6 @@ public class GlobalExceptionHandler {
         }else {
             ERROR_RESPONSE.setMessage(errorResponse.getMessage());
         }
-        LOGGER.info("Error Response DTO : "+errorResponse);
         return new ResponseEntity<>(ERROR_RESPONSE, HttpStatus.valueOf(ERROR_RESPONSE.getErrorCode()));
     }
 }
