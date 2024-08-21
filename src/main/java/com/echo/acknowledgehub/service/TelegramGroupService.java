@@ -1,6 +1,3 @@
-
-
-
 package com.echo.acknowledgehub.service;
 
 import com.echo.acknowledgehub.entity.TelegramGroup;
@@ -8,7 +5,6 @@ import com.echo.acknowledgehub.repository.TelegramGroupRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.util.Optional;
 import java.util.logging.Logger;
 
@@ -40,5 +36,3 @@ public class TelegramGroupService {
     }
 
 }
-
-

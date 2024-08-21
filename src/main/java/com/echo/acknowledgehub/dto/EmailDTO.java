@@ -6,7 +6,7 @@ import java.io.Serializable;
 
 @Data
 public class EmailDTO implements Serializable {
+    private String address;
     private String subject;
     private String message;
-    private String address;
 }

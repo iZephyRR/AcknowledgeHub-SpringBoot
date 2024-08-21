@@ -30,6 +30,7 @@ public class JWTAuthenticationFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
+       // LOGGER.info("Authenticatory : "+SecurityContextHolder.getContext().getAuthentication());
         String authHeader = request.getHeader("Authorization");
         //LOGGER.info("Token : "+authHeader.substring(7));
         //LOGGER.info("BaseUrl : " + BASE_URL);
@@ -62,6 +63,7 @@ public class JWTAuthenticationFilter extends OncePerRequestFilter {
             LOGGER.severe(e.getMessage());
             throw new SessionExpireException();
         }
+
         filterChain.doFilter(request, response);
     }
 }

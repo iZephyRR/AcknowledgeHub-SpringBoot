@@ -28,10 +28,10 @@ public class EmployeeController {
         return EMPLOYEE_SERVICE.findAll();
     }
 
-    @GetMapping("/get-user/{id}")
-    private CompletableFuture<Employee> findById(@PathVariable Long id){
-        LOGGER.info("id"+id);
-        return EMPLOYEE_SERVICE.findById(id);
+    @GetMapping("/user/get-user/{id}")
+    private Optional<Employee> findById(@PathVariable Long id){
+       // LOGGER.info("id"+id);
+        return EMPLOYEE_SERVICE.findById(id).join();
     }
 
     @PostMapping("/ad/add-user")

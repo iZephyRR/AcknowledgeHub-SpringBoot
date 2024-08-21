@@ -29,6 +29,10 @@ public interface EmployeeRepository extends JpaRepository <Employee,Long>{
    @Query("SELECT em.password from Employee em where em.id= :id")
    String getPasswordById(@Param("id") Long id);
 
+   @Modifying
+   @Query("UPDATE Employee em SET em.password= :newPassword WHERE em.id= :id")
+   int updatePassword(@Param("id") Long id,@Param("newPassword")String password);
+
    @Query("select em.id from Employee em where em.department.id = :departmentId")
    List<Long> findByDepartmentId(@Param("departmentId") Long departmentId);
 
