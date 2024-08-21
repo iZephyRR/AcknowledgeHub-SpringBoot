@@ -30,8 +30,13 @@ public class EmployeeService {
     private final PasswordEncoder PASSWORD_ENCODER;
 
     @Async
-    public CompletableFuture<Optional<Employee>> findById(Long id) {
-        return CompletableFuture.completedFuture(EMPLOYEE_REPOSITORY.findById(id));
+    public CompletableFuture<Employee> findById(Long id) {
+        Optional<Employee> employee=EMPLOYEE_REPOSITORY.findById(id);
+        if(employee.isPresent()){
+            return CompletableFuture.completedFuture(employee.get());
+        }else {
+            throw new UserNotFoundException();
+        }
     }
 
     @Async

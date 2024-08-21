@@ -68,13 +68,9 @@ public class TargetService {
     }
 
     private void createNotificationForEmployee(Long employeeId, Announcement announcement, Target target) {
-        EMPLOYEE_SERVICE.findById(employeeId).thenAccept(optionalEmployee -> {
-            if (optionalEmployee.isPresent()) {
-                NotificationDTO notificationDTO = buildNotificationDTO(announcement, target, optionalEmployee.get().getId());
-                NOTIFICATION_CONTROLLER.sendNotification(notificationDTO, employeeId); // Pass employeeId as loggedInId
-            } else {
-                LOGGER.warning("Employee with ID " + employeeId + " not found.");
-            }
+        EMPLOYEE_SERVICE.findById(employeeId).thenAccept(employee -> {
+            NotificationDTO notificationDTO = buildNotificationDTO(announcement, target, employee.getId());
+            NOTIFICATION_CONTROLLER.sendNotification(notificationDTO, employeeId); // Pass employeeId as loggedInId
         }).join();
     }
 
