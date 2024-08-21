@@ -1,3 +1,4 @@
+
 package com.echo.acknowledgehub.service;
 
 import com.echo.acknowledgehub.constant.NotificationStatus;
@@ -30,48 +31,30 @@ public class TargetService {
     private final NotificationController NOTIFICATION_CONTROLLER;  // Inject NotificationController
 
     @Transactional
-    public synchronized List<Target> insertTargetWithNotifications(List<TargetDTO> targetDTOList, Announcement announcement) {
-        List<Target> targets = new ArrayList<>();
-
-        for (TargetDTO dto : targetDTOList) {
-            try {
-                // Check if the target already exists
-                Optional<Target> existingTargetOptional = TARGET_REPOSITORY.findByAnnouncementAndReceiverTypeAndSendTo(
-                        announcement, ReceiverType.valueOf(dto.getReceiverType()), dto.getSendTo()
-                );
-
-                if (existingTargetOptional.isPresent()) {
-                    // Skip this entry to prevent duplicates
-                    continue;
-                }
-
-
-                Target target = new Target();
-                target.setReceiverType(ReceiverType.valueOf(dto.getReceiverType()));
-                target.setSendTo(dto.getSendTo());
-                target.setAnnouncement(announcement);
-                targets.add(target);
-
-
-            } catch (DataIntegrityViolationException e) {
-                LOGGER.warning("Data integrity violation while saving target: " + e.getMessage());
-                continue;
-            }
-        }
+    public synchronized List<Target> insertTargetWithNotifications(List<Target> targetList, Announcement announcement) {
+        LOGGER.info("in target service -  insertTargetWithNotifications");
 
         // Save all unique targets
-        targets = TARGET_REPOSITORY.saveAll(targets);
+        LOGGER.info("before saving targets ");
+        for (Target target : targetList) {
+            LOGGER.info("For Saving Target: " + target.toString());
+        }
 
+        List<Target> targets = TARGET_REPOSITORY.saveAll(targetList);
+        LOGGER.info("After saving targets ");
         // Handle notifications based on the receiver type
         for (Target target : targets) {
             switch (target.getReceiverType()) {
                 case EMPLOYEE:
+                    LOGGER.info("case employee");
                     createNotificationForEmployee(target.getSendTo(), announcement, target);
                     break;
                 case DEPARTMENT:
+                    LOGGER.info("case department");
                     createNotificationsForDepartment(target.getSendTo(), announcement, target);
                     break;
                 case COMPANY:
+                    LOGGER.info("case company");
                     createNotificationsForCompany(target.getSendTo(), announcement, target);
                     break;
                 case CUSTOM:
@@ -81,18 +64,13 @@ public class TargetService {
                     LOGGER.warning("Unknown receiver type: " + target.getReceiverType());
             }
         }
-
         return targets;
     }
 
     private void createNotificationForEmployee(Long employeeId, Announcement announcement, Target target) {
-        EMPLOYEE_SERVICE.findById(employeeId).thenAccept(optionalEmployee -> {
-            if (optionalEmployee.isPresent()) {
-                NotificationDTO notificationDTO = buildNotificationDTO(announcement, target, optionalEmployee.get().getId());
-                NOTIFICATION_CONTROLLER.sendNotification(notificationDTO, employeeId); // Pass employeeId as loggedInId
-            } else {
-                LOGGER.warning("Employee with ID " + employeeId + " not found.");
-            }
+        EMPLOYEE_SERVICE.findById(employeeId).thenAccept(employee -> {
+            NotificationDTO notificationDTO = buildNotificationDTO(announcement, target, employee.getId());
+            NOTIFICATION_CONTROLLER.sendNotification(notificationDTO, employeeId); // Pass employeeId as loggedInId
         }).join();
     }
 
@@ -100,6 +78,7 @@ public class TargetService {
     private void createNotificationsForDepartment(Long departmentId, Announcement announcement, Target target) {
         List<Long> employeeIds = EMPLOYEE_SERVICE.findByDepartmentId(departmentId).join();
         for (Long employeeId : employeeIds) {
+            LOGGER.info("employee id from department : " + employeeId);
             createNotificationForEmployee(employeeId, announcement, target);
         }
     }
@@ -107,6 +86,7 @@ public class TargetService {
     private void createNotificationsForCompany(Long companyId, Announcement announcement, Target target) {
         List<Long> employeeIds = EMPLOYEE_SERVICE.findByCompanyId(companyId).join();
         for (Long employeeId : employeeIds) {
+            LOGGER.info("employee id from company : " + employeeId);
             createNotificationForEmployee(employeeId, announcement, target);
         }
     }
@@ -115,10 +95,16 @@ public class TargetService {
         NotificationDTO notificationDTO = new NotificationDTO();
         notificationDTO.setEmployeeId(employeeId);
         notificationDTO.setAnnouncementId(announcement.getId());
+        notificationDTO.setCategoryId(announcement.getCategory().getId());
         notificationDTO.setTargetId(target.getId());
         notificationDTO.setStatus(NotificationStatus.SEND);
         notificationDTO.setType(NotificationType.RECEIVED);
         notificationDTO.setNoticeAt(LocalDateTime.now());
         return notificationDTO;
     }
+
+    public void saveTargets(List<Target> entityList) {
+        TARGET_REPOSITORY.saveAll(entityList);
+    }
+
 }

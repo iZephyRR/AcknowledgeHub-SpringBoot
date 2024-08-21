@@ -4,25 +4,34 @@ import com.echo.acknowledgehub.dto.UserDTO;
 import com.echo.acknowledgehub.dto.UsersDTO;
 import com.echo.acknowledgehub.entity.Employee;
 import com.echo.acknowledgehub.service.EmployeeService;
+import com.echo.acknowledgehub.util.JWTService;
 import lombok.AllArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.logging.Logger;
 
 @RestController
-@RequestMapping("/api/v1")
+@RequestMapping("${app.api.base-url}")
 @AllArgsConstructor
 public class EmployeeController {
     private static final Logger LOGGER = Logger.getLogger(EmployeeController.class.getName());
     private final EmployeeService EMPLOYEE_SERVICE;
+    private final JWTService JWT_SERVICE;
 
     @GetMapping("/ad/users")
     private CompletableFuture<List<Employee>> findAll(){
         LOGGER.info("Finding users..");
         return EMPLOYEE_SERVICE.findAll();
+    }
+
+    @GetMapping("/get-user/{id}")
+    private CompletableFuture<Employee> findById(@PathVariable Long id){
+        LOGGER.info("id"+id);
+        return EMPLOYEE_SERVICE.findById(id);
     }
 
     @PostMapping("/ad/add-user")

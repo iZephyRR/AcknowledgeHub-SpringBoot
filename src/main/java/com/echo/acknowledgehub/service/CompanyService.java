@@ -6,6 +6,7 @@ import lombok.AllArgsConstructor;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.logging.Logger;
@@ -29,5 +30,9 @@ public class CompanyService {
     @Async
     public CompletableFuture<Optional<Company>> findByName(String name){
         return CompletableFuture.completedFuture(COMPANY_REPOSITORY.findByName(name));
+    }
+
+    public List<Company> getAllCompanies () {
+        return COMPANY_REPOSITORY.findAll();
     }
 }
