@@ -18,14 +18,13 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.AllArgsConstructor;
 import org.modelmapper.ModelMapper;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.io.IOException;
 import java.time.LocalDateTime;
-import java.util.Collections;
-import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -34,6 +33,7 @@ import java.util.stream.Collectors;
 @RequestMapping("${app.api.base-url}/announcement")
 @AllArgsConstructor
 public class AnnouncementController {
+
     private static final Logger LOGGER = Logger.getLogger(AnnouncementController.class.getName());
     private final AnnouncementService ANNOUNCEMENT_SERVICE;
     private final JWTService JWT_SERVICE;
@@ -108,8 +108,14 @@ public class AnnouncementController {
         }
         List<Long> chatIdsList = EMPLOYEE_SERVICE.getAllChatId();
 
-        TELEGRAM_SERVICE.sendReportsInBatches(chatIdsList, announcement.getPdfLink(), announcement.getTitle(), announcement.getEmployee().getName());
+        //TELEGRAM_SERVICE.sendReportsInBatches(chatIdsList, announcement.getPdfLink(), announcement.getTitle(), announcement.getEmployee().getName());
 
 
+    }
+
+    @GetMapping("/aug-to-oct-2024")
+    public ResponseEntity<Map<String, List<Announcement>>> getAnnouncementsForAugToOct2024() {
+        Map<String, List<Announcement>> announcementsByMonth = ANNOUNCEMENT_SERVICE.getAnnouncementsForAugToOct2024();
+        return ResponseEntity.ok(announcementsByMonth);
     }
 }
