@@ -7,9 +7,14 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
+
 public interface AnnouncementCategoryRepository extends JpaRepository<AnnouncementCategory,Long> {
     @Modifying
     @Query("UPDATE AnnouncementCategory ac SET ac.status = :status WHERE ac.id = :id")
     int softDeleteById(@Param("id") Long id, @Param("status") AnnouncementCategoryStatus status);
+
+    @Query("select ac from AnnouncementCategory ac order by ac.id DESC")
+    List<AnnouncementCategory> getAllCategories();
 
 }
