@@ -9,29 +9,35 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.logging.Logger;
 
 @RestController
 @RequestMapping("${app.api.base-url}")
 @AllArgsConstructor
 public class AnnouncementCategoryController {
-
-    private final AnnouncementCategoryService announcementCategoryService;
+    private static final Logger LOGGER = Logger.getLogger(AnnouncementCategoryController.class.getName());
+    private final AnnouncementCategoryService ANNOUNCEMENT_CATEGORY_SERVICE;
 
     @PostMapping("/mr/create-category")
     public CompletableFuture<ResponseEntity<AnnouncementCategory>> createCategory(@RequestBody AnnouncementCategory category) {
-        return announcementCategoryService.save(category)
+        return ANNOUNCEMENT_CATEGORY_SERVICE.save(category)
                 .thenApply(savedCategory -> new ResponseEntity<>(savedCategory, HttpStatus.CREATED));
     }
 
     @GetMapping("/mr/get-categories")
-    public CompletableFuture<ResponseEntity<List<AnnouncementCategory>>> getAllCategories() {
-        return announcementCategoryService.findAll()
-                .thenApply(categories -> new ResponseEntity<>(categories, HttpStatus.OK));
+    public ResponseEntity<List<AnnouncementCategory>> getAllCategories() {
+        return ResponseEntity.ok(ANNOUNCEMENT_CATEGORY_SERVICE.getAllCategoriesDESC());
     }
 
-    @PutMapping("/{id}/soft-delete")
-    public CompletableFuture<ResponseEntity<Void>> softDeleteCategory(@PathVariable Long id) {
-        return announcementCategoryService.softDelete(id)
-                .thenApply(result -> new ResponseEntity<>(HttpStatus.NO_CONTENT));
+    @PutMapping("/mr/soft-delete/{id}")
+    public CompletableFuture<Integer> softDeleteCategory(@PathVariable("id") Long id) {
+    LOGGER.info("Id : "+id);
+        return ANNOUNCEMENT_CATEGORY_SERVICE.softDelete(id);
     }
+    @PutMapping("/mr/undelete-category/{id}")
+    public CompletableFuture<Integer> softUndeleteCategory(@PathVariable("id") Long id) {
+      return  ANNOUNCEMENT_CATEGORY_SERVICE.softUndelete(id);  // Implement soft undelete logic
+
+    }
+
 }

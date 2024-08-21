@@ -59,7 +59,7 @@ public class SecurityConfig {
                                                 authentication.get().getAuthorities().stream()
                                                         .noneMatch(grantedAuthority -> grantedAuthority.getAuthority().equals(EmployeeRole.MAIN_HR.name()))
                                         )
-                                ).requestMatchers(BASE_URL + "/ma/**", BASE_URL + "/announcement/create",BASE_URL+"/get-user/{id}").access((authentication, requestContext) ->
+                                ).requestMatchers(BASE_URL + "/ma/**", BASE_URL + "/announcement/create",BASE_URL+"/get-user/{id}",BASE_URL+"/soft-delete/{id}").access((authentication, requestContext) ->
                                         new AuthorizationDecision(
                                                 authentication.get().getAuthorities().stream()
                                                         .noneMatch(grantedAuthority -> grantedAuthority.getAuthority().equals(EmployeeRole.MAIN_HR_ASSISTANCE.name()))
