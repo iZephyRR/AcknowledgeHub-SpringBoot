@@ -44,6 +44,7 @@ public class AnnouncementCategoryService {
 
     public List<AnnouncementCategory> getAllCategoriesDESC(){
         return ANNOUNCEMENT_CATEGORY_REPOSITORY.getAllCategories();
+
     }
 
     public Optional<AnnouncementCategory> findById(Long id){

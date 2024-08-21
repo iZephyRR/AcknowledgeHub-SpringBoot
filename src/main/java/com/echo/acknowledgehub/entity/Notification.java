@@ -13,7 +13,6 @@ import java.time.LocalDateTime;
 @Table(name = "notification")
 public class Notification {
 
-
   @Column(name = "notice_at", columnDefinition = "TIMESTAMP")
   private LocalDateTime noticeAt;
   @Enumerated(EnumType.STRING)

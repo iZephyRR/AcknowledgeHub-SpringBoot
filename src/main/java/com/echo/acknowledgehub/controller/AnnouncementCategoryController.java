@@ -33,6 +33,7 @@ public class AnnouncementCategoryController {
     public CompletableFuture<Integer> softDeleteCategory(@PathVariable("id") Long id) {
     LOGGER.info("Id : "+id);
         return ANNOUNCEMENT_CATEGORY_SERVICE.softDelete(id);
+
     }
     @PutMapping("/mr/undelete-category/{id}")
     public CompletableFuture<Integer> softUndeleteCategory(@PathVariable("id") Long id) {
