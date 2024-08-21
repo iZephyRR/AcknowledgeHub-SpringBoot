@@ -59,9 +59,7 @@ public class AnnouncementController {
         Long loggedInId = Long.parseLong(JWT_SERVICE.extractId(token));
         LOGGER.info("LoggedId : " + loggedInId);
 
-        CompletableFuture<Employee> conFuEmployee = EMPLOYEE_SERVICE.findById(loggedInId)
-                .thenApply(optionalEmployee -> optionalEmployee.orElseThrow(() -> new NoSuchElementException("Employee not found")));
-
+        CompletableFuture<Employee> conFuEmployee = EMPLOYEE_SERVICE.findById(loggedInId);
         Optional<AnnouncementCategory> optionalAnnouncementCategory = ANNOUNCEMENT_CATEGORY_SERVICE.findById(announcementDTO.getCategoryId());
         AnnouncementCategory category = optionalAnnouncementCategory.orElse(null);
 

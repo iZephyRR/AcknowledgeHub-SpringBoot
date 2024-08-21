@@ -15,7 +15,9 @@ import java.util.logging.Logger;
 @RequestMapping("${app.api.base-url}")
 @AllArgsConstructor
 public class AnnouncementCategoryController {
+
     private static final Logger LOGGER = Logger.getLogger(AnnouncementCategoryController.class.getName());
+
     private final AnnouncementCategoryService ANNOUNCEMENT_CATEGORY_SERVICE;
 
     @PostMapping("/mr/create-category")
@@ -34,10 +36,12 @@ public class AnnouncementCategoryController {
     LOGGER.info("Id : "+id);
         return ANNOUNCEMENT_CATEGORY_SERVICE.softDelete(id);
 
+
     }
     @PutMapping("/mr/undelete-category/{id}")
     public CompletableFuture<Integer> softUndeleteCategory(@PathVariable("id") Long id) {
       return  ANNOUNCEMENT_CATEGORY_SERVICE.softUndelete(id);  // Implement soft undelete logic
+
 
     }
 
