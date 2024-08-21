@@ -5,7 +5,6 @@ import com.echo.acknowledgehub.repository.TelegramGroupRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.util.Optional;
 import java.util.logging.Logger;
 
@@ -15,7 +14,6 @@ public class TelegramGroupService {
 
     private static final Logger LOGGER = Logger.getLogger(TelegramGroupService.class.getName());
     public final TelegramGroupRepository TELEGRAM_GROUP_REPOSITORY;
-
 
     public TelegramGroup findByGroupName(String groupName) {
         Optional<TelegramGroup> optionalTelegramGroup = TELEGRAM_GROUP_REPOSITORY.findByGroupName(groupName);
