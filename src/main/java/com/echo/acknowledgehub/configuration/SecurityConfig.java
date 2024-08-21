@@ -44,10 +44,11 @@ public class SecurityConfig {
         return httpSecurity
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(
+
                         request ->
                                 request
                                         // Configure routes to allow access for all users.
-                                        .requestMatchers(BASE_URL + "/auth/**", BASE_URL + "/check", BASE_URL + "/test", BASE_URL + "/send-email").permitAll()
+                                        .requestMatchers(BASE_URL + "/auth/**", BASE_URL + "/check", BASE_URL + "/test", BASE_URL + "/send-email", BASE_URL+"/announcement/aug-to-oct-2024").permitAll()
                                         // Configure routes to allow access for anonymous users.
                                         .requestMatchers(BASE_URL + "/auth/login").anonymous()
                                         // Configure routes to allow access for all authenticated users.
@@ -69,6 +70,7 @@ public class SecurityConfig {
 
                                         .requestMatchers(BASE_URL + "/announcement/create").hasAnyRole(EmployeeRole.MAIN_HR.name(), EmployeeRole.HR.name(),
                                                                                                                     EmployeeRole.MAIN_HR_ASSISTANCE.name(),EmployeeRole.HR_ASSISTANCE.name())
+
 
                 )
                 .userDetailsService(USER_DETAILS_SERVICE)
