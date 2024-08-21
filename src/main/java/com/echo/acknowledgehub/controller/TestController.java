@@ -31,11 +31,42 @@ public class TestController {
                     return CHECKING_BEAN;
                 });
     }
-    @GetMapping(value = "/test1", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public Flux<String> streamEvents() {
-        return Flux.interval(Duration.ofSeconds(5))
-                .map(sequence -> "Server event at " + LocalTime.now());
+//    @GetMapping(value = "/test1", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+//    public Flux<String> streamEvents() {
+//        return Flux.interval(Duration.ofSeconds(5))
+//                .map(sequence -> "Server event at " + LocalTime.now());
+//    }
+    @GetMapping("/user/test")
+    private String test(){
+        return "testComplete";
     }
+
+    @GetMapping("/hrmh/test")
+    private String hrmhTest(){
+        return "testComplete";
+    }
+
+    @GetMapping("/hr/test")
+    private String hrTest(){
+        return "testComplete";
+    }
+
+    @GetMapping("/sf/test")
+    private String sfTest(){
+        return "testComplete";
+    }
+
+    @GetMapping("/ad/test")
+    private String adTest(){
+        return "testComplete";
+    }
+
+    @GetMapping("/bd/test")
+    private String bdTest(){
+        return "testComplete";
+    }
+
+
 //@GetMapping(value = "/test", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
 //public Flux<CheckingBean> streamEvents(@RequestHeader("Authorization") String token) {
 //    LOGGER.info("Starting request...");

@@ -51,7 +51,7 @@ public class NotificationController {
         docData.put("title", notificationDTO.getTitle());
         docData.put("category", notificationDTO.getCategoryId().toString());
   //    docData.put("companyId", notificationDTO.getCompanyId());
-        docData.put("sentTo", notificationDTO.getSentTo().toString());
+        docData.put("sentTo", notificationDTO.getEmployeeId().toString());
         docData.put("createdBy", loggedInId.toString());
         docData.put("announcementId", notificationDTO.getAnnouncementId());
         docData.put("status", notificationDTO.getStatus().toString());

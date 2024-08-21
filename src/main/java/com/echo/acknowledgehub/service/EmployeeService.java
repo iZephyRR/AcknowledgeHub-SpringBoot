@@ -27,18 +27,11 @@ public class EmployeeService {
     private static final Logger LOGGER = Logger.getLogger(EmployeeService.class.getName());
     private final EmployeeRepository EMPLOYEE_REPOSITORY;
     private final ModelMapper MAPPER;
-    private final UserDetailsService USER_DETAILS_SERVICE;
-    private final JWTService JWT_SERVICE;
     private final PasswordEncoder PASSWORD_ENCODER;
 
     @Async
-    public CompletableFuture<Employee> findById(Long id) {
-        Optional<Employee> employee=EMPLOYEE_REPOSITORY.findById(id);
-        if(employee.isPresent()){
-            return CompletableFuture.completedFuture(employee.get());
-        }else {
-            throw new UserNotFoundException();
-        }
+    public CompletableFuture<Optional<Employee>> findById(Long id) {
+        return CompletableFuture.completedFuture(EMPLOYEE_REPOSITORY.findById(id));
     }
 
     @Async
@@ -75,10 +68,6 @@ public class EmployeeService {
         return CompletableFuture.completedFuture(employees);
     }
 
-    @Async
-    public CompletableFuture<Boolean> isFirstTime(String email) {
-        return CompletableFuture.completedFuture(PASSWORD_ENCODER.matches("root",EMPLOYEE_REPOSITORY.getPasswordById(Long.parseLong(USER_DETAILS_SERVICE.loadUserByUsername(email).getUsername()))));
-    }
 //    @Async
 //    public CompletableFuture<List<Employee>> saveAll(MultipartFile users) throws IOException {
 //        return XLSX_READER.getEmployees(users.getInputStream()).thenApply(employees -> {

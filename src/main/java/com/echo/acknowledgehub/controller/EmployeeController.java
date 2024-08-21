@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.logging.Logger;
 
@@ -27,16 +28,13 @@ public class EmployeeController {
         return EMPLOYEE_SERVICE.findAll();
     }
 
-    @GetMapping("/get-user/{id}")
-    private CompletableFuture<Employee> findById(@PathVariable Long id){
-        LOGGER.info("id"+id);
-        return EMPLOYEE_SERVICE.findById(id);
-    }
+//    @GetMapping("/get-user/{id}")
+//    private CompletableFuture<Employee> findById(@PathVariable Long id){
+//        LOGGER.info("id"+id);
+//        return EMPLOYEE_SERVICE.findById(id);
+//    }
 
     @PostMapping("/ad/add-user")
-
-
-
     private CompletableFuture<Employee> register(@RequestBody UserDTO user) {
         LOGGER.info("Adding a user...");
         return EMPLOYEE_SERVICE.save(user);

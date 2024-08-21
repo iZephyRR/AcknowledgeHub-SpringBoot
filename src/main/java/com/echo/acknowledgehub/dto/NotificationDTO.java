@@ -8,7 +8,7 @@ import java.time.LocalDateTime;
 
 @Data
 public class NotificationDTO {
-    private Long id;
+//    private Long id;
     private LocalDateTime noticeAt;
     private NotificationStatus status;
     private NotificationType type;
@@ -17,7 +17,7 @@ public class NotificationDTO {
     private Long targetId;
     private Long categoryId;
     private String title;
-    private String receiverType;
+//    private String receiverType;
     private Long sentTo;
-    private Long companyId;
+//    private Long companyId;
 }
