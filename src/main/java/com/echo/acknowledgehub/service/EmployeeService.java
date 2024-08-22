@@ -1,5 +1,6 @@
 package com.echo.acknowledgehub.service;
 
+import com.echo.acknowledgehub.dto.ChangePasswordDTO;
 import com.echo.acknowledgehub.dto.UserDTO;
 import com.echo.acknowledgehub.entity.Employee;
 import com.echo.acknowledgehub.exception_handler.UserNotFoundException;
@@ -30,14 +31,9 @@ public class EmployeeService {
     private final PasswordEncoder PASSWORD_ENCODER;
 
     @Async
-    public CompletableFuture<Employee> findById(Long id) {
-        Optional<Employee> employee=EMPLOYEE_REPOSITORY.findById(id);
-        if(employee.isPresent()){
-            return CompletableFuture.completedFuture(employee.get());
-        }else {
-            throw new UserNotFoundException();
-        }
-    }
+    public CompletableFuture<Optional<Employee>> findById(Long id) {
+        return CompletableFuture.completedFuture(EMPLOYEE_REPOSITORY.findById(id));
+}
 
     @Async
     public CompletableFuture<Optional<Employee>> findByEmail(String email) {
@@ -51,7 +47,17 @@ public class EmployeeService {
     public CompletableFuture<List<Long>> findByCompanyId(Long companyId) {
         return CompletableFuture.completedFuture(EMPLOYEE_REPOSITORY.findByCompanyId(companyId));
     }
-
+    @Transactional
+    @Async
+    public CompletableFuture<Void> updatePassword(ChangePasswordDTO changePasswordDTO){
+        int updatedRows = EMPLOYEE_REPOSITORY.updatePassword(changePasswordDTO.getId(),PASSWORD_ENCODER.encode(changePasswordDTO.getPassword()));
+        LOGGER.info("Updated rows : "+updatedRows);
+        if(updatedRows>0){
+            return CompletableFuture.completedFuture(null);
+        }else{
+            return null;
+        }
+    }
 
     @Async
     public CompletableFuture<Employee> save(UserDTO user) {
