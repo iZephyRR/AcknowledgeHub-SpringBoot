@@ -18,6 +18,7 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiRequestException;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.CompletionException;
 import java.util.logging.Logger;
 
 @RestControllerAdvice
@@ -42,7 +43,9 @@ public class GlobalExceptionHandler {
         STATUS_MAP.put(InternalAuthenticationServiceException.class, new ErrorResponseDTO(HttpStatus.UNAUTHORIZED.value(), null));
         STATUS_MAP.put(NoResourceFoundException.class, new ErrorResponseDTO(HttpStatus.NOT_FOUND.value(), "This rout cannot be reach."));
         STATUS_MAP.put(HttpRequestMethodNotSupportedException.class, new ErrorResponseDTO(HttpStatus.METHOD_NOT_ALLOWED.value(), null));
-        //Can add more exception that you want to handle.
+        STATUS_MAP.put(DuplicatedEnteryException.class, new ErrorResponseDTO(HttpStatus.BAD_REQUEST.value(), null));
+        STATUS_MAP.put(CompletionException.class, new ErrorResponseDTO(HttpStatus.BAD_REQUEST.value(), null));
+//Can add more exception that you want to handle.
     }
 
     @ExceptionHandler(Exception.class)
@@ -57,7 +60,7 @@ public class GlobalExceptionHandler {
         }else {
             ERROR_RESPONSE.setMessage(errorResponse.getMessage());
         }
-        LOGGER.info("Error Response DTO : "+errorResponse);
+        LOGGER.info("Error Response DTO : "+ERROR_RESPONSE);
         return new ResponseEntity<>(ERROR_RESPONSE, HttpStatus.valueOf(ERROR_RESPONSE.getErrorCode()));
     }
 }
