@@ -29,8 +29,7 @@ public class EmployeeController {
     }
 
     @GetMapping("/user/get-user/{id}")
-    private Employee findById(@PathVariable Long id){
-        LOGGER.info("id"+id);
+    private Optional<Employee> findById(@PathVariable Long id){
         return EMPLOYEE_SERVICE.findById(id).join();
     }
 

@@ -7,7 +7,6 @@ import com.google.firebase.database.FirebaseDatabase;
 import jakarta.annotation.PostConstruct;
 import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Service;
-
 import java.io.FileInputStream;
 
 @Service
@@ -19,7 +18,14 @@ public class FirebaseInitialization {
         FileInputStream serviceAccount =
                 null;
         try {
-            serviceAccount = new FileInputStream("C:\\OJT14\\Final Project(Spring Boot)\\AcknowledgeHub\\src\\main\\resources\\serviceAccountKey.json");
+          //Hnin Wai Phyo
+           // serviceAccount = new FileInputStream("C:\\OJT14\\Final Project(Spring Boot)\\AcknowledgeHub\\src\\main\\resources\\serviceAccountKey.json");
+
+
+        //    serviceAccount = new FileInputStream("C:\\AcknowledgeHub\\AcknowledgeHub\\src\\main\\resources\\serviceAccountKey.json");
+
+            serviceAccount = new FileInputStream("E:\\AcknowledgeHub - TeamEcho\\acknowledgehub\\src\\main\\resources\\serviceAccountKey.json");
+
 
             FirebaseOptions options = new FirebaseOptions.Builder()
                     .setCredentials(GoogleCredentials.fromStream(serviceAccount))
