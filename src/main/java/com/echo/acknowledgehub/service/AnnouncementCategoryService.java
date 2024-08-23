@@ -2,9 +2,11 @@ package com.echo.acknowledgehub.service;
 
 import com.echo.acknowledgehub.constant.AnnouncementCategoryStatus;
 import com.echo.acknowledgehub.entity.AnnouncementCategory;
+import com.echo.acknowledgehub.exception_handler.DuplicatedEnteryException;
 import com.echo.acknowledgehub.repository.AnnouncementCategoryRepository;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
@@ -21,7 +23,18 @@ public class AnnouncementCategoryService {
 
     @Async
     public CompletableFuture<AnnouncementCategory> save(AnnouncementCategory announcementCategory){
-        return CompletableFuture.completedFuture(ANNOUNCEMENT_CATEGORY_REPOSITORY.save(announcementCategory));
+        try {
+            return CompletableFuture.completedFuture(ANNOUNCEMENT_CATEGORY_REPOSITORY.save(announcementCategory));
+
+        }catch (DataIntegrityViolationException e){
+            if(e.getMessage().contains("Duplicate entry")){
+                LOGGER.info("Duplicated ");
+                throw new DuplicatedEnteryException();
+            }else {
+                LOGGER.info("Other exception");
+                throw e;
+            }
+        }
     }
 
     @Async
@@ -30,7 +43,7 @@ public class AnnouncementCategoryService {
         LOGGER.info("softDeleteService : "+id);
         int category=ANNOUNCEMENT_CATEGORY_REPOSITORY.softDeleteById(id, AnnouncementCategoryStatus.SOFT_DELETE);
         LOGGER.info("SoftDelete : "+category);
-        return CompletableFuture.completedFuture(ANNOUNCEMENT_CATEGORY_REPOSITORY.softDeleteById(id, AnnouncementCategoryStatus.SOFT_DELETE));
+        return CompletableFuture.completedFuture(category);
     }
 
     @Async
@@ -50,6 +63,7 @@ public class AnnouncementCategoryService {
         return ANNOUNCEMENT_CATEGORY_REPOSITORY.getAllCategories();
 
     }
+
 
     public Optional<AnnouncementCategory> findById(Long id){
         return ANNOUNCEMENT_CATEGORY_REPOSITORY.findById(id);

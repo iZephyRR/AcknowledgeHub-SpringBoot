@@ -22,22 +22,21 @@ public class EmployeeController {
     private final EmployeeService EMPLOYEE_SERVICE;
     private final JWTService JWT_SERVICE;
 
-    @GetMapping("/ad/users")
-    private CompletableFuture<List<Employee>> findAll(){
+    @GetMapping("/mr/users")
+    private List<Employee> findAll(){
         LOGGER.info("Finding users..");
-        return EMPLOYEE_SERVICE.findAll();
+        return EMPLOYEE_SERVICE.findAll().join();
     }
 
     @GetMapping("/user/get-user/{id}")
     private Optional<Employee> findById(@PathVariable Long id){
-       // LOGGER.info("id"+id);
         return EMPLOYEE_SERVICE.findById(id).join();
     }
 
     @PostMapping("/ad/add-user")
-    private CompletableFuture<Employee> register(@RequestBody UserDTO user) {
+    private Employee register(@RequestBody UserDTO user) {
         LOGGER.info("Adding a user...");
-        return EMPLOYEE_SERVICE.save(user);
+        return EMPLOYEE_SERVICE.save(user).join();
     }
 
     @PostMapping("/ad/add-users")
