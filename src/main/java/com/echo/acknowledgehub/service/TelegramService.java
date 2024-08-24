@@ -1,5 +1,6 @@
 package com.echo.acknowledgehub.service;
 
+import com.echo.acknowledgehub.constant.ContentType;
 import com.echo.acknowledgehub.entity.Employee;
 import com.echo.acknowledgehub.entity.TelegramGroup;
 import org.springframework.scheduling.annotation.Async;
@@ -8,11 +9,16 @@ import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.groupadministration.SetChatPhoto;
 import org.telegram.telegrambots.meta.api.methods.polls.SendPoll;
 import org.telegram.telegrambots.meta.api.methods.send.*;
-import org.telegram.telegrambots.meta.api.objects.InputFile;
-import org.telegram.telegrambots.meta.api.objects.Message;
-import org.telegram.telegrambots.meta.api.objects.Update;
+import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageCaption;
+import org.telegram.telegrambots.meta.api.objects.*;
 import org.telegram.telegrambots.meta.api.objects.polls.PollAnswer;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
+
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -50,22 +56,63 @@ public class TelegramService extends TelegramLongPollingBot {
     @Async
     @Override
     public void onUpdateReceived(Update updateInfo) {
-       if (updateInfo.hasMessage()) {
-           try {
-               registerTelegram(updateInfo);
-           } catch (TelegramApiException e) {
-               throw new RuntimeException(e);
-           }
-       } else if (updateInfo.hasPollAnswer()) {
-           handlePollAnswer(updateInfo.getPollAnswer());
-       }
+        if (updateInfo.hasCallbackQuery()) {
+            CallbackQuery callbackQuery = updateInfo.getCallbackQuery();
+            String callbackData = callbackQuery.getData();
+            LocalDateTime now = LocalDateTime.now();
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+            String formattedNow = now.format(formatter);
+            if (callbackData.startsWith("seen_confirmed:")) {
+                String[] dataParts = callbackData.split(":");
+                String announcementId = dataParts[1];
+                User user = callbackQuery.getFrom();
+                String username = user.getUserName();
+                Long chatId = user.getId();
+                LOGGER.info("User " + username + " clicked for announcement " + announcementId + " at " + formattedNow);
+                updateCaption(callbackQuery,username,chatId);
+            }
+        } else if (updateInfo.hasMessage()) {
+            try {
+                registerTelegram(updateInfo);
+            } catch (TelegramApiException e) {
+                throw new RuntimeException(e);
+            }
+        } else if (updateInfo.hasPollAnswer()) {
+            handlePollAnswer(updateInfo.getPollAnswer());
+        }
+    }
+
+    private void updateCaption(CallbackQuery callbackQuery, String username, Long chatId){
+        EditMessageCaption editMessage = new EditMessageCaption();
+        editMessage.setChatId(callbackQuery.getMessage().getChatId().toString());
+        editMessage.setMessageId(callbackQuery.getMessage().getMessageId());
+        // Append the confirmation to the original caption
+        String newCaption = callbackQuery.getMessage().getCaption() + "\n\nThanks";
+        editMessage.setCaption(newCaption);
+        // Remove the inline keyboard (set reply markup to null)
+        editMessage.setReplyMarkup(null);
+        try {
+            execute(editMessage);
+            sendMessageAfterNotice(chatId);
+        } catch (TelegramApiException e) {
+            LOGGER.info("Error editing message: " + e.getMessage());
+        }
+    }
+
+    private void sendMessageAfterNotice(long chatId) throws TelegramApiException {
+//        Long chatId = getChatIdByUsername(username);
+//        LOGGER.info(username +" + "+ chatId);
+        SendMessage message = new SendMessage();
+        message.setChatId(chatId);
+        message.setText("Thank you for your noted");
+        execute(message);
     }
 
     @Async
-    public CompletableFuture<Void> registerTelegram(Update updateInfo) throws TelegramApiException {
+    private CompletableFuture<Void> registerTelegram(Update updateInfo) throws TelegramApiException {
         if (updateInfo.hasMessage()) {
             Message message = updateInfo.getMessage();
-           // System.out.println(message.getReplyToMessage().getText());
+            // System.out.println(message.getReplyToMessage().getText());
             Long chatId = message.getChatId();
             if (message.getChat().isGroupChat() || message.getChat().isSuperGroupChat()) {
                 String groupTitle = message.getChat().getTitle();
@@ -87,9 +134,35 @@ public class TelegramService extends TelegramLongPollingBot {
         return CompletableFuture.completedFuture(null);
     }
 
-    public Long getChatIdByUsername(String username) {
+    private Long getChatIdByUsername(String username) {
         return EMPLOYEE_SERVICE.getChatIdByUsername(username);
     }
+
+    @Async
+    public void sendToTelegram(List<Long> chatIdsList, String contentType, Long announcementId, String filePathOrUrl, String title, String creator) {
+        LOGGER.info("in send to telegram");
+        LOGGER.info("Content Type: " + contentType); // Log the contentType for debugging
+        // Trim any whitespace from contentType before comparison
+        contentType = contentType.trim();
+        if (contentType.startsWith(ContentType.AUDIO.getValues()[0])) {
+            LOGGER.info("send audio");
+            sendAudioInBatches(chatIdsList, announcementId, filePathOrUrl, title, creator);
+        } else if (contentType.startsWith(ContentType.VIDEO.getValues()[0])) {
+            LOGGER.info("send video");
+            sendVideoInBatches(chatIdsList, announcementId, filePathOrUrl, title, creator);
+        } else if (contentType.startsWith(ContentType.IMAGE.getValues()[0])) {
+            LOGGER.info("send image");
+            sendImageInBatches(chatIdsList, announcementId, filePathOrUrl, title, creator);
+        } else if (contentType.equals(ContentType.PDF.getValues()[0]) ||
+                contentType.equals(ContentType.EXCEL.getValues()[0]) ||
+                contentType.equals(ContentType.EXCEL.getValues()[1])) {
+            LOGGER.info("send pdf or excel");
+            sendReportsInBatches(chatIdsList, announcementId, filePathOrUrl, title, creator);
+        } else {
+            LOGGER.info("Unknown content type: " + contentType);
+        }
+    }
+
 
     // handle Poll Answer
     private void handlePollAnswer(PollAnswer pollAnswer) {
@@ -105,7 +178,7 @@ public class TelegramService extends TelegramLongPollingBot {
     }
 
     // send Poll if u want to send to more than one user, call sendPollInBatches
-    public void sendPoll(Long groupChatId, String question, String... options) throws TelegramApiException {
+    private void sendPoll(Long groupChatId, String question, String... options) throws TelegramApiException {
         SendPoll poll = SendPoll.builder()
                 .chatId(groupChatId)
                 .question(question)
@@ -113,7 +186,8 @@ public class TelegramService extends TelegramLongPollingBot {
                 .isAnonymous(false).build();
         execute(poll);
     }
-    public void sendPollInBatches(List<Long> groupChatIds, String question, String... options) {
+
+    private void sendPollInBatches(List<Long> groupChatIds, String question, String... options) {
         int batchSize = 30;
         int delay = 1; // 1-second delay between batches
         ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
@@ -122,7 +196,7 @@ public class TelegramService extends TelegramLongPollingBot {
             executor.schedule(() -> {
                 for (Long groupChatId : batch) {
                     try {
-                        sendPoll(groupChatId, question,options);
+                        sendPoll(groupChatId, question, options);
                     } catch (TelegramApiException e) {
                         throw new RuntimeException(e);
                     }
@@ -139,7 +213,8 @@ public class TelegramService extends TelegramLongPollingBot {
         message.setText(text);
         execute(message);
     }
-    public void sendMessagesInBatches(List<Long> chatIds, String message) {
+
+    private void sendMessagesInBatches(List<Long> chatIds, String message) {
         int batchSize = 30;
         int delay = 1; // 1-second delay between batches
         ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
@@ -148,7 +223,7 @@ public class TelegramService extends TelegramLongPollingBot {
             executor.schedule(() -> {
                 for (Long chatId : batch) {
                     try {
-                        sendMessage(chatId,message);
+                        sendMessage(chatId, message);
                     } catch (TelegramApiException e) {
                         throw new RuntimeException(e);
                     }
@@ -159,15 +234,27 @@ public class TelegramService extends TelegramLongPollingBot {
     }
 
     // send report pdf or excel if u want to send to more than one user, call ....InBatches
-    public void sendReports(Long chatId, String filePathOrUrl, String title, String creator) throws TelegramApiException {
+    private void sendReports(Long chatId,Long announcementId, String filePathOrUrl, String title, String creator) throws TelegramApiException {
         SendDocument sendDocumentRequest = new SendDocument();
         sendDocumentRequest.setChatId(chatId);
         InputFile file = new InputFile(filePathOrUrl);
         sendDocumentRequest.setDocument(file);
-        sendDocumentRequest.setCaption("Title : " +title + "\nSend By : " + creator);
+        sendDocumentRequest.setCaption("Title : " + title + "\nSend By : " + creator);
+        InlineKeyboardMarkup markupInline = new InlineKeyboardMarkup();
+        List<List<InlineKeyboardButton>> rowsInline = new ArrayList<>();
+        List<InlineKeyboardButton> rowInline = new ArrayList<>();
+        InlineKeyboardButton button = new InlineKeyboardButton();
+        button.setText("Click For Your Confirmation");
+        button.setCallbackData("seen_confirmed:"+ announcementId);
+        rowInline.add(button);
+        rowsInline.add(rowInline);
+        markupInline.setKeyboard(rowsInline);
+        sendDocumentRequest.setReplyMarkup(markupInline);
+        LOGGER.info("Before sending to : "+ chatId);
         execute(sendDocumentRequest);
     }
-    public void sendReportsInBatches(List<Long> chatIds, String filePath, String title, String creator) {
+
+    private void sendReportsInBatches(List<Long> chatIds,Long announcementId, String filePath, String title, String creator) {
         int batchSize = 30;
         int delay = 1; // 1-second delay between batches
         ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
@@ -176,7 +263,7 @@ public class TelegramService extends TelegramLongPollingBot {
             executor.schedule(() -> {
                 for (Long chatId : batch) {
                     try {
-                        sendReports(chatId, filePath, title , creator);
+                        sendReports(chatId,announcementId, filePath, title, creator);
                     } catch (TelegramApiException e) {
                         throw new RuntimeException(e);
                     }
@@ -187,14 +274,26 @@ public class TelegramService extends TelegramLongPollingBot {
     }
 
     //send audio if u want to send to more than one user, call ....InBatches
-    public void sendAudio(Long chatId, String fileUrl,String title, String senderName) throws TelegramApiException {
+    private void sendAudio(Long chatId,Long announcementId, String fileUrl, String title, String senderName) throws TelegramApiException {
         SendAudio sendAudio = new SendAudio();
         sendAudio.setChatId(chatId.toString());
         sendAudio.setAudio(new InputFile(fileUrl));
-        sendAudio.setCaption("Title : " + title  + "\nSent by: " + senderName);
+        sendAudio.setCaption("Title : " + title + "\nSent by: " + senderName);
+        InlineKeyboardMarkup markupInline = new InlineKeyboardMarkup();
+        List<List<InlineKeyboardButton>> rowsInline = new ArrayList<>();
+        List<InlineKeyboardButton> rowInline = new ArrayList<>();
+        InlineKeyboardButton button = new InlineKeyboardButton();
+        button.setText("Click For Your Confirmation");
+        button.setCallbackData("seen_confirmed:"+announcementId);
+        rowInline.add(button);
+        rowsInline.add(rowInline);
+        markupInline.setKeyboard(rowsInline);
+        sendAudio.setReplyMarkup(markupInline);
+        LOGGER.info("Before sending to : "+chatId);
         execute(sendAudio);
     }
-    public void sendAudioInBatches(List<Long> chatIds, String fileUrl,String title, String senderName) {
+
+    private void sendAudioInBatches(List<Long> chatIds,Long announcementId, String fileUrl, String title, String senderName) {
         int batchSize = 30;
         int delay = 1; // 1-second delay between batches
         ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
@@ -203,7 +302,7 @@ public class TelegramService extends TelegramLongPollingBot {
             executor.schedule(() -> {
                 for (Long chatId : batch) {
                     try {
-                        sendAudio(chatId, fileUrl,title, senderName);
+                        sendAudio(chatId,announcementId, fileUrl, title, senderName);
                     } catch (TelegramApiException e) {
                         throw new RuntimeException(e);
                     }
@@ -214,14 +313,26 @@ public class TelegramService extends TelegramLongPollingBot {
     }
 
     // send video if u want to send to more than one user, call ....InBatches
-    public void sendVideo(Long chatId, String fileUrl, String title, String senderName) throws TelegramApiException {
+    private void sendVideo(Long chatId,Long announcementId, String fileUrl, String title, String senderName) throws TelegramApiException {
         SendVideo sendVideo = new SendVideo();
         sendVideo.setChatId(chatId.toString());
         sendVideo.setVideo(new InputFile(fileUrl));
-        sendVideo.setCaption("Title : " + title  + "\nSent by: " + senderName);
+        sendVideo.setCaption("Title : " + title + "\nSent by: " + senderName);
+        InlineKeyboardMarkup markupInline = new InlineKeyboardMarkup();
+        List<List<InlineKeyboardButton>> rowsInline = new ArrayList<>();
+        List<InlineKeyboardButton> rowInline = new ArrayList<>();
+        InlineKeyboardButton button = new InlineKeyboardButton();
+        button.setText("Click For Your Confirmation");
+        button.setCallbackData("seen_confirmed:"+announcementId);
+        rowInline.add(button);
+        rowsInline.add(rowInline);
+        markupInline.setKeyboard(rowsInline);
+        sendVideo.setReplyMarkup(markupInline);
+        LOGGER.info("Before sending to : "+chatId);
         execute(sendVideo);
     }
-    public void sendVideoInBatches(List<Long> chatIds, String fileUrl, String filename, String senderName) {
+
+    private void sendVideoInBatches(List<Long> chatIds,Long announcementId, String fileUrl, String filename, String senderName) {
         int batchSize = 30;
         int delay = 1; // 1-second delay between batches
         ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
@@ -230,7 +341,7 @@ public class TelegramService extends TelegramLongPollingBot {
             executor.schedule(() -> {
                 for (Long chatId : batch) {
                     try {
-                        sendVideo(chatId, fileUrl, filename, senderName);
+                        sendVideo(chatId,announcementId, fileUrl, filename, senderName);
                     } catch (TelegramApiException e) {
                         throw new RuntimeException(e);
                     }
@@ -241,14 +352,26 @@ public class TelegramService extends TelegramLongPollingBot {
     }
 
     // send image if u want to send to more than one user, call ....InBatches
-    public void sendImage(Long chatId, String fileUrl, String title, String senderName) throws TelegramApiException {
+    private void sendImage(Long chatId,Long announcementId, String fileUrl, String title, String senderName) throws TelegramApiException {
         SendPhoto sendPhoto = new SendPhoto();
         sendPhoto.setChatId(chatId.toString());
         sendPhoto.setPhoto(new InputFile(fileUrl));
-        sendPhoto.setCaption("Title : " + title  + "\nSent by: " + senderName);
+        sendPhoto.setCaption("Title : " + title + "\nSent by: " + senderName);
+        InlineKeyboardMarkup markupInline = new InlineKeyboardMarkup();
+        List<List<InlineKeyboardButton>> rowsInline = new ArrayList<>();
+        List<InlineKeyboardButton> rowInline = new ArrayList<>();
+        InlineKeyboardButton button = new InlineKeyboardButton();
+        button.setText("Click For Your Confirmation");
+        button.setCallbackData("seen_confirmed:"+announcementId);
+        rowInline.add(button);
+        rowsInline.add(rowInline);
+        markupInline.setKeyboard(rowsInline);
+        sendPhoto.setReplyMarkup(markupInline);
+        LOGGER.info("Before sending to :"+ chatId);
         execute(sendPhoto);
     }
-    public void sendImageInBatches(List<Long> chatIds, String fileUrl, String title, String senderName) {
+
+    private void sendImageInBatches(List<Long> chatIds,Long announcementId, String fileUrl, String title, String senderName) {
         int batchSize = 30;
         int delay = 1; // 1-second delay between batches
         ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
@@ -257,7 +380,7 @@ public class TelegramService extends TelegramLongPollingBot {
             executor.schedule(() -> {
                 for (Long chatId : batch) {
                     try {
-                        sendImage(chatId, fileUrl, title, senderName);
+                        sendImage(chatId,announcementId, fileUrl, title, senderName);
                     } catch (TelegramApiException e) {
                         throw new RuntimeException(e);
                     }
@@ -268,18 +391,31 @@ public class TelegramService extends TelegramLongPollingBot {
     }
 
     // change bot profile
-    public void setProfile(String photoFilePath) throws TelegramApiException {
-        SetChatPhoto setChatPhoto = new SetChatPhoto();
-        setChatPhoto.setChatId(getMe().getId().toString());
-        setChatPhoto.setPhoto(new InputFile((photoFilePath)));
-        execute(setChatPhoto);
-        System.out.println("Profile picture updated successfully.");
-    }
-
-//    public void getChatId() {
-//        List<Long> chatIdList = EMPLOYEE_SERVICE.getAllChatId();
+//    public void setProfile(String photoFilePath) throws TelegramApiException {
+//        SetChatPhoto setChatPhoto = new SetChatPhoto();
+//        setChatPhoto.setChatId(getMe().getId().toString());
+//        setChatPhoto.setPhoto(new InputFile((photoFilePath)));
+//        execute(setChatPhoto);
+//        System.out.println("Profile picture updated successfully.");
 //    }
 
+//    public void sendMessageForNotice(Long chatId) throws TelegramApiException {
+//        SendMessage message = new SendMessage();
+//        message.setChatId(chatId);
+//        message.setText("Please confirm you've seen this message.");
+//        // Create an inline keyboard
+//        InlineKeyboardMarkup markupInline = new InlineKeyboardMarkup();
+//        List<List<InlineKeyboardButton>> rowsInline = new ArrayList<>();
+//        List<InlineKeyboardButton> rowInline = new ArrayList<>();
+//        InlineKeyboardButton button = new InlineKeyboardButton();
+//        button.setText("I've seen this");
+//        button.setCallbackData("seen_confirmed");
+//        rowInline.add(button);
+//        rowsInline.add(rowInline);
+//        markupInline.setKeyboard(rowsInline);
+//        message.setReplyMarkup(markupInline);
+//        execute(message);
+//    }
 
 
 }

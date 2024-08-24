@@ -6,9 +6,12 @@ import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface TargetRepository extends JpaRepository<Target, Long> {
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     Optional<Target> findByAnnouncementAndReceiverTypeAndSendTo(Announcement announcement, ReceiverType receiverType, Long sendTo);
+
+    List<Target> findByAnnouncement(Announcement announcement);
 }

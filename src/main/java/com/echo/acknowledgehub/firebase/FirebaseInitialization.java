@@ -19,12 +19,7 @@ public class FirebaseInitialization {
         FileInputStream serviceAccount =
                 null;
         try {
-
-        //    serviceAccount = new FileInputStream("C:\\AcknowledgeHub\\AcknowledgeHub\\src\\main\\resources\\serviceAccountKey.json");
-
             serviceAccount = new FileInputStream("E:\\AcknowledgeHub - TeamEcho\\acknowledgehub\\src\\main\\resources\\serviceAccountKey.json");
-
-
             FirebaseOptions options = new FirebaseOptions.Builder()
                     .setCredentials(GoogleCredentials.fromStream(serviceAccount))
                     .setDatabaseUrl("https://cheatsheet1-d5b26.firebaseio.com/")

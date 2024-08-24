@@ -16,6 +16,7 @@ public class AnnouncementDTO {
     private String filename;
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSX")
     private LocalDateTime createdAt;
+    private String scheduleOption;
     private Long categoryId;
     private String categoryName;
     private String createdBy;

@@ -42,11 +42,9 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception {
-
         return httpSecurity
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(
-
                         request ->
                                 request
                                         // Configure routes to allow access for all users.
@@ -67,10 +65,9 @@ public class SecurityConfig {
                                         .requestMatchers(BASE_URL + "/sf/**").hasRole(EmployeeRole.STAFF.name())
                                         // Configure routes to allow access for main HR & 'company/HR' subdirectory.
                                         .requestMatchers(BASE_URL + "/mhr/**").hasAnyRole(EmployeeRole.MAIN_HR.name(), EmployeeRole.HR.name())
-                                        .requestMatchers(BASE_URL + "/announcement/create").hasAnyRole(EmployeeRole.MAIN_HR.name(), EmployeeRole.HR.name(),
+                                        .requestMatchers(BASE_URL + "/announcement/create", BASE_URL + "/get-companies", BASE_URL + "/getCompanyById/**",
+                                                BASE_URL + "/get-categories").hasAnyRole(EmployeeRole.MAIN_HR.name(), EmployeeRole.HR.name(),
                                                                                                                     EmployeeRole.MAIN_HR_ASSISTANCE.name(),EmployeeRole.HR_ASSISTANCE.name())
-
-
                 )
                 .userDetailsService(USER_DETAILS_SERVICE)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

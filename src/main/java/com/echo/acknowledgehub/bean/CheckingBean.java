@@ -13,11 +13,13 @@ public class CheckingBean {
     private EmployeeRole role;
     private String name;
     private Long id;
+    private Long companyId;
 
     public void refresh() {
         this.status = null;
         this.role = null;
         this.name = null;
         this.id = null;
+        this.companyId = null;
     }
 }

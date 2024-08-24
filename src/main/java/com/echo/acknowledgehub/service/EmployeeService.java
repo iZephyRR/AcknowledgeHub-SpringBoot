@@ -5,13 +5,9 @@ import com.echo.acknowledgehub.dto.UserDTO;
 import com.echo.acknowledgehub.entity.Employee;
 import com.echo.acknowledgehub.exception_handler.UserNotFoundException;
 import com.echo.acknowledgehub.repository.EmployeeRepository;
-import com.echo.acknowledgehub.util.JWTService;
-import com.echo.acknowledgehub.util.XlsxReader;
 import lombok.AllArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.scheduling.annotation.Async;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,28 +29,31 @@ public class EmployeeService {
     @Async
     public CompletableFuture<Optional<Employee>> findById(Long id) {
         return CompletableFuture.completedFuture(EMPLOYEE_REPOSITORY.findById(id));
-}
+    }
 
     @Async
     public CompletableFuture<Optional<Employee>> findByEmail(String email) {
         return CompletableFuture.completedFuture(EMPLOYEE_REPOSITORY.findByEmail(email));
     }
+
     @Async
     public CompletableFuture<List<Long>> findByDepartmentId(Long departmentId) {
         return CompletableFuture.completedFuture(EMPLOYEE_REPOSITORY.findByDepartmentId(departmentId));
     }
+
     @Async
     public CompletableFuture<List<Long>> findByCompanyId(Long companyId) {
         return CompletableFuture.completedFuture(EMPLOYEE_REPOSITORY.findByCompanyId(companyId));
     }
+
     @Transactional
     @Async
-    public CompletableFuture<Void> updatePassword(ChangePasswordDTO changePasswordDTO){
-        int updatedRows = EMPLOYEE_REPOSITORY.updatePassword(changePasswordDTO.getId(),PASSWORD_ENCODER.encode(changePasswordDTO.getPassword()));
-        LOGGER.info("Updated rows : "+updatedRows);
-        if(updatedRows>0){
+    public CompletableFuture<Void> updatePassword(ChangePasswordDTO changePasswordDTO) {
+        int updatedRows = EMPLOYEE_REPOSITORY.updatePassword(changePasswordDTO.getId(), PASSWORD_ENCODER.encode(changePasswordDTO.getPassword()));
+        LOGGER.info("Updated rows : " + updatedRows);
+        if (updatedRows > 0) {
             return CompletableFuture.completedFuture(null);
-        }else{
+        } else {
             return null;
         }
     }
@@ -78,6 +77,8 @@ public class EmployeeService {
         users.forEach(user -> this.save(user).thenAccept(employees::add));
         return CompletableFuture.completedFuture(employees);
     }
+
+
 
 //    @Async
 //    public CompletableFuture<List<Employee>> saveAll(MultipartFile users) throws IOException {
@@ -165,6 +166,20 @@ public class EmployeeService {
         return EMPLOYEE_REPOSITORY.getTelegramChatId(username);
     }
 
-    public List<Long> getAllChatId() { return  EMPLOYEE_REPOSITORY.getAllChatId(); }
+    public List<Long> getAllChatId() {
+        return EMPLOYEE_REPOSITORY.getAllChatId();
+    }
+
+    public List<Employee> getEmployeesByDepartmentId(Long departmentId) {
+        return EMPLOYEE_REPOSITORY.getByDepartmentId(departmentId);
+    }
+
+    public List<Long> getAllChatIdByCompanyId(Long companyId) {
+        return EMPLOYEE_REPOSITORY.getAllChatIdByCompanyId(companyId);
+    }
+
+    public List<Long> getAllChatIdByDepartmentId(Long departmentId) {
+        return EMPLOYEE_REPOSITORY.getAllChatIdByDepartmentId(departmentId);
+    }
 
 }

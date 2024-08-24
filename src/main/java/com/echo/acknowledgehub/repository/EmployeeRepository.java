@@ -38,4 +38,14 @@ public interface EmployeeRepository extends JpaRepository <Employee,Long>{
 
    @Query("select em.id from Employee em where em.company.id = :companyId")
    List<Long> findByCompanyId(@Param("companyId") Long companyId);
+
+   @Query("select em from Employee em where em.department.id = :departmentId")
+   List<Employee> getByDepartmentId(@Param("departmentId") Long departmentId);
+
+   @Query("select em.telegramUserId from Employee em where em.company.id = :companyId")
+   List<Long> getAllChatIdByCompanyId(@Param("companyId") Long companyId);
+
+   @Query("select em.telegramUserId from Employee em where em.department.id = :departmentId")
+   List<Long> getAllChatIdByDepartmentId(@Param("departmentId") Long departmentId);
+
 }
