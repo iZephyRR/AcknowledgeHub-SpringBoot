@@ -2,9 +2,13 @@ package com.echo.acknowledgehub.entity;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "department")
@@ -22,6 +26,10 @@ public class Department {
   @JoinColumn(name = "company_id", nullable = false)
   @JsonBackReference
   private Company company;
+
+  @OneToMany(mappedBy = "department", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+  @JsonManagedReference
+  private List<Employee> employees = new ArrayList<>();
 
 //  @ManyToOne(cascade = CascadeType.MERGE)
 //  @JoinColumn(name = "company_id", nullable = false)

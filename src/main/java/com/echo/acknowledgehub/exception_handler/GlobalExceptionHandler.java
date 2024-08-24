@@ -12,9 +12,11 @@ import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.async.AsyncRequestTimeoutException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiRequestException;
 import java.io.IOException;
+import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletionException;
@@ -45,6 +47,9 @@ public class GlobalExceptionHandler {
         STATUS_MAP.put(DuplicatedEnteryException.class, new ErrorResponseDTO(HttpStatus.BAD_REQUEST.value(), null));
         STATUS_MAP.put(CompletionException.class, new ErrorResponseDTO(HttpStatus.BAD_REQUEST.value(), null));
         STATUS_MAP.put(UpdatePasswordException.class, new ErrorResponseDTO(HttpStatus.BAD_REQUEST.value(), null));
+        STATUS_MAP.put(MaxUploadSizeExceededException.class, new ErrorResponseDTO(HttpStatus.BAD_REQUEST.value(), null));
+        STATUS_MAP.put(UnknownHostException.class, new ErrorResponseDTO(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Please try again later"));
+
         //Can add more exception that you want to handle.
     }
 
@@ -60,6 +65,9 @@ public class GlobalExceptionHandler {
         }else {
             ERROR_RESPONSE.setMessage(errorResponse.getMessage());
         }
-        return new ResponseEntity<>(ERROR_RESPONSE, HttpStatus.valueOf(ERROR_RESPONSE.getErrorCode()));
+        ResponseEntity<ErrorResponseDTO> responseDTOResponseEntity=new ResponseEntity<>(ERROR_RESPONSE, HttpStatus.valueOf(ERROR_RESPONSE.getErrorCode()));
+        System.out.println("Response : "+responseDTOResponseEntity);
+        return responseDTOResponseEntity;
     }
+
 }

@@ -1,5 +1,6 @@
 package com.echo.acknowledgehub.service;
 
+import com.echo.acknowledgehub.constant.AnnouncementStatus;
 import com.echo.acknowledgehub.entity.Announcement;
 import com.echo.acknowledgehub.repository.AnnouncementRepository;
 import lombok.AllArgsConstructor;
@@ -34,7 +35,6 @@ public class AnnouncementService {
     }
 
     public Announcement save(Announcement announcement) throws IOException {
-        LOGGER.info("in announcement service");
          return ANNOUNCEMENT_REPOSITORY.save(announcement);
     }
 
@@ -50,6 +50,10 @@ public class AnnouncementService {
 
     public List<Announcement> getAnnouncementsForMonth(LocalDateTime startDateTime, LocalDateTime endDateTime) {
         return ANNOUNCEMENT_REPOSITORY.findAllByDateBetween(startDateTime, endDateTime);
+    }
+
+    public List<Announcement> findPendingAnnouncementsScheduledForNow(LocalDateTime now) {
+        return ANNOUNCEMENT_REPOSITORY.findByStatusAndScheduledTime(AnnouncementStatus.PENDING, now); // AnnouncementStatus.PENDING
     }
 
     public Map<String, List<Announcement>> getAnnouncementsForAugToOct2024() {

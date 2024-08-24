@@ -24,13 +24,11 @@ public class NotificationController {
     }
 
     public void sendNotification(NotificationDTO notificationDTO, Long loggedInId) {
-
         simpMessagingTemplate.convertAndSend("/topic/notifications", notificationDTO);
         saveNotificationToFirestore(notificationDTO, loggedInId);
     }
 
     private void saveNotificationToFirestore(NotificationDTO notificationDTO, Long loggedInId) {
-
         Firestore db = FirestoreClient.getFirestore();
         ApiFuture<QuerySnapshot> future = db.collection("notifications")
                 .whereEqualTo("targetId", notificationDTO.getTargetId())
