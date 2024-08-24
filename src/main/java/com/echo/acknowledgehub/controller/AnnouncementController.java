@@ -4,6 +4,7 @@ import com.echo.acknowledgehub.bean.CheckingBean;
 import com.echo.acknowledgehub.constant.AnnouncementStatus;
 import com.echo.acknowledgehub.constant.ContentType;
 import com.echo.acknowledgehub.constant.EmployeeRole;
+import com.echo.acknowledgehub.constant.IsSchedule;
 import com.echo.acknowledgehub.dto.AnnouncementDTO;
 import com.echo.acknowledgehub.dto.TargetDTO;
 import com.echo.acknowledgehub.entity.Announcement;
@@ -41,6 +42,8 @@ public class AnnouncementController {
     private final CheckingBean CHECKING_BEAN;
     private final ModelMapper MODEL_MAPPER;
     private final EmployeeService EMPLOYEE_SERVICE;
+    private final CompanyService COMPANY_SERVICE;
+    private final DepartmentService DEPARTMENT_SERVICE;
     private final AnnouncementCategoryService ANNOUNCEMENT_CATEGORY_SERVICE;
     private final TelegramService TELEGRAM_SERVICE;
     private final CloudinaryServiceImpl CLOUDINARY_SERVICE_IMP;
@@ -52,9 +55,9 @@ public class AnnouncementController {
     @Scheduled(fixedRate = 60000) // Runs every minute
     public void checkPendingAnnouncements() throws IOException {
         LocalDateTime now = LocalDateTime.now();
-        List<Announcement> pendingAnnouncements = ANNOUNCEMENT_SERVICE.findPendingAnnouncementsScheduledForNow(now);
+        List<Announcement> pendingAnnouncementsScheduled = ANNOUNCEMENT_SERVICE.findPendingAnnouncementsScheduledForNow(now);
         LOGGER.info("in schedule");
-        for (Announcement announcement : pendingAnnouncements) {
+        for (Announcement announcement : pendingAnnouncementsScheduled) {
             announcement.setStatus(AnnouncementStatus.APPROVED);
             ANNOUNCEMENT_SERVICE.save(announcement);
             List<Target> targetList = targetStorage.get(announcement.getId());
@@ -81,20 +84,37 @@ public class AnnouncementController {
         ObjectMapper objectMapper = new ObjectMapper();
         List<TargetDTO> targetDTOList = objectMapper.readValue(announcementDTO.getTarget(), new TypeReference<List<TargetDTO>>() {
         });
-
         String token = authHeader.substring(7);
         Long loggedInId = Long.parseLong(JWT_SERVICE.extractId(token));
-
         CompletableFuture<Employee> conFuEmployee = EMPLOYEE_SERVICE.findById(loggedInId)
                 .thenApply(optionalEmployee -> optionalEmployee.orElseThrow(() -> new NoSuchElementException("Employee not found")));
         Optional<AnnouncementCategory> optionalAnnouncementCategory = ANNOUNCEMENT_CATEGORY_SERVICE.findById(announcementDTO.getCategoryId());
         AnnouncementCategory category = optionalAnnouncementCategory.orElse(null);
+        validateTargets(targetDTOList); // validate targets are exist or not
+        String scheduleOption = announcementDTO.getScheduleOption();
+        if (!"later".equals(scheduleOption) && !"now".equals(scheduleOption)) {
+            throw new IllegalArgumentException("Invalid option");
+        }
         AnnouncementStatus status = AnnouncementStatus.PENDING;
-        if (!announcementDTO.getScheduleOption().equals("later") &&
-                (CHECKING_BEAN.getRole() == EmployeeRole.MAIN_HR || CHECKING_BEAN.getRole() == EmployeeRole.HR)) {
-            status = AnnouncementStatus.APPROVED;
+        IsSchedule isSchedule = IsSchedule.FALSE;
+        if (CHECKING_BEAN.getRole() == EmployeeRole.MAIN_HR || CHECKING_BEAN.getRole() == EmployeeRole.HR) {
+            if (announcementDTO.getScheduleOption().equals("later")) {
+                status = AnnouncementStatus.PENDING;
+                isSchedule = IsSchedule.TRUE;
+            } else {
+                status = AnnouncementStatus.APPROVED;
+                isSchedule = IsSchedule.FALSE;
+            }
+        } else {
+            status = AnnouncementStatus.PENDING;
+            if (announcementDTO.getScheduleOption().equals("later")) {
+                isSchedule = IsSchedule.TRUE;
+            } else {
+                isSchedule = IsSchedule.FALSE;
+            }
         }
         announcementDTO.setStatus(status);
+        announcementDTO.setIsSchedule(isSchedule);
         String contentType = announcementDTO.getFile().getContentType();
         Announcement entity = MODEL_MAPPER.map(announcementDTO, Announcement.class);
         entity.setEmployee(conFuEmployee.join());
@@ -138,6 +158,28 @@ public class AnnouncementController {
             }
         } else {
             targetStorage.put(announcement.getId(), targetList);
+        }
+    }
+    private void validateTargets(List<TargetDTO> targetDTOList) {
+        for (TargetDTO targetDTO : targetDTOList) {
+            String receiverType = targetDTO.getReceiverType();
+            Long sendTo = targetDTO.getSendTo();
+
+            if ("COMPANY".equals(receiverType)) {
+                if (!COMPANY_SERVICE.existsById(sendTo)) {
+                    throw new NoSuchElementException("Company does not exist.");
+                }
+            } else if ("DEPARTMENT".equals(receiverType)) {
+                if (!DEPARTMENT_SERVICE.existsById(sendTo)) {
+                    throw new NoSuchElementException("Department does not exist.");
+                }
+            } else if ("EMPLOYEE".equals(receiverType)) {
+                if (!EMPLOYEE_SERVICE.existsById(sendTo)) {
+                    throw new NoSuchElementException("Employee does not exist.");
+                }
+            } else {
+                throw new IllegalArgumentException("Invalid receiver type: " + receiverType);
+            }
         }
     }
 

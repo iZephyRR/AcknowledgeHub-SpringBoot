@@ -39,4 +39,7 @@ public class DepartmentService {
     }
 
 
+    public boolean existsById(Long sendTo) {
+        return DEPARTMENT_REPOSITORY.existsById(sendTo);
+    }
 }

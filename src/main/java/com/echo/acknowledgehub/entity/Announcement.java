@@ -2,6 +2,7 @@ package com.echo.acknowledgehub.entity;
 
 import com.echo.acknowledgehub.constant.AnnouncementStatus;
 import com.echo.acknowledgehub.constant.ContentType;
+import com.echo.acknowledgehub.constant.IsSchedule;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
@@ -28,6 +29,8 @@ public class Announcement {
     @Enumerated(EnumType.STRING)
     @Column(name = "contentType", nullable = false)
     private ContentType contentType;
+    @Column(name ="isSchedule", nullable = false)
+    private IsSchedule isSchedule;
     @JsonIgnore
     @ManyToOne(cascade = CascadeType.MERGE)
     @JoinColumn(name = "hr_id" ,nullable = false)

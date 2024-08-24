@@ -3,6 +3,7 @@ package com.echo.acknowledgehub.service;
 import com.echo.acknowledgehub.constant.ContentType;
 import com.echo.acknowledgehub.entity.Employee;
 import com.echo.acknowledgehub.entity.TelegramGroup;
+import lombok.AllArgsConstructor;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
@@ -28,6 +29,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 @Service
+@AllArgsConstructor
 public class TelegramService extends TelegramLongPollingBot {
 
     private static final Logger LOGGER = Logger.getLogger(TelegramService.class.getName());
@@ -35,13 +37,6 @@ public class TelegramService extends TelegramLongPollingBot {
     private final String BOT_TOKEN;
     private final EmployeeService EMPLOYEE_SERVICE;
     private final TelegramGroupService TELEGRAM_GROUP_SERVICE;
-
-    public TelegramService(String botUsername, String botToken, EmployeeService employeeService, TelegramGroupService telegramGroupService) {
-        this.BOT_USERNAME = botUsername;
-        this.BOT_TOKEN = botToken;
-        this.EMPLOYEE_SERVICE = employeeService;
-        this.TELEGRAM_GROUP_SERVICE = telegramGroupService;
-    }
 
     @Override
     public String getBotUsername() {
@@ -61,15 +56,16 @@ public class TelegramService extends TelegramLongPollingBot {
             String callbackData = callbackQuery.getData();
             LocalDateTime now = LocalDateTime.now();
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-            String formattedNow = now.format(formatter);
+            String formattedNow = now.format(formatter); // to save firebase
             if (callbackData.startsWith("seen_confirmed:")) {
                 String[] dataParts = callbackData.split(":");
-                String announcementId = dataParts[1];
+                long announcementId = Long.parseLong(dataParts[1]); // to save firebase
                 User user = callbackQuery.getFrom();
                 String username = user.getUserName();
                 Long chatId = user.getId();
-                LOGGER.info("User " + username + " clicked for announcement " + announcementId + " at " + formattedNow);
-                updateCaption(callbackQuery,username,chatId);
+                Long employeeId = EMPLOYEE_SERVICE.getEmployeeIdByTelegramUsername(username); // to save firebase
+                LOGGER.info("User " + username +" userId "+ employeeId + " clicked for announcement " + announcementId + " at " + formattedNow);
+                updateCaption(callbackQuery,chatId);
             }
         } else if (updateInfo.hasMessage()) {
             try {
@@ -82,14 +78,12 @@ public class TelegramService extends TelegramLongPollingBot {
         }
     }
 
-    private void updateCaption(CallbackQuery callbackQuery, String username, Long chatId){
+    private void updateCaption(CallbackQuery callbackQuery, Long chatId){
         EditMessageCaption editMessage = new EditMessageCaption();
         editMessage.setChatId(callbackQuery.getMessage().getChatId().toString());
         editMessage.setMessageId(callbackQuery.getMessage().getMessageId());
-        // Append the confirmation to the original caption
         String newCaption = callbackQuery.getMessage().getCaption() + "\n\nThanks";
         editMessage.setCaption(newCaption);
-        // Remove the inline keyboard (set reply markup to null)
         editMessage.setReplyMarkup(null);
         try {
             execute(editMessage);
@@ -100,8 +94,6 @@ public class TelegramService extends TelegramLongPollingBot {
     }
 
     private void sendMessageAfterNotice(long chatId) throws TelegramApiException {
-//        Long chatId = getChatIdByUsername(username);
-//        LOGGER.info(username +" + "+ chatId);
         SendMessage message = new SendMessage();
         message.setChatId(chatId);
         message.setText("Thank you for your noted");

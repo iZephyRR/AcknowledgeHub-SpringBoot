@@ -48,4 +48,7 @@ public interface EmployeeRepository extends JpaRepository <Employee,Long>{
    @Query("select em.telegramUserId from Employee em where em.department.id = :departmentId")
    List<Long> getAllChatIdByDepartmentId(@Param("departmentId") Long departmentId);
 
+   @Query("SELECT e.id FROM Employee e WHERE e.telegramUsername = :telegramUsername")
+   Long getEmployeeIdByTelegramUsername(@Param("telegramUsername") String telegramUsername);
+
 }

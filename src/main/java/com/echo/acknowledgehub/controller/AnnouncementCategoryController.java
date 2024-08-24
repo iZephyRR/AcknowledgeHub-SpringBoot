@@ -20,20 +20,14 @@ public class AnnouncementCategoryController {
 
     private final AnnouncementCategoryService ANNOUNCEMENT_CATEGORY_SERVICE;
 
-@PostMapping("/create")
-public AnnouncementCategory createCategory(@RequestBody AnnouncementCategory category) {
-    return ANNOUNCEMENT_CATEGORY_SERVICE.save(category).join();
-}
-
     @PostMapping("/create-category")
     public AnnouncementCategory createCategory(@RequestBody AnnouncementCategory category) {
         return ANNOUNCEMENT_CATEGORY_SERVICE.save(category).join();
     }
-  //  @PostMapping("/mr/create-category")
-   // public CompletableFuture<ResponseEntity<AnnouncementCategory>> createCategory(@RequestBody AnnouncementCategory category) {
-   //     return ANNOUNCEMENT_CATEGORY_SERVICE.save(category)
+    //  @PostMapping("/mr/create-category")
+    // public CompletableFuture<ResponseEntity<AnnouncementCategory>> createCategory(@RequestBody AnnouncementCategory category) {
+    //     return ANNOUNCEMENT_CATEGORY_SERVICE.save(category)
     //            .thenApply(savedCategory -> new ResponseEntity<>(savedCategory, HttpStatus.CREATED));
-
 
 
     @GetMapping("/get-all")
@@ -43,7 +37,7 @@ public AnnouncementCategory createCategory(@RequestBody AnnouncementCategory cat
 
     @PutMapping("/disable/{id}")
     public Integer softDeleteCategory(@PathVariable("id") Long id) {
-    LOGGER.info("Id : "+id);
+        LOGGER.info("Id : " + id);
         return ANNOUNCEMENT_CATEGORY_SERVICE.softDelete(id).join();
 
 
@@ -51,14 +45,12 @@ public AnnouncementCategory createCategory(@RequestBody AnnouncementCategory cat
 
     @PutMapping("/mr/undelete-category/{id}")
     public CompletableFuture<Integer> softUndeleteCategory(@PathVariable("id") Long id) {
-      return  ANNOUNCEMENT_CATEGORY_SERVICE.softUndelete(id);  // Implement soft undelete logic
-
-    @PutMapping("/enable/{id}")
-    public Integer softUndeleteCategory(@PathVariable("id") Long id) {
-      return  ANNOUNCEMENT_CATEGORY_SERVICE.softUndelete(id).join();
-
-
-
+        return ANNOUNCEMENT_CATEGORY_SERVICE.softUndelete(id);  // Implement soft undelete logic
     }
+
+//    @PutMapping("/enable/{id}")
+//    public Integer softUndeleteCategory (@PathVariable("id") Long id) {
+//        return ANNOUNCEMENT_CATEGORY_SERVICE.softUndelete(id).join();
+//    }
 
 }

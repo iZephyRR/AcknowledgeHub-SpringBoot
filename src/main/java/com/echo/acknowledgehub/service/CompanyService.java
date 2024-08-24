@@ -39,4 +39,8 @@ public class CompanyService {
     public Optional<Company> getCompanyById(Long id){
         return COMPANY_REPOSITORY.findById(id);
     }
+
+    public boolean existsById(Long sendTo) {
+        return COMPANY_REPOSITORY.existsById(sendTo);
+    }
 }

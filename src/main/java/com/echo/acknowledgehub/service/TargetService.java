@@ -29,27 +29,27 @@ public class TargetService {
     public synchronized void insertTargetWithNotifications(List<Target> targetList, Announcement announcement) {
         List<Target> targets = TARGET_REPOSITORY.saveAll(targetList);
         // Handle notifications based on the receiver type
-//        for (Target target : targets) {
-//            switch (target.getReceiverType()) {
-//                case EMPLOYEE:
-//                    LOGGER.info("case employee");
-//                    createNotificationForEmployee(target.getSendTo(), announcement);
-//                    break;
-//                case DEPARTMENT:
-//                    LOGGER.info("case department");
-//                    createNotificationsForDepartment(target.getSendTo(), announcement);
-//                    break;
-//                case COMPANY:
-//                    LOGGER.info("case company");
-//                    createNotificationsForCompany(target.getSendTo(), announcement);
-//                    break;
-//                case CUSTOM:
-//                    // Handle custom logic if necessary
-//                    break;
-//                default:
-//                    LOGGER.warning("Unknown receiver type: " + target.getReceiverType());
-//            }
-//        }
+        for (Target target : targets) {
+            switch (target.getReceiverType()) {
+                case EMPLOYEE:
+                    LOGGER.info("case employee");
+                    createNotificationForEmployee(target.getSendTo(), announcement);
+                    break;
+                case DEPARTMENT:
+                    LOGGER.info("case department");
+                    createNotificationsForDepartment(target.getSendTo(), announcement);
+                    break;
+                case COMPANY:
+                    LOGGER.info("case company");
+                    createNotificationsForCompany(target.getSendTo(), announcement);
+                    break;
+                case CUSTOM:
+                    // Handle custom logic if necessary
+                    break;
+                default:
+                    LOGGER.warning("Unknown receiver type: " + target.getReceiverType());
+            }
+        }
     }
 
     private void createNotificationForEmployee(Long employeeId, Announcement announcement) {

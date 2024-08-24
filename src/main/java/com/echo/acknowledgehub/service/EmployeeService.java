@@ -78,6 +78,10 @@ public class EmployeeService {
         return CompletableFuture.completedFuture(employees);
     }
 
+    public Long getEmployeeIdByTelegramUsername(String telegramUsername) {
+        return EMPLOYEE_REPOSITORY.getEmployeeIdByTelegramUsername(telegramUsername);
+    }
+
 
 
 //    @Async
@@ -182,4 +186,7 @@ public class EmployeeService {
         return EMPLOYEE_REPOSITORY.getAllChatIdByDepartmentId(departmentId);
     }
 
+    public boolean existsById(Long sendTo) {
+        return EMPLOYEE_REPOSITORY.existsById(sendTo);
+    }
 }

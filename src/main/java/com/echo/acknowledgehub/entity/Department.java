@@ -31,10 +31,6 @@ public class Department {
   @JsonManagedReference
   private List<Employee> employees = new ArrayList<>();
 
-//  @ManyToOne(cascade = CascadeType.MERGE)
-//  @JoinColumn(name = "company_id", nullable = false)
-//  private Company company;
-
   public Department (String name, Long companyId){
     this.name=name;
     this.company.setId(companyId);

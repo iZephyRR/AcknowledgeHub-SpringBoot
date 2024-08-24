@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.concurrent.CompletionException;
 import java.util.logging.Logger;
 
@@ -49,7 +50,8 @@ public class GlobalExceptionHandler {
         STATUS_MAP.put(UpdatePasswordException.class, new ErrorResponseDTO(HttpStatus.BAD_REQUEST.value(), null));
         STATUS_MAP.put(MaxUploadSizeExceededException.class, new ErrorResponseDTO(HttpStatus.BAD_REQUEST.value(), null));
         STATUS_MAP.put(UnknownHostException.class, new ErrorResponseDTO(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Please try again later"));
-
+        STATUS_MAP.put(NoSuchElementException.class, new ErrorResponseDTO(HttpStatus.INTERNAL_SERVER_ERROR.value(), null));
+        STATUS_MAP.put(IllegalArgumentException.class, new ErrorResponseDTO(HttpStatus.INTERNAL_SERVER_ERROR.value(), null));
         //Can add more exception that you want to handle.
     }
 
