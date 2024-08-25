@@ -51,8 +51,7 @@ public class AnnouncementController {
     private final NotificationController NOTIFICATION_CONTROLLER;
     private final TargetRepository TARGET_REPOSITORY;
 
-    @Async
-    @Scheduled(fixedRate = 60000) // Runs every minute
+    @Scheduled(fixedRate = 60000)
     public void checkPendingAnnouncements() throws IOException {
         LocalDateTime now = LocalDateTime.now();
         List<Announcement> pendingAnnouncementsScheduled = ANNOUNCEMENT_SERVICE.findPendingAnnouncementsScheduledForNow(now);
@@ -95,8 +94,8 @@ public class AnnouncementController {
         if (!"later".equals(scheduleOption) && !"now".equals(scheduleOption)) {
             throw new IllegalArgumentException("Invalid option");
         }
-        AnnouncementStatus status = AnnouncementStatus.PENDING;
-        IsSchedule isSchedule = IsSchedule.FALSE;
+        AnnouncementStatus status ;
+        IsSchedule isSchedule;
         if (CHECKING_BEAN.getRole() == EmployeeRole.MAIN_HR || CHECKING_BEAN.getRole() == EmployeeRole.HR) {
             if (announcementDTO.getScheduleOption().equals("later")) {
                 status = AnnouncementStatus.PENDING;
@@ -108,7 +107,7 @@ public class AnnouncementController {
         } else {
             status = AnnouncementStatus.PENDING;
             if (announcementDTO.getScheduleOption().equals("later")) {
-                isSchedule = IsSchedule.TRUE;
+                isSchedule = IsSchedule.TRUE_APPROVED;
             } else {
                 isSchedule = IsSchedule.FALSE;
             }
@@ -160,11 +159,11 @@ public class AnnouncementController {
             targetStorage.put(announcement.getId(), targetList);
         }
     }
+
     private void validateTargets(List<TargetDTO> targetDTOList) {
         for (TargetDTO targetDTO : targetDTOList) {
             String receiverType = targetDTO.getReceiverType();
             Long sendTo = targetDTO.getSendTo();
-
             if ("COMPANY".equals(receiverType)) {
                 if (!COMPANY_SERVICE.existsById(sendTo)) {
                     throw new NoSuchElementException("Company does not exist.");
