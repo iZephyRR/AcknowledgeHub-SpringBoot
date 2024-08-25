@@ -1,5 +1,6 @@
 package com.echo.acknowledgehub.service;
 
+import com.echo.acknowledgehub.constant.AnnouncementStatus;
 import com.echo.acknowledgehub.entity.Announcement;
 import com.echo.acknowledgehub.repository.AnnouncementRepository;
 import lombok.AllArgsConstructor;
@@ -34,7 +35,6 @@ public class AnnouncementService {
     }
 
     public Announcement save(Announcement announcement) throws IOException {
-        LOGGER.info("in announcement service");
          return ANNOUNCEMENT_REPOSITORY.save(announcement);
     }
 
@@ -52,9 +52,12 @@ public class AnnouncementService {
         return ANNOUNCEMENT_REPOSITORY.findAllByDateBetween(startDateTime, endDateTime);
     }
 
+    public List<Announcement> findPendingAnnouncementsScheduledForNow(LocalDateTime now) {
+        return ANNOUNCEMENT_REPOSITORY.findByStatusAndScheduledTime(AnnouncementStatus.PENDING, now); // AnnouncementStatus.PENDING
+    }
+
     public Map<String, List<Announcement>> getAnnouncementsForAugToOct2024() {
         Map<String, List<Announcement>> announcementsByMonth = new LinkedHashMap<>();
-
         // Define the start and end dates for August, September, and October
         LocalDateTime startOfAugust = LocalDateTime.of(2024, 8, 1, 0, 0);
         LocalDateTime endOfAugust = LocalDateTime.of(2024, 8, 31, 23, 59, 59);
@@ -64,7 +67,6 @@ public class AnnouncementService {
 
         LocalDateTime startOfOctober = LocalDateTime.of(2024, 10, 1, 0, 0);
         LocalDateTime endOfOctober = LocalDateTime.of(2024, 10, 31, 23, 59, 59);
-
         // Fetch announcements for each month and add them to the map
         announcementsByMonth.put("August", getAnnouncementsForMonth(startOfAugust, endOfAugust));
         announcementsByMonth.put("September", getAnnouncementsForMonth(startOfSeptember, endOfSeptember));
@@ -72,4 +74,6 @@ public class AnnouncementService {
 
         return announcementsByMonth;
     }
+
+
 }

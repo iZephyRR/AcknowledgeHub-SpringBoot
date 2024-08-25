@@ -1,6 +1,8 @@
 package com.echo.acknowledgehub.service;
 
+import com.echo.acknowledgehub.dto.UserDTO;
 import com.echo.acknowledgehub.entity.Department;
+import com.echo.acknowledgehub.entity.Employee;
 import com.echo.acknowledgehub.repository.DepartmentRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.scheduling.annotation.Async;
@@ -34,5 +36,10 @@ public class DepartmentService {
 
     public List<Department> getAll() {
         return DEPARTMENT_REPOSITORY.findAll();
+    }
+
+
+    public boolean existsById(Long sendTo) {
+        return DEPARTMENT_REPOSITORY.existsById(sendTo);
     }
 }

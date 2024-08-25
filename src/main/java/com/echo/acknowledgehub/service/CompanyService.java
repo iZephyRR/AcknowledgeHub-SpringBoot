@@ -35,4 +35,12 @@ public class CompanyService {
     public List<Company> getAllCompanies () {
         return COMPANY_REPOSITORY.findAll();
     }
+
+    public Optional<Company> getCompanyById(Long id){
+        return COMPANY_REPOSITORY.findById(id);
+    }
+
+    public boolean existsById(Long sendTo) {
+        return COMPANY_REPOSITORY.existsById(sendTo);
+    }
 }

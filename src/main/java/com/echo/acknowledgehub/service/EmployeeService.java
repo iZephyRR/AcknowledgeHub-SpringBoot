@@ -14,7 +14,6 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -102,6 +101,12 @@ public class EmployeeService {
         users.forEach(user -> this.save(user).thenAccept(employees::add));
         return CompletableFuture.completedFuture(employees);
     }
+
+    public Long getEmployeeIdByTelegramUsername(String telegramUsername) {
+        return EMPLOYEE_REPOSITORY.getEmployeeIdByTelegramUsername(telegramUsername);
+    }
+
+
 
 //    @Async
 //    public CompletableFuture<List<Employee>> saveAll(MultipartFile users) throws IOException {
@@ -193,4 +198,19 @@ public class EmployeeService {
         return EMPLOYEE_REPOSITORY.getAllChatId();
     }
 
+    public List<Employee> getEmployeesByDepartmentId(Long departmentId) {
+        return EMPLOYEE_REPOSITORY.getByDepartmentId(departmentId);
+    }
+
+    public List<Long> getAllChatIdByCompanyId(Long companyId) {
+        return EMPLOYEE_REPOSITORY.getAllChatIdByCompanyId(companyId);
+    }
+
+    public List<Long> getAllChatIdByDepartmentId(Long departmentId) {
+        return EMPLOYEE_REPOSITORY.getAllChatIdByDepartmentId(departmentId);
+    }
+
+    public boolean existsById(Long sendTo) {
+        return EMPLOYEE_REPOSITORY.existsById(sendTo);
+    }
 }

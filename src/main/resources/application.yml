@@ -15,12 +15,12 @@ spring:
         callable: false
     hibernate:
       ddl-auto: update
-
+      
   servlet:
     multipart:
       max-file-size: 50MB
       max-request-size: 50MB
-
+      
 server:
   port: 8080
   error:
@@ -37,7 +37,7 @@ telegram:
     token: 7408765661:AAHTCb7W_QXCeP9GZjpkol1ly_qBeXf4u9Y
 
 #if u need to debug spring security u can use this property.
-logging:
-  level:
-    org.springframework.security: DEBUG
+#logging:
+ # level:
+ #   org.springframework.security: DEBUG
 
