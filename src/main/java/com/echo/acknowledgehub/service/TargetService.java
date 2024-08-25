@@ -4,15 +4,18 @@ import com.echo.acknowledgehub.constant.NotificationStatus;
 import com.echo.acknowledgehub.constant.NotificationType;
 import com.echo.acknowledgehub.controller.NotificationController;
 import com.echo.acknowledgehub.dto.NotificationDTO;
+import com.echo.acknowledgehub.dto.TargetDTO;
 import com.echo.acknowledgehub.entity.*;
 import com.echo.acknowledgehub.repository.TargetRepository;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.logging.Logger;
 
 @Service
@@ -26,8 +29,8 @@ public class TargetService {
     private final NotificationController NOTIFICATION_CONTROLLER;
 
     @Transactional
-    public synchronized void insertTargetWithNotifications(List<Target> targetList, Announcement announcement) {
-        List<Target> targets = TARGET_REPOSITORY.saveAll(targetList);
+    @Async
+    public CompletableFuture<Void> insertTargetWithNotifications(List<Target> targets, Announcement announcement) {
         for (Target target : targets) {
             switch (target.getReceiverType()) {
                 case EMPLOYEE:
@@ -49,6 +52,7 @@ public class TargetService {
                     LOGGER.warning("Unknown receiver type: " + target.getReceiverType());
             }
         }
+        return null;
     }
 
     private void createNotificationForEmployee(Long employeeId, Announcement announcement) {
@@ -85,8 +89,8 @@ public class TargetService {
         return notificationDTO;
     }
 
-    public void saveTargets(List<Target> entityList) {
-        TARGET_REPOSITORY.saveAll(entityList);
+    public List<Target> saveTargets(List<Target> entityList) {
+        return TARGET_REPOSITORY.saveAll(entityList);
     }
 
     public List<Target> findByAnnouncement(Announcement announcement) {
