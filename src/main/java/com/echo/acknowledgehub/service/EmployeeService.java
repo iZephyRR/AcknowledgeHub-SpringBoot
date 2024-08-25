@@ -58,6 +58,12 @@ public class EmployeeService {
         }
     }
 
+
+    public Optional<Employee> findByIdd(Long id) {
+       return EMPLOYEE_REPOSITORY.findById(id);
+
+    }
+
     @Async
     public CompletableFuture<Employee> save(UserDTO user) {
         MAPPER.typeMap(UserDTO.class, Employee.class).addMappings(mapper -> {

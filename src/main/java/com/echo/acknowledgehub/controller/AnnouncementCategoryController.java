@@ -23,11 +23,14 @@ public class AnnouncementCategoryController {
     @PostMapping("/create-category")
     public AnnouncementCategory createCategory(@RequestBody AnnouncementCategory category) {
         return ANNOUNCEMENT_CATEGORY_SERVICE.save(category).join();
-    }
+
+}
+
     //  @PostMapping("/mr/create-category")
     // public CompletableFuture<ResponseEntity<AnnouncementCategory>> createCategory(@RequestBody AnnouncementCategory category) {
     //     return ANNOUNCEMENT_CATEGORY_SERVICE.save(category)
-    //            .thenApply(savedCategory -> new ResponseEntity<>(savedCategory, HttpStatus.CREATED));
+
+    //     .thenApply(savedCategory -> new ResponseEntity<>(savedCategory, HttpStatus.CREATED));
 
 
     @GetMapping("/get-all")

@@ -82,9 +82,11 @@ public class AnnouncementController {
             @RequestHeader("Authorization") String authHeader) throws IOException {
         ObjectMapper objectMapper = new ObjectMapper();
         List<TargetDTO> targetDTOList = objectMapper.readValue(announcementDTO.getTarget(), new TypeReference<List<TargetDTO>>() {
-        });
+        });   
+
         String token = authHeader.substring(7);
         Long loggedInId = Long.parseLong(JWT_SERVICE.extractId(token));
+
         CompletableFuture<Employee> conFuEmployee = EMPLOYEE_SERVICE.findById(loggedInId)
                 .thenApply(optionalEmployee -> optionalEmployee.orElseThrow(() -> new NoSuchElementException("Employee not found")));
         Optional<AnnouncementCategory> optionalAnnouncementCategory = ANNOUNCEMENT_CATEGORY_SERVICE.findById(announcementDTO.getCategoryId());
@@ -141,6 +143,13 @@ public class AnnouncementController {
                     return target;
                 })
                 .toList();
+
+        LOGGER.info("getting target entity list");
+        TARGET_SERVICE.insertTargetWithNotifications(targetList, announcement);
+
+        List<Long> chatIdsList = EMPLOYEE_SERVICE.getAllChatId();
+        //TELEGRAM_SERVICE.sendReportsInBatches(chatIdsList, announcement.getPdfLink(), announcement.getTitle(), announcement.getEmployee().getName());
+
         if (status == AnnouncementStatus.APPROVED) {
             LOGGER.info("announcement status : " + status);
             List<Target> targets = TARGET_SERVICE.saveTargets(targetList);
