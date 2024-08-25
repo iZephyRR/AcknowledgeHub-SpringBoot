@@ -16,7 +16,6 @@ import org.telegram.telegrambots.meta.api.objects.polls.PollAnswer;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
-
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -381,33 +380,4 @@ public class TelegramService extends TelegramLongPollingBot {
         }
         executor.shutdown();
     }
-
-    // change bot profile
-//    public void setProfile(String photoFilePath) throws TelegramApiException {
-//        SetChatPhoto setChatPhoto = new SetChatPhoto();
-//        setChatPhoto.setChatId(getMe().getId().toString());
-//        setChatPhoto.setPhoto(new InputFile((photoFilePath)));
-//        execute(setChatPhoto);
-//        System.out.println("Profile picture updated successfully.");
-//    }
-
-//    public void sendMessageForNotice(Long chatId) throws TelegramApiException {
-//        SendMessage message = new SendMessage();
-//        message.setChatId(chatId);
-//        message.setText("Please confirm you've seen this message.");
-//        // Create an inline keyboard
-//        InlineKeyboardMarkup markupInline = new InlineKeyboardMarkup();
-//        List<List<InlineKeyboardButton>> rowsInline = new ArrayList<>();
-//        List<InlineKeyboardButton> rowInline = new ArrayList<>();
-//        InlineKeyboardButton button = new InlineKeyboardButton();
-//        button.setText("I've seen this");
-//        button.setCallbackData("seen_confirmed");
-//        rowInline.add(button);
-//        rowsInline.add(rowInline);
-//        markupInline.setKeyboard(rowsInline);
-//        message.setReplyMarkup(markupInline);
-//        execute(message);
-//    }
-
-
 }

@@ -1,22 +1,21 @@
 package com.echo.acknowledgehub.controller;
 
 import com.echo.acknowledgehub.bean.CheckingBean;
-import com.echo.acknowledgehub.dto.ChangePasswordDTO;
-import com.echo.acknowledgehub.dto.EmailDTO;
-import com.echo.acknowledgehub.dto.LoginResponseDTO;
-import com.echo.acknowledgehub.dto.LoginDTO;
+import com.echo.acknowledgehub.dto.*;
+import com.echo.acknowledgehub.entity.Employee;
 import com.echo.acknowledgehub.service.EmployeeService;
 import com.echo.acknowledgehub.util.EmailSender;
 import com.echo.acknowledgehub.util.JWTService;
 import lombok.AllArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.logging.Logger;
 
@@ -33,16 +32,17 @@ public class AuthController {
     private final EmployeeService EMPLOYEE_SERVICE;
 
     @PostMapping("/login")
-    private LoginResponseDTO login(@RequestBody LoginDTO login) {
+    private StringResponseDTO login(@RequestBody LoginDTO login) {
         LOGGER.info("Login info : " + login);
         AUTHENTICATION_MANAGER.authenticate(new UsernamePasswordAuthenticationToken(login.getEmail(), login.getPassword()));
         final UserDetails USER_DETAILS = USER_DETAILS_SERVICE.loadUserByUsername(login.getEmail());
         if (login.getPassword().equals("root")) { //For first login.
-            return new LoginResponseDTO("NAME_".concat(CHECKING_BEAN.getName()).concat("_ID_").concat(CHECKING_BEAN.getId().toString()));
+           // return new StringResponseDTO("NAME_".concat(CHECKING_BEAN.getName()).concat("_ID_").concat(CHECKING_BEAN.getId().toString()));
+            return new StringResponseDTO("NAME_".concat(CHECKING_BEAN.getName()));
         } else {
             final String JWT_TOKEN = JWT_SERVICE.generateToken(USER_DETAILS.getUsername());
             LOGGER.info("Token : " + JWT_TOKEN);
-            return new LoginResponseDTO(JWT_TOKEN);
+            return new StringResponseDTO(JWT_TOKEN);
         }
     }
 
@@ -60,5 +60,20 @@ public class AuthController {
     private CompletableFuture<Void> sendEmail(@RequestBody EmailDTO email) {
         LOGGER.info("Email : " + email);
         return EMAIL_SENDER.sendEmail(email);
+    }
+
+    @GetMapping("/check-email")
+    private ResponseEntity<Boolean> checkEmail(@RequestBody String email) {
+        return ResponseEntity.ok(EMPLOYEE_SERVICE.checkEmail(email).join());
+    }
+
+    @PostMapping("/is-password-default")
+    private BooleanResponseDTO isPasswordDefault(@RequestBody String email){
+        return EMPLOYEE_SERVICE.isPasswordDefault(email).join();
+    }
+
+    @PostMapping("/find-name-by-email")
+    private StringResponseDTO findNameByEmail(@RequestBody String email) {
+       return EMPLOYEE_SERVICE.findNameByEmail(email).join();
     }
 }

@@ -33,7 +33,7 @@ public class CompanyController {
     private final EmployeeService EMPLOYEE_SERVICE;
     private final ModelMapper MODEL_MAPPER;
 
-    @GetMapping("get-company")
+    @GetMapping("/mr/get-company")
     private CompletableFuture<Optional<Company>> getCompany(@RequestBody String id){
         LOGGER.info("Company id : "+id);
         return COMPANY_SERVICE.findById(Long.parseLong(id));
@@ -44,7 +44,9 @@ public class CompanyController {
         return COMPANY_SERVICE.getAllCompanies();
     }
 
+
     @GetMapping(value = "/get-departments", produces = MediaType.APPLICATION_JSON_VALUE)
+
     public List<Department> getDepartments () {
         return DEPARTMENT_SERVICE.getAll();
     }
