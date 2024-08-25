@@ -28,7 +28,6 @@ public class TargetService {
     @Transactional
     public synchronized void insertTargetWithNotifications(List<Target> targetList, Announcement announcement) {
         List<Target> targets = TARGET_REPOSITORY.saveAll(targetList);
-        // Handle notifications based on the receiver type
         for (Target target : targets) {
             switch (target.getReceiverType()) {
                 case EMPLOYEE:

@@ -58,7 +58,6 @@ public class AnnouncementService {
 
     public Map<String, List<Announcement>> getAnnouncementsForAugToOct2024() {
         Map<String, List<Announcement>> announcementsByMonth = new LinkedHashMap<>();
-
         // Define the start and end dates for August, September, and October
         LocalDateTime startOfAugust = LocalDateTime.of(2024, 8, 1, 0, 0);
         LocalDateTime endOfAugust = LocalDateTime.of(2024, 8, 31, 23, 59, 59);
@@ -68,7 +67,6 @@ public class AnnouncementService {
 
         LocalDateTime startOfOctober = LocalDateTime.of(2024, 10, 1, 0, 0);
         LocalDateTime endOfOctober = LocalDateTime.of(2024, 10, 31, 23, 59, 59);
-
         // Fetch announcements for each month and add them to the map
         announcementsByMonth.put("August", getAnnouncementsForMonth(startOfAugust, endOfAugust));
         announcementsByMonth.put("September", getAnnouncementsForMonth(startOfSeptember, endOfSeptember));
@@ -76,4 +74,6 @@ public class AnnouncementService {
 
         return announcementsByMonth;
     }
+
+
 }

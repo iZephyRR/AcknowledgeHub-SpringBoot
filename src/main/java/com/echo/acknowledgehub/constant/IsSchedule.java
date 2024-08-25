@@ -1,5 +1,5 @@
 package com.echo.acknowledgehub.constant;
 
 public enum IsSchedule {
-    TRUE , FALSE;
+    TRUE , TRUE_APPROVED ,  FALSE;
 }

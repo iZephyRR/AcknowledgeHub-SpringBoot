@@ -29,6 +29,7 @@ public class Announcement {
     @Enumerated(EnumType.STRING)
     @Column(name = "contentType", nullable = false)
     private ContentType contentType;
+    @Enumerated(EnumType.STRING)
     @Column(name ="isSchedule", nullable = false)
     private IsSchedule isSchedule;
     @JsonIgnore
