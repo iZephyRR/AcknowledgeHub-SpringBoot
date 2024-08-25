@@ -12,7 +12,6 @@ import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -28,9 +27,7 @@ public class TargetService {
     private final DepartmentService DEPARTMENT_SERVICE;
     private final CompanyService COMPANY_SERVICE;
     private final NotificationController NOTIFICATION_CONTROLLER;
-
     private final CheckingBean CHECKING_BEAN;
-
 
     @Transactional
     @Async
@@ -58,7 +55,6 @@ public class TargetService {
         }
         return null;
     }
-
     private void createNotificationForEmployee(Long employeeId, Announcement announcement) {
         Optional<Employee> optionalEmployee = EMPLOYEE_SERVICE.findById(employeeId).join();
         NotificationDTO notificationDTO = buildNotificationDTO(announcement, optionalEmployee.get().getId());
@@ -108,5 +104,4 @@ public class TargetService {
     public List<Target> findByAnnouncement(Announcement announcement) {
         return TARGET_REPOSITORY.findByAnnouncement(announcement);
     }
-
 }

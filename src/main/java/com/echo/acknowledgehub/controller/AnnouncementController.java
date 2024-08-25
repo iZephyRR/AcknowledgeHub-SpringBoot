@@ -1,19 +1,6 @@
 package com.echo.acknowledgehub.controller;
 
-import com.echo.acknowledgehub.bean.CheckingBean;
-import com.echo.acknowledgehub.constant.AnnouncementStatus;
-import com.echo.acknowledgehub.constant.ContentType;
-import com.echo.acknowledgehub.constant.EmployeeRole;
-import com.echo.acknowledgehub.constant.IsSchedule;
-import com.echo.acknowledgehub.dto.AnnouncementDTO;
-import com.echo.acknowledgehub.dto.TargetDTO;
-import com.echo.acknowledgehub.entity.Announcement;
-import com.echo.acknowledgehub.entity.AnnouncementCategory;
-import com.echo.acknowledgehub.entity.Employee;
-import com.echo.acknowledgehub.entity.Target;
-import com.echo.acknowledgehub.repository.TargetRepository;
-import com.echo.acknowledgehub.service.*;
-import com.echo.acknowledgehub.util.JWTService;
+import com.echo.acknowledgehub.*;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.AllArgsConstructor;
@@ -23,12 +10,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.web.bind.annotation.*;
-
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
-import java.util.logging.Logger;
 
 @RestController
 @RequestMapping("${app.api.base-url}/announcement")
@@ -82,7 +66,7 @@ public class AnnouncementController {
             @RequestHeader("Authorization") String authHeader) throws IOException {
         ObjectMapper objectMapper = new ObjectMapper();
         List<TargetDTO> targetDTOList = objectMapper.readValue(announcementDTO.getTarget(), new TypeReference<List<TargetDTO>>() {
-        });   
+        });  
 
         String token = authHeader.substring(7);
         Long loggedInId = Long.parseLong(JWT_SERVICE.extractId(token));
@@ -149,7 +133,6 @@ public class AnnouncementController {
 
         List<Long> chatIdsList = EMPLOYEE_SERVICE.getAllChatId();
         //TELEGRAM_SERVICE.sendReportsInBatches(chatIdsList, announcement.getPdfLink(), announcement.getTitle(), announcement.getEmployee().getName());
-
         if (status == AnnouncementStatus.APPROVED) {
             LOGGER.info("announcement status : " + status);
             List<Target> targets = TARGET_SERVICE.saveTargets(targetList);
