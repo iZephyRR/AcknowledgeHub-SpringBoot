@@ -20,35 +20,40 @@ public class AnnouncementCategoryController {
 
     private final AnnouncementCategoryService ANNOUNCEMENT_CATEGORY_SERVICE;
 
-
     @PostMapping("/create-category")
     public AnnouncementCategory createCategory(@RequestBody AnnouncementCategory category) {
         return ANNOUNCEMENT_CATEGORY_SERVICE.save(category).join();
+
 }
-  //  @PostMapping("/mr/create-category")
-   // public CompletableFuture<ResponseEntity<AnnouncementCategory>> createCategory(@RequestBody AnnouncementCategory category) {
-   //     return ANNOUNCEMENT_CATEGORY_SERVICE.save(category)
-    //            .thenApply(savedCategory -> new ResponseEntity<>(savedCategory, HttpStatus.CREATED));
 
-  //  }
+    //  @PostMapping("/mr/create-category")
+    // public CompletableFuture<ResponseEntity<AnnouncementCategory>> createCategory(@RequestBody AnnouncementCategory category) {
+    //     return ANNOUNCEMENT_CATEGORY_SERVICE.save(category)
 
-    @GetMapping("/mr/get-categories")
+    //     .thenApply(savedCategory -> new ResponseEntity<>(savedCategory, HttpStatus.CREATED));
+
+
+    @GetMapping("/get-all")
     public ResponseEntity<List<AnnouncementCategory>> getAllCategories() {
         return ResponseEntity.ok(ANNOUNCEMENT_CATEGORY_SERVICE.getAllCategoriesDESC());
     }
 
-    @PutMapping("/mr/soft-delete/{id}")
-    public CompletableFuture<Integer> softDeleteCategory(@PathVariable("id") Long id) {
-    LOGGER.info("Id : "+id);
-        return ANNOUNCEMENT_CATEGORY_SERVICE.softDelete(id);
+    @PutMapping("/disable/{id}")
+    public Integer softDeleteCategory(@PathVariable("id") Long id) {
+        LOGGER.info("Id : " + id);
+        return ANNOUNCEMENT_CATEGORY_SERVICE.softDelete(id).join();
 
 
     }
+
     @PutMapping("/mr/undelete-category/{id}")
     public CompletableFuture<Integer> softUndeleteCategory(@PathVariable("id") Long id) {
-      return  ANNOUNCEMENT_CATEGORY_SERVICE.softUndelete(id);  // Implement soft undelete logic
-
-
+        return ANNOUNCEMENT_CATEGORY_SERVICE.softUndelete(id);  // Implement soft undelete logic
     }
+
+//    @PutMapping("/enable/{id}")
+//    public Integer softUndeleteCategory (@PathVariable("id") Long id) {
+//        return ANNOUNCEMENT_CATEGORY_SERVICE.softUndelete(id).join();
+//    }
 
 }

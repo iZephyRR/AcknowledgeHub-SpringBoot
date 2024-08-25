@@ -67,12 +67,14 @@ public class SecurityConfig {
                                         // Configure routes to allow access only for stuff.
                                         .requestMatchers(BASE_URL + "/sf/**").hasRole(EmployeeRole.STAFF.name())
                                         // Configure routes to allow access for main HR & 'company/HR' subdirectory.
-                                        .requestMatchers(BASE_URL + "/mhr/**").hasAnyRole(EmployeeRole.MAIN_HR.name(), EmployeeRole.HR.name())
+    
+                                    .requestMatchers(BASE_URL + "/mhr/**").hasAnyRole(EmployeeRole.MAIN_HR.name(), EmployeeRole.HR.name())
 
-                                        .requestMatchers(BASE_URL + "/announcement/create",BASE_URL + "/get-categories", BASE_URL + "/get-companies").hasAnyRole(EmployeeRole.MAIN_HR.name(), EmployeeRole.HR.name(),
+                                        .requestMatchers(BASE_URL + "/announcement/create", BASE_URL + "/get-companies", BASE_URL + "/getCompanyById/**",
+                                                BASE_URL + "/get-categories").hasAnyRole(EmployeeRole.MAIN_HR.name(), EmployeeRole.HR.name(),
                                                                                                                     EmployeeRole.MAIN_HR_ASSISTANCE.name(),EmployeeRole.HR_ASSISTANCE.name())
 
-                )
+            )
                 .userDetailsService(USER_DETAILS_SERVICE)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterBefore(JWT_AUTHENTICATION_FILTER, UsernamePasswordAuthenticationFilter.class)

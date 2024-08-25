@@ -24,8 +24,10 @@ public class NotificationController {
     private final SimpMessagingTemplate simpMessagingTemplate;
     private final CheckingBean CHECKING_BEAN;
 
+
     @PostMapping("/send")
     public void sendNotification(@RequestBody NotificationDTO notificationDTO, @RequestParam Long loggedInId) {
+
         simpMessagingTemplate.convertAndSend("/topic/notifications", notificationDTO);
         saveNotificationToFirestore(notificationDTO, loggedInId);
     }
