@@ -23,28 +23,28 @@ public class AnnouncementCategoryController {
 
     @PostMapping("/create-category")
     public AnnouncementCategory createCategory(@RequestBody AnnouncementCategory category) {
-        return announcementCategoryService.save(category).join();
+        return ANNOUNCEMENT_CATEGORY_SERVICE.save(category).join();
 
   //  @PostMapping("/mr/create-category")
    // public CompletableFuture<ResponseEntity<AnnouncementCategory>> createCategory(@RequestBody AnnouncementCategory category) {
    //     return ANNOUNCEMENT_CATEGORY_SERVICE.save(category)
     //            .thenApply(savedCategory -> new ResponseEntity<>(savedCategory, HttpStatus.CREATED));
 
-  //  }
+    }
 
-    @GetMapping("/mr/get-categories")
+    @GetMapping("/get-categories")
     public ResponseEntity<List<AnnouncementCategory>> getAllCategories() {
         return ResponseEntity.ok(ANNOUNCEMENT_CATEGORY_SERVICE.getAllCategoriesDESC());
     }
 
-    @PutMapping("/mr/soft-delete/{id}")
+    @PutMapping("/soft-delete/{id}")
     public CompletableFuture<Integer> softDeleteCategory(@PathVariable("id") Long id) {
     LOGGER.info("Id : "+id);
         return ANNOUNCEMENT_CATEGORY_SERVICE.softDelete(id);
 
 
     }
-    @PutMapping("/mr/undelete-category/{id}")
+    @PutMapping("/undelete-category/{id}")
     public CompletableFuture<Integer> softUndeleteCategory(@PathVariable("id") Long id) {
       return  ANNOUNCEMENT_CATEGORY_SERVICE.softUndelete(id);  // Implement soft undelete logic
 

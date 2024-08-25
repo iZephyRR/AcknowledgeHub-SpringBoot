@@ -1,17 +1,16 @@
 package com.echo.acknowledgehub.service;
 
+import com.echo.acknowledgehub.dto.BooleanResponseDTO;
 import com.echo.acknowledgehub.dto.ChangePasswordDTO;
+import com.echo.acknowledgehub.dto.StringResponseDTO;
 import com.echo.acknowledgehub.dto.UserDTO;
 import com.echo.acknowledgehub.entity.Employee;
-import com.echo.acknowledgehub.exception_handler.UserNotFoundException;
+import com.echo.acknowledgehub.exception_handler.DataNotFoundException;
+import com.echo.acknowledgehub.exception_handler.UpdatePasswordException;
 import com.echo.acknowledgehub.repository.EmployeeRepository;
-import com.echo.acknowledgehub.util.JWTService;
-import com.echo.acknowledgehub.util.XlsxReader;
 import lombok.AllArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.scheduling.annotation.Async;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,6 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.logging.Logger;
 
 @Service
@@ -33,29 +33,53 @@ public class EmployeeService {
     @Async
     public CompletableFuture<Optional<Employee>> findById(Long id) {
         return CompletableFuture.completedFuture(EMPLOYEE_REPOSITORY.findById(id));
-}
+    }
 
     @Async
     public CompletableFuture<Optional<Employee>> findByEmail(String email) {
         return CompletableFuture.completedFuture(EMPLOYEE_REPOSITORY.findByEmail(email));
     }
+
     @Async
     public CompletableFuture<List<Long>> findByDepartmentId(Long departmentId) {
         return CompletableFuture.completedFuture(EMPLOYEE_REPOSITORY.findByDepartmentId(departmentId));
     }
+
     @Async
     public CompletableFuture<List<Long>> findByCompanyId(Long companyId) {
         return CompletableFuture.completedFuture(EMPLOYEE_REPOSITORY.findByCompanyId(companyId));
     }
-    @Transactional
+
     @Async
-    public CompletableFuture<Void> updatePassword(ChangePasswordDTO changePasswordDTO){
-        int updatedRows = EMPLOYEE_REPOSITORY.updatePassword(changePasswordDTO.getId(),PASSWORD_ENCODER.encode(changePasswordDTO.getPassword()));
-        LOGGER.info("Updated rows : "+updatedRows);
-        if(updatedRows>0){
+    public CompletableFuture<Boolean> checkEmail(String email) {
+        return CompletableFuture.completedFuture(EMPLOYEE_REPOSITORY.existsByEmail(email));
+    }
+
+    @Async
+    public CompletableFuture<BooleanResponseDTO> isPasswordDefault(String email) {
+        return CompletableFuture.completedFuture(new BooleanResponseDTO(PASSWORD_ENCODER.matches("root", EMPLOYEE_REPOSITORY.findPasswordByEmail(email))));
+    }
+
+    @Async
+    public CompletableFuture<StringResponseDTO> findNameByEmail(String email) {
+        String name = EMPLOYEE_REPOSITORY.findNameByEmail(email);
+        if (name != null) {
+            return CompletableFuture.completedFuture(new StringResponseDTO(name));
+        } else {
+            throw new DataNotFoundException("Cannot find name.");
+        }
+    }
+
+    @Async
+    @Transactional
+    public CompletableFuture<Void> updatePassword(ChangePasswordDTO changePasswordDTO) {
+        LOGGER.info("Requested change password : " + changePasswordDTO);
+        int updatedRows = EMPLOYEE_REPOSITORY.updatePassword(changePasswordDTO.getEmail(), PASSWORD_ENCODER.encode(changePasswordDTO.getPassword()));
+        LOGGER.info("Updated rows : " + updatedRows);
+        if (updatedRows > 0) {
             return CompletableFuture.completedFuture(null);
-        }else{
-            return null;
+        } else {
+            throw new UpdatePasswordException("Failed to update password.");
         }
     }
 
@@ -165,6 +189,8 @@ public class EmployeeService {
         return EMPLOYEE_REPOSITORY.getTelegramChatId(username);
     }
 
-    public List<Long> getAllChatId() { return  EMPLOYEE_REPOSITORY.getAllChatId(); }
+    public List<Long> getAllChatId() {
+        return EMPLOYEE_REPOSITORY.getAllChatId();
+    }
 
 }

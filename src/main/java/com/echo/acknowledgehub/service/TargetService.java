@@ -42,7 +42,7 @@ public class TargetService {
 
         List<Target> targets = TARGET_REPOSITORY.saveAll(targetList);
         LOGGER.info("After saving targets ");
-      
+
         // Handle notifications based on the receiver type
         for (Target target : targets) {
             switch (target.getReceiverType()) {
@@ -71,11 +71,10 @@ public class TargetService {
     }
 
     private void createNotificationForEmployee(Long employeeId, Announcement announcement, Target target) {
+        Optional<Employee> optionalEmployee = EMPLOYEE_SERVICE.findById(employeeId).join();
+        NotificationDTO notificationDTO = buildNotificationDTO(announcement, target, optionalEmployee.get().getId());
+        NOTIFICATION_CONTROLLER.sendNotification(notificationDTO, employeeId); // Pass employeeId as loggedInId
 
-        EMPLOYEE_SERVICE.findById(employeeId).thenAccept(employee -> {
-            NotificationDTO notificationDTO = buildNotificationDTO(announcement, target, employee.getId());
-            NOTIFICATION_CONTROLLER.sendNotification(notificationDTO, employeeId); // Pass employeeId as loggedInId
-        }).join();
     }
 
 
@@ -109,6 +108,7 @@ public class TargetService {
         notificationDTO.setNoticeAt(LocalDateTime.now());
         return notificationDTO;
     }
+
     public void saveTargets(List<Target> entityList) {
         TARGET_REPOSITORY.saveAll(entityList);
     }

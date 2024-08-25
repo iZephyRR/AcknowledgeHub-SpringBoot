@@ -51,15 +51,18 @@ public class AnnouncementController {
     public void createAnnouncement(
                     @ModelAttribute AnnouncementDTO announcementDTO,
                     @RequestHeader("Authorization") String authHeader) throws IOException {
+        LOGGER.info("Start creating...");
 
         ObjectMapper objectMapper = new ObjectMapper();
-        List<TargetDTO> targetDTOList = objectMapper.readValue(announcementDTO.getTarget(), new TypeReference<List<TargetDTO>>() {});
+        List<TargetDTO> targetDTOList = objectMapper.readValue(announcementDTO.getTarget(), new TypeReference<List<TargetDTO>>() {
+        });
 
         String token = authHeader.substring(7);
         Long loggedInId = Long.parseLong(JWT_SERVICE.extractId(token));
         LOGGER.info("LoggedId : " + loggedInId);
 
-        CompletableFuture<Employee> conFuEmployee = EMPLOYEE_SERVICE.findById(loggedInId);
+        CompletableFuture<Employee> conFuEmployee = EMPLOYEE_SERVICE.findById(loggedInId)
+                .thenApply(optionalEmployee -> optionalEmployee.orElseThrow(() -> new NoSuchElementException("Employee not found")));
         Optional<AnnouncementCategory> optionalAnnouncementCategory = ANNOUNCEMENT_CATEGORY_SERVICE.findById(announcementDTO.getCategoryId());
         AnnouncementCategory category = optionalAnnouncementCategory.orElse(null);
 
@@ -109,7 +112,7 @@ public class AnnouncementController {
 
         LOGGER.info("Last LOGGER");
         //TELEGRAM_SERVICE.sendReportsInBatches(chatIdsList, announcement.getPdfLink(), announcement.getTitle(), announcement.getEmployee().getName());
-
+    }
 
     @GetMapping("/aug-to-oct-2024")
     public ResponseEntity<Map<String, List<Announcement>>> getAnnouncementsForAugToOct2024() {
