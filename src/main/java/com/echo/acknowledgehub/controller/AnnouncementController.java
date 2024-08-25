@@ -94,7 +94,7 @@ public class AnnouncementController {
         if (!"later".equals(scheduleOption) && !"now".equals(scheduleOption)) {
             throw new IllegalArgumentException("Invalid option");
         }
-        AnnouncementStatus status ;
+        AnnouncementStatus status;
         IsSchedule isSchedule;
         if (CHECKING_BEAN.getRole() == EmployeeRole.MAIN_HR || CHECKING_BEAN.getRole() == EmployeeRole.HR) {
             if (announcementDTO.getScheduleOption().equals("later")) {
@@ -107,7 +107,7 @@ public class AnnouncementController {
         } else {
             status = AnnouncementStatus.PENDING;
             if (announcementDTO.getScheduleOption().equals("later")) {
-                isSchedule = IsSchedule.TRUE_APPROVED;
+                isSchedule = IsSchedule.TRUE_PENDING;
             } else {
                 isSchedule = IsSchedule.FALSE;
             }
@@ -118,7 +118,7 @@ public class AnnouncementController {
         Announcement entity = MODEL_MAPPER.map(announcementDTO, Announcement.class);
         entity.setEmployee(conFuEmployee.join());
         entity.setCategory(category);
-        String url = ANNOUNCEMENT_SERVICE.handleFileUpload(announcementDTO.getFile());
+        String url = ANNOUNCEMENT_SERVICE.handleFileUpload(announcementDTO.getFile()); // cloud
         entity.setPdfLink(url);
         assert contentType != null;
         if (contentType.startsWith("audio/")) {
@@ -133,7 +133,7 @@ public class AnnouncementController {
                 contentType.startsWith("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")) {
             entity.setContentType(ContentType.EXCEL);
         }
-        Announcement announcement = ANNOUNCEMENT_SERVICE.save(entity);
+        Announcement announcement = ANNOUNCEMENT_SERVICE.save(entity); // save announcement
         List<Target> targetList = targetDTOList.stream()
                 .map(dto -> {
                     Target target = MODEL_MAPPER.map(dto, Target.class);
@@ -143,9 +143,10 @@ public class AnnouncementController {
                 .toList();
         if (status == AnnouncementStatus.APPROVED) {
             LOGGER.info("announcement status : " + status);
-            TARGET_SERVICE.insertTargetWithNotifications(targetList, announcement);
+            List<Target> targets = TARGET_SERVICE.saveTargets(targetList);
+            TARGET_SERVICE.insertTargetWithNotifications(targets, announcement); // target save, send notification
             List<Long> chatIdsList = List.of();
-            for (Target target : targetList) {
+            for (Target target : targets) {
                 String receiverType = target.getReceiverType().name();
                 Long sendTo = target.getSendTo();
                 if (receiverType.equals("COMPANY")) {
@@ -181,21 +182,6 @@ public class AnnouncementController {
             }
         }
     }
-
-//        for (Target target : targetList) {
-//            NotificationDTO notificationDTO = new NotificationDTO();
-//            notificationDTO.setEmployeeId(loggedInId);
-//            notificationDTO.setAnnouncementId(announcement.getId());
-//            //notificationDTO.setTargetId(target.getId());  // Set the targetId
-//            notificationDTO.setStatus(NotificationStatus.SEND);
-//            notificationDTO.setType(NotificationType.RECEIVED);
-//            notificationDTO.setNoticeAt(LocalDateTime.now());
-//            //notificationDTO.setReceiverType(announcement.get); // Set receiverType
-//            notificationDTO.setSentTo(target.getSendTo());
-//            notificationDTO.setCategoryId(announcement.getCategory().getId());
-//            notificationDTO.setTitle(announcement.getTitle());
-//            NOTIFICATION_CONTROLLER.sendNotification(notificationDTO, loggedInId);
-//        }
 
     @GetMapping("/aug-to-oct-2024")
     public ResponseEntity<Map<String, List<Announcement>>> getAnnouncementsForAugToOct2024() {
