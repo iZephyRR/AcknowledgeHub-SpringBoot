@@ -20,7 +20,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.logging.Logger;
 
 @RestController
-@RequestMapping("${app.api.base-url}/mr")
+@RequestMapping("${app.api.base-url}")
 @AllArgsConstructor
 public class CompanyController {
     private static final Logger LOGGER = Logger.getLogger(CompanyController.class.getName());
@@ -28,23 +28,23 @@ public class CompanyController {
     private final DepartmentService DEPARTMENT_SERVICE;
     private final AnnouncementCategoryService ANNOUNCEMENT_CATEGORY_SERVICE;
 
-    @GetMapping("get-company")
+    @GetMapping("/mr/get-company")
     private CompletableFuture<Optional<Company>> getCompany(@RequestBody String id){
         LOGGER.info("Company id : "+id);
         return COMPANY_SERVICE.findById(Long.parseLong(id));
     }
 
-    @GetMapping(value = "get-companies", produces = MediaType.APPLICATION_JSON_VALUE)
+    @GetMapping(value = "/get-companies", produces = MediaType.APPLICATION_JSON_VALUE)
     public List<Company> getCompanies () {
         return COMPANY_SERVICE.getAllCompanies();
     }
 
-    @GetMapping(value = "get-departments", produces = MediaType.APPLICATION_JSON_VALUE)
+    @GetMapping(value = "/mr/get-departments", produces = MediaType.APPLICATION_JSON_VALUE)
     public List<Department> getDepartments () {
         return DEPARTMENT_SERVICE.getAll();
     }
 
-    @GetMapping(value = "get-categories", produces = MediaType.APPLICATION_JSON_VALUE)
+    @GetMapping(value = "/get-categories", produces = MediaType.APPLICATION_JSON_VALUE)
     public List<AnnouncementCategory> getCategories () {
         return ANNOUNCEMENT_CATEGORY_SERVICE.findAll();
     }

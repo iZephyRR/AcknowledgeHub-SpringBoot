@@ -53,13 +53,15 @@ public class AnnouncementController {
                     @RequestHeader("Authorization") String authHeader) throws IOException {
 
         ObjectMapper objectMapper = new ObjectMapper();
-        List<TargetDTO> targetDTOList = objectMapper.readValue(announcementDTO.getTarget(), new TypeReference<List<TargetDTO>>() {});
+        List<TargetDTO> targetDTOList = objectMapper.readValue(announcementDTO.getTarget(), new TypeReference<List<TargetDTO>>() {
+        });
 
         String token = authHeader.substring(7);
         Long loggedInId = Long.parseLong(JWT_SERVICE.extractId(token));
         LOGGER.info("LoggedId : " + loggedInId);
 
-        CompletableFuture<Employee> conFuEmployee = EMPLOYEE_SERVICE.findById(loggedInId);
+        CompletableFuture<Employee> conFuEmployee = EMPLOYEE_SERVICE.findById(loggedInId)
+                .thenApply(optionalEmployee -> optionalEmployee.orElseThrow(() -> new NoSuchElementException("Employee not found")));
         Optional<AnnouncementCategory> optionalAnnouncementCategory = ANNOUNCEMENT_CATEGORY_SERVICE.findById(announcementDTO.getCategoryId());
         AnnouncementCategory category = optionalAnnouncementCategory.orElse(null);
 
@@ -90,26 +92,23 @@ public class AnnouncementController {
         LOGGER.info("getting target entity list");
         TARGET_SERVICE.insertTargetWithNotifications(targetList, announcement);
 
-        for (Target target : targetList) {
-            target.setAnnouncement(announcement);
-            NotificationDTO notificationDTO = new NotificationDTO();
-            notificationDTO.setEmployeeId(loggedInId);
-            notificationDTO.setAnnouncementId(announcement.getId());
-//          notificationDTO.setTargetId(target.getId());  // Set the targetId
-            notificationDTO.setStatus(NotificationStatus.SEND);
-            notificationDTO.setType(NotificationType.RECEIVED);
-            notificationDTO.setNoticeAt(LocalDateTime.now());
-            //notificationDTO.setReceiverType(announcement.get); // Set receiverType
-            notificationDTO.setSentTo(target.getSendTo());
-            notificationDTO.setCategoryId(announcement.getCategory().getId());
-            notificationDTO.setTitle(announcement.getTitle());
-            NOTIFICATION_CONTROLLER.sendNotification(notificationDTO, loggedInId);
-        }
+//        for (Target target : targetList) {
+//            NotificationDTO notificationDTO = new NotificationDTO();
+//            notificationDTO.setEmployeeId(loggedInId);
+//            notificationDTO.setAnnouncementId(announcement.getId());
+////          notificationDTO.setTargetId(target.getId());  // Set the targetId
+//            notificationDTO.setStatus(NotificationStatus.SEND);
+//            notificationDTO.setType(NotificationType.RECEIVED);
+//            notificationDTO.setNoticeAt(LocalDateTime.now());
+//            //notificationDTO.setReceiverType(announcement.get); // Set receiverType
+//            notificationDTO.setSentTo(target.getSendTo());
+//            notificationDTO.setCategoryId(announcement.getCategory().getId());
+//            notificationDTO.setTitle(announcement.getTitle());
+//            NOTIFICATION_CONTROLLER.sendNotification(notificationDTO, loggedInId);
+//        }
         List<Long> chatIdsList = EMPLOYEE_SERVICE.getAllChatId();
-
-        LOGGER.info("Last LOGGER");
         //TELEGRAM_SERVICE.sendReportsInBatches(chatIdsList, announcement.getPdfLink(), announcement.getTitle(), announcement.getEmployee().getName());
-
+    }
 
     @GetMapping("/aug-to-oct-2024")
     public ResponseEntity<Map<String, List<Announcement>>> getAnnouncementsForAugToOct2024() {

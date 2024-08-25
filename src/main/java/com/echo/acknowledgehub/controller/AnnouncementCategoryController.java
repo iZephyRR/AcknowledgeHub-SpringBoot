@@ -23,8 +23,8 @@ public class AnnouncementCategoryController {
 
     @PostMapping("/create-category")
     public AnnouncementCategory createCategory(@RequestBody AnnouncementCategory category) {
-        return announcementCategoryService.save(category).join();
-
+        return ANNOUNCEMENT_CATEGORY_SERVICE.save(category).join();
+}
   //  @PostMapping("/mr/create-category")
    // public CompletableFuture<ResponseEntity<AnnouncementCategory>> createCategory(@RequestBody AnnouncementCategory category) {
    //     return ANNOUNCEMENT_CATEGORY_SERVICE.save(category)

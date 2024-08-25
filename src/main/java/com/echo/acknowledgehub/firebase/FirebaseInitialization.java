@@ -22,7 +22,7 @@ public class FirebaseInitialization {
 
         //    serviceAccount = new FileInputStream("C:\\AcknowledgeHub\\AcknowledgeHub\\src\\main\\resources\\serviceAccountKey.json");
 
-            serviceAccount = new FileInputStream("E:\\AcknowledgeHub - TeamEcho\\acknowledgehub\\src\\main\\resources\\serviceAccountKey.json");
+            serviceAccount = new FileInputStream("C:\\Users\\jps\\Desktop\\Final Project\\AcknowledgeHub\\src\\main\\resources\\serviceAccountKey.json");
 
 
             FirebaseOptions options = new FirebaseOptions.Builder()

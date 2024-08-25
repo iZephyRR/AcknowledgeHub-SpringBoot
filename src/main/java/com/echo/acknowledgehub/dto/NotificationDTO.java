@@ -10,14 +10,17 @@ import java.time.LocalDateTime;
 public class NotificationDTO {
 //    private Long id;
     private LocalDateTime noticeAt;
+    private LocalDateTime notedAt;
     private NotificationStatus status;
     private NotificationType type;
-    private Long employeeId;
+    private String name;
+    private Long userId;
     private Long announcementId;
     private Long targetId;
-    private Long categoryId;
+    private String categoryName;
     private String title;
-//    private String receiverType;
     private Long sentTo;
-//    private Long companyId;
+
+
+
 }
