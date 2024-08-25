@@ -1,18 +1,32 @@
 package com.echo.acknowledgehub.controller;
 
-import com.echo.acknowledgehub.*;
-import com.fasterxml.jackson.core.type.TypeReference;
+import com.echo.acknowledgehub.bean.CheckingBean;
+import com.echo.acknowledgehub.constant.AnnouncementStatus;
+import com.echo.acknowledgehub.constant.ContentType;
+import com.echo.acknowledgehub.constant.EmployeeRole;
+import com.echo.acknowledgehub.constant.IsSchedule;
+import com.echo.acknowledgehub.dto.AnnouncementDTO;
+import com.echo.acknowledgehub.dto.TargetDTO;
+import com.echo.acknowledgehub.entity.Announcement;
+import com.echo.acknowledgehub.entity.AnnouncementCategory;
+import com.echo.acknowledgehub.entity.Employee;
+import com.echo.acknowledgehub.entity.Target;
+import com.echo.acknowledgehub.repository.TargetRepository;
+import com.echo.acknowledgehub.service.*;
+import com.echo.acknowledgehub.util.JWTService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.AllArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.web.bind.annotation.*;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.logging.Logger;
+import com.fasterxml.jackson.core.type.TypeReference;
 
 @RestController
 @RequestMapping("${app.api.base-url}/announcement")
@@ -30,15 +44,11 @@ public class AnnouncementController {
     private final DepartmentService DEPARTMENT_SERVICE;
     private final AnnouncementCategoryService ANNOUNCEMENT_CATEGORY_SERVICE;
     private final TelegramService TELEGRAM_SERVICE;
-    private final CloudinaryServiceImpl CLOUDINARY_SERVICE_IMP;
     private final TargetService TARGET_SERVICE;
-    private final NotificationController NOTIFICATION_CONTROLLER;
-    private final TargetRepository TARGET_REPOSITORY;
 
     @Scheduled(fixedRate = 60000)
     public void checkPendingAnnouncements() throws IOException {
-        LocalDateTime now = LocalDateTime.now();
-        List<Announcement> pendingAnnouncementsScheduled = ANNOUNCEMENT_SERVICE.findPendingAnnouncementsScheduledForNow(now);
+        List<Announcement> pendingAnnouncementsScheduled = ANNOUNCEMENT_SERVICE.findPendingAnnouncementsScheduledForNow(LocalDateTime.now());
         LOGGER.info("in schedule");
         for (Announcement announcement : pendingAnnouncementsScheduled) {
             announcement.setStatus(AnnouncementStatus.APPROVED);
@@ -127,12 +137,8 @@ public class AnnouncementController {
                     return target;
                 })
                 .toList();
-
         LOGGER.info("getting target entity list");
         TARGET_SERVICE.insertTargetWithNotifications(targetList, announcement);
-
-        List<Long> chatIdsList = EMPLOYEE_SERVICE.getAllChatId();
-        //TELEGRAM_SERVICE.sendReportsInBatches(chatIdsList, announcement.getPdfLink(), announcement.getTitle(), announcement.getEmployee().getName());
         if (status == AnnouncementStatus.APPROVED) {
             LOGGER.info("announcement status : " + status);
             List<Target> targets = TARGET_SERVICE.saveTargets(targetList);
