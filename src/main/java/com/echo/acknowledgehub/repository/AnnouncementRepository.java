@@ -16,7 +16,7 @@ public interface AnnouncementRepository extends JpaRepository <Announcement,Long
     @Query("SELECT a FROM Announcement a WHERE a.createdAt BETWEEN :startDateTime AND :endDateTime")
     List<Announcement> findAllByDateBetween(@Param("startDateTime") LocalDateTime startDateTime, @Param("endDateTime") LocalDateTime endDateTime);
 
-    @Query("SELECT a FROM Announcement a WHERE a.isSchedule=TRUE AND a.status = :status AND a.createdAt <= :now")
+    @Query("SELECT a FROM Announcement a WHERE a.status = :status AND a.createdAt <= :now")
     List<Announcement> findByStatusAndScheduledTime(@Param("status") AnnouncementStatus status, @Param("now") LocalDateTime now);
 
 }
