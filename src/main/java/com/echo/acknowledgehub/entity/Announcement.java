@@ -1,6 +1,8 @@
 package com.echo.acknowledgehub.entity;
 
 import com.echo.acknowledgehub.constant.AnnouncementStatus;
+import com.echo.acknowledgehub.constant.ContentType;
+import com.echo.acknowledgehub.constant.IsSchedule;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
@@ -17,14 +19,19 @@ public class Announcement {
     private Long id;
     @Column(name = "title", nullable = false, columnDefinition = "VARCHAR(100)")
     private String title;
-    @Column(name = "created_at", nullable = false, columnDefinition = "TIMESTAMP")
+    @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, columnDefinition = "ENUM('EDITING', 'PENDING', 'APPROVED', 'DECLINED')")
     private AnnouncementStatus status;
     @Column(name = "pdf_link", nullable = true,columnDefinition = "VARCHAR(125)")
     private String pdfLink;
-
+    @Enumerated(EnumType.STRING)
+    @Column(name = "contentType", nullable = false)
+    private ContentType contentType;
+    @Enumerated(EnumType.STRING)
+    @Column(name ="isSchedule", nullable = false)
+    private IsSchedule isSchedule;
     @JsonIgnore
     @ManyToOne(cascade = CascadeType.MERGE)
     @JoinColumn(name = "hr_id" ,nullable = false)
@@ -37,8 +44,8 @@ public class Announcement {
 
     @PrePersist
     private void prePersist(){
-        if(createdAt!=null){
-            createdAt = LocalDateTime.now();
+        if(createdAt == null){
+            throw new IllegalArgumentException("CreatedAt must be set before saving the announcement.");
         }
     }
 }

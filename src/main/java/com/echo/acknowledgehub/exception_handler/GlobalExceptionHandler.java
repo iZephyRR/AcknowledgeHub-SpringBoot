@@ -12,11 +12,15 @@ import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.async.AsyncRequestTimeoutException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.multipart.MultipartException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiRequestException;
 import java.io.IOException;
+import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.concurrent.CompletionException;
 import java.util.logging.Logger;
 
@@ -27,7 +31,7 @@ public class GlobalExceptionHandler {
     private static final ErrorResponseDTO ERROR_RESPONSE = new ErrorResponseDTO();
 
     static {
-        STATUS_MAP.put(EmailSenderException.class, new ErrorResponseDTO(HttpStatus.NO_CONTENT.value(), null));
+        STATUS_MAP.put(EmailSenderException.class, new ErrorResponseDTO(HttpStatus.BAD_REQUEST.value(), null));
         STATUS_MAP.put(XlsxReaderException.class, new ErrorResponseDTO(HttpStatus.BAD_REQUEST.value(), null));
         STATUS_MAP.put(NullPointerException.class, new ErrorResponseDTO(HttpStatus.INTERNAL_SERVER_ERROR.value(), "An unexpected error occurred. Please try again later."));
         STATUS_MAP.put(BadCredentialsException.class, new ErrorResponseDTO(HttpStatus.FORBIDDEN.value(), "Invalid email or password."));
@@ -45,6 +49,11 @@ public class GlobalExceptionHandler {
         STATUS_MAP.put(DuplicatedEnteryException.class, new ErrorResponseDTO(HttpStatus.BAD_REQUEST.value(), null));
         STATUS_MAP.put(CompletionException.class, new ErrorResponseDTO(HttpStatus.BAD_REQUEST.value(), null));
         STATUS_MAP.put(UpdatePasswordException.class, new ErrorResponseDTO(HttpStatus.BAD_REQUEST.value(), null));
+        STATUS_MAP.put(DataNotFoundException.class, new ErrorResponseDTO(HttpStatus.BAD_REQUEST.value(), null));
+        STATUS_MAP.put(MaxUploadSizeExceededException.class, new ErrorResponseDTO(HttpStatus.BAD_REQUEST.value(), null));
+        STATUS_MAP.put(UnknownHostException.class, new ErrorResponseDTO(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Please try again later"));
+        STATUS_MAP.put(NoSuchElementException.class, new ErrorResponseDTO(HttpStatus.INTERNAL_SERVER_ERROR.value(), null));
+        STATUS_MAP.put(IllegalArgumentException.class, new ErrorResponseDTO(HttpStatus.INTERNAL_SERVER_ERROR.value(), null));
         //Can add more exception that you want to handle.
     }
 
@@ -60,6 +69,9 @@ public class GlobalExceptionHandler {
         }else {
             ERROR_RESPONSE.setMessage(errorResponse.getMessage());
         }
-        return new ResponseEntity<>(ERROR_RESPONSE, HttpStatus.valueOf(ERROR_RESPONSE.getErrorCode()));
+        ResponseEntity<ErrorResponseDTO> responseDTOResponseEntity=new ResponseEntity<>(ERROR_RESPONSE, HttpStatus.valueOf(ERROR_RESPONSE.getErrorCode()));
+        System.out.println("Response : "+responseDTOResponseEntity);
+        return responseDTOResponseEntity;
     }
+
 }
