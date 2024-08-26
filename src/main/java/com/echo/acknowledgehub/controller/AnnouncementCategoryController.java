@@ -20,12 +20,11 @@ public class AnnouncementCategoryController {
 
     private final AnnouncementCategoryService ANNOUNCEMENT_CATEGORY_SERVICE;
 
-@PostMapping("/create")
-public AnnouncementCategory createCategory(@RequestBody AnnouncementCategory category) {
-    return ANNOUNCEMENT_CATEGORY_SERVICE.save(category).join();
-}
-
-
+    @PostMapping("/create-category")
+    public AnnouncementCategory createCategory(@RequestBody AnnouncementCategory category) {
+        return ANNOUNCEMENT_CATEGORY_SERVICE.save(category).join();
+    }
+  
     @GetMapping("/get-all")
     public ResponseEntity<List<AnnouncementCategory>> getAllCategories() {
         return ResponseEntity.ok(ANNOUNCEMENT_CATEGORY_SERVICE.getAllCategoriesDESC());
@@ -33,16 +32,13 @@ public AnnouncementCategory createCategory(@RequestBody AnnouncementCategory cat
 
     @PutMapping("/disable/{id}")
     public Integer softDeleteCategory(@PathVariable("id") Long id) {
-    LOGGER.info("Id : "+id);
+        LOGGER.info("Id : " + id);
         return ANNOUNCEMENT_CATEGORY_SERVICE.softDelete(id).join();
-
-
     }
-    @PutMapping("/enable/{id}")
-    public Integer softUndeleteCategory(@PathVariable("id") Long id) {
-      return  ANNOUNCEMENT_CATEGORY_SERVICE.softUndelete(id).join();
 
-
+    @PutMapping("/mr/undelete-category/{id}")
+    public CompletableFuture<Integer> softUndeleteCategory(@PathVariable("id") Long id) {
+        return ANNOUNCEMENT_CATEGORY_SERVICE.softUndelete(id);  // Implement soft undelete logic
     }
 
 }

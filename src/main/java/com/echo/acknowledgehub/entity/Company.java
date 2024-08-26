@@ -14,8 +14,6 @@ import java.util.List;
 @NoArgsConstructor
 @Table(name = "company")
 public class Company {
-
-
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   @Column(name = "id", columnDefinition = "BIGINT")
@@ -26,5 +24,4 @@ public class Company {
   @OneToMany(mappedBy = "company", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
   @JsonManagedReference
   private List<Department> departments = new ArrayList<>();
-
 }

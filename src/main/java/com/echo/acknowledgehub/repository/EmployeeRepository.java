@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.security.core.parameters.P;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -30,12 +31,32 @@ public interface EmployeeRepository extends JpaRepository <Employee,Long>{
    String getPasswordById(@Param("id") Long id);
 
    @Modifying
-   @Query("UPDATE Employee em SET em.password= :newPassword WHERE em.id= :id")
-   int updatePassword(@Param("id") Long id,@Param("newPassword")String password);
+   @Query("UPDATE Employee em SET em.password= :newPassword WHERE em.email= :email")
+   int updatePassword(@Param("email") String email,@Param("newPassword")String password);
 
    @Query("select em.id from Employee em where em.department.id = :departmentId")
    List<Long> findByDepartmentId(@Param("departmentId") Long departmentId);
 
    @Query("select em.id from Employee em where em.company.id = :companyId")
    List<Long> findByCompanyId(@Param("companyId") Long companyId);
+
+   boolean existsByEmail (String email);
+
+   @Query("SELECT em.password from Employee em WHERE em.email = :email")
+   String findPasswordByEmail(@Param("email")String email);
+
+   @Query("SELECT em.name from Employee em WHERE em.email = :email")
+   String findNameByEmail(@Param("email")String email);
+  
+   @Query("select em from Employee em where em.department.id = :departmentId")
+   List<Employee> getByDepartmentId(@Param("departmentId") Long departmentId);
+
+   @Query("select em.telegramUserId from Employee em where em.company.id = :companyId")
+   List<Long> getAllChatIdByCompanyId(@Param("companyId") Long companyId);
+
+   @Query("select em.telegramUserId from Employee em where em.department.id = :departmentId")
+   List<Long> getAllChatIdByDepartmentId(@Param("departmentId") Long departmentId);
+
+   @Query("SELECT e.id FROM Employee e WHERE e.telegramUsername = :telegramUsername")
+   Long getEmployeeIdByTelegramUsername(@Param("telegramUsername") String telegramUsername);
 }
