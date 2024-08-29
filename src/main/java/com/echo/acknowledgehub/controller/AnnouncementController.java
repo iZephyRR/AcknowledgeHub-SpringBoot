@@ -43,7 +43,7 @@ public class AnnouncementController {
     private final CompanyService COMPANY_SERVICE;
     private final DepartmentService DEPARTMENT_SERVICE;
     private final AnnouncementCategoryService ANNOUNCEMENT_CATEGORY_SERVICE;
-    private final TelegramService TELEGRAM_SERVICE;
+    //private final TelegramService TELEGRAM_SERVICE;
     private final TargetService TARGET_SERVICE;
 
     @Scheduled(fixedRate = 60000)
@@ -64,7 +64,7 @@ public class AnnouncementController {
                 } else if (receiverType.equals("DEPARTMENT")) {
                     chatIdsList = EMPLOYEE_SERVICE.getAllChatIdByDepartmentId(sendTo);
                 }
-                TELEGRAM_SERVICE.sendToTelegram(chatIdsList, announcement.getContentType().getFirstValue(), announcement.getId(), announcement.getPdfLink(), announcement.getTitle(), announcement.getEmployee().getName());
+                //TELEGRAM_SERVICE.sendToTelegram(chatIdsList, announcement.getContentType().getFirstValue(), announcement.getId(), announcement.getPdfLink(), announcement.getTitle(), announcement.getEmployee().getName());
             }
             targetStorage.remove(announcement.getId());
         }
@@ -76,7 +76,7 @@ public class AnnouncementController {
             @RequestHeader("Authorization") String authHeader) throws IOException {
         ObjectMapper objectMapper = new ObjectMapper();
         List<TargetDTO> targetDTOList = objectMapper.readValue(announcementDTO.getTarget(), new TypeReference<List<TargetDTO>>() {
-        });  
+        });
 
         String token = authHeader.substring(7);
         Long loggedInId = Long.parseLong(JWT_SERVICE.extractId(token));
@@ -92,7 +92,6 @@ public class AnnouncementController {
         }
         AnnouncementStatus status;
         IsSchedule isSchedule;
-        if (CHECKING_BEAN.getRole() == EmployeeRole.MAIN_HR || CHECKING_BEAN.getRole() == EmployeeRole.HR) {
             if (announcementDTO.getScheduleOption().equals("later")) {
                 status = AnnouncementStatus.PENDING;
                 isSchedule = IsSchedule.TRUE;
@@ -100,14 +99,7 @@ public class AnnouncementController {
                 status = AnnouncementStatus.APPROVED;
                 isSchedule = IsSchedule.FALSE;
             }
-        } else {
-            status = AnnouncementStatus.PENDING;
-            if (announcementDTO.getScheduleOption().equals("later")) {
-                isSchedule = IsSchedule.TRUE_PENDING;
-            } else {
-                isSchedule = IsSchedule.FALSE;
-            }
-        }
+
         announcementDTO.setStatus(status);
         announcementDTO.setIsSchedule(isSchedule);
         String contentType = announcementDTO.getFile().getContentType();
@@ -138,11 +130,12 @@ public class AnnouncementController {
                 })
                 .toList();
         LOGGER.info("getting target entity list");
-        TARGET_SERVICE.insertTargetWithNotifications(targetList, announcement);
+//        TARGET_SERVICE.insertTargetWithNotifications(targetList, announcement);
         if (status == AnnouncementStatus.APPROVED) {
             LOGGER.info("announcement status : " + status);
             List<Target> targets = TARGET_SERVICE.saveTargets(targetList);
-            TARGET_SERVICE.insertTargetWithNotifications(targets, announcement); // target save, send notification
+            handleTargetsAndNotifications(targets, announcement);
+            // target save, send notification
             List<Long> chatIdsList = List.of();
             for (Target target : targets) {
                 String receiverType = target.getReceiverType().name();
@@ -152,12 +145,17 @@ public class AnnouncementController {
                 } else if (receiverType.equals("DEPARTMENT")) {
                     chatIdsList = EMPLOYEE_SERVICE.getAllChatIdByDepartmentId(sendTo);
                 }
-                TELEGRAM_SERVICE.sendToTelegram(chatIdsList, announcement.getContentType().getFirstValue(), announcement.getId(), announcement.getPdfLink(), announcement.getTitle(), announcement.getEmployee().getName());
+                //TELEGRAM_SERVICE.sendToTelegram(chatIdsList, announcement.getContentType().getFirstValue(), announcement.getId(), announcement.getPdfLink(), announcement.getTitle(), announcement.getEmployee().getName());
             }
         } else {
             targetStorage.put(announcement.getId(), targetList);
         }
     }
+    private void handleTargetsAndNotifications(List<Target> targetList, Announcement announcement) {
+        // Insert all targets with notifications in one call
+        TARGET_SERVICE.insertTargetWithNotifications(targetList, announcement);
+    }
+
 
     private void validateTargets(List<TargetDTO> targetDTOList) {
         for (TargetDTO targetDTO : targetDTOList) {
