@@ -1,5 +1,6 @@
 package com.echo.acknowledgehub.service;
 
+import com.echo.acknowledgehub.constant.EmployeeRole;
 import com.echo.acknowledgehub.dto.BooleanResponseDTO;
 import com.echo.acknowledgehub.dto.ChangePasswordDTO;
 import com.echo.acknowledgehub.dto.StringResponseDTO;
@@ -15,11 +16,13 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 @Service
 @AllArgsConstructor
@@ -106,6 +109,13 @@ public class EmployeeService {
         return EMPLOYEE_REPOSITORY.getEmployeeIdByTelegramUsername(telegramUsername);
     }
 
+    public List<Long> getMainHRAndHRIds() {
+        List<EmployeeRole> roles = Arrays.asList(EmployeeRole.MAIN_HR, EmployeeRole.HR);
+        return EMPLOYEE_REPOSITORY.findAllByRole(roles)
+                .stream()
+                .map(Employee::getId)
+                .collect(Collectors.toList());
+    }
 
 
 //    @Async
