@@ -53,9 +53,9 @@ public class TargetService {
                 case COMPANY:
                     addNotificationsForCompany(target.getSendTo(), notificationDTO);
                     break;
-                case CUSTOM:
-                    // Handle custom logic if necessary
-                    break;
+//                case CUSTOM:
+//                    // Handle custom logic if necessary
+//                    break;
                 default:
                     LOGGER.warning("Unknown receiver type: " + target.getReceiverType());
             }

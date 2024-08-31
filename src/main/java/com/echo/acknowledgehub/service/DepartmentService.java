@@ -34,6 +34,11 @@ public class DepartmentService {
         return CompletableFuture.completedFuture(DEPARTMENT_REPOSITORY.save(department));
     }
 
+    @Async
+    public void delete(Long id){
+        DEPARTMENT_REPOSITORY.deleteById(id);
+    }
+
     public List<Department> getAll() {
         return DEPARTMENT_REPOSITORY.findAll();
     }

@@ -44,7 +44,6 @@ public class CompanyController {
         return COMPANY_SERVICE.getAllCompanies();
     }
 
-
     @GetMapping(value = "/get-departments", produces = MediaType.APPLICATION_JSON_VALUE)
 
     public List<Department> getDepartments () {

@@ -30,6 +30,18 @@ public class EmployeeController {
     private final CheckingBean CHECKING_BEAN;
     private final EmployeeRepository employeeRepository;
 
+//     @GetMapping("/mr/users")
+//     private List<Employee> findAll() {
+//         LOGGER.info("Finding users..");
+//         return EMPLOYEE_SERVICE.findAll().join();
+//     }
+
+//     @GetMapping("/user/profile")
+//     private Optional<Employee> findById() {
+//         Long id = CHECKING_BEAN.getId();
+//         return EMPLOYEE_SERVICE.findById(id).join();
+
+    
 //    @GetMapping("/mr/users")
 //    private List<Employee> findAll() {
 //        LOGGER.info("Finding users..");
@@ -57,12 +69,5 @@ public class EmployeeController {
     private CompletableFuture<List<Employee>> register(@RequestBody List<UserDTO> users) {
         LOGGER.info("Adding users...");
         return EMPLOYEE_SERVICE.saveAll(users);
-    }
-
-    //Not finish yet!
-//    @PostMapping("/ad/add-excel-users")
-    private CompletableFuture<List<Employee>> register(@RequestBody UsersDTO users) throws IOException {
-        LOGGER.info("Adding users...");
-        return EMPLOYEE_SERVICE.saveAll(null);
     }
 }
