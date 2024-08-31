@@ -1,5 +1,6 @@
 package com.echo.acknowledgehub.repository;
 
+import com.echo.acknowledgehub.constant.EmployeeRole;
 import com.echo.acknowledgehub.entity.Employee;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -59,4 +60,8 @@ public interface EmployeeRepository extends JpaRepository <Employee,Long>{
 
    @Query("SELECT e.id FROM Employee e WHERE e.telegramUsername = :telegramUsername")
    Long getEmployeeIdByTelegramUsername(@Param("telegramUsername") String telegramUsername);
+
+   @Query("SELECT e FROM Employee e WHERE e.role IN :roles")
+   List<Employee> findAllByRole(@Param("roles") List<EmployeeRole> roles);
 }
+

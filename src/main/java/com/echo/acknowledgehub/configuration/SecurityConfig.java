@@ -47,9 +47,8 @@ public class SecurityConfig {
                         request ->
                                 request
                                         // Configure routes to allow access for all users.
-                                        .requestMatchers(BASE_URL + "/auth/**", BASE_URL + "/check", BASE_URL + "/test", BASE_URL + "/send-email").permitAll()
-
-                                        .requestMatchers(BASE_URL + "/notifications/**").authenticated()
+                                        .requestMatchers(BASE_URL + "/auth/**", BASE_URL + "/check", BASE_URL + "/test", BASE_URL + "/send-email",
+                                                BASE_URL + "/notifications/**").permitAll()
                                         // Configure routes to allow access for anonymous users.
                                         .requestMatchers(BASE_URL + "/auth/login").anonymous()
                                         // Configure routes to allow access for all authenticated users.

@@ -4,6 +4,7 @@ import com.echo.acknowledgehub.constant.AnnouncementStatus;
 import com.echo.acknowledgehub.constant.ContentType;
 import com.echo.acknowledgehub.constant.EmployeeRole;
 import com.echo.acknowledgehub.dto.AnnouncementDTO;
+import com.echo.acknowledgehub.constant.IsSchedule;
 import com.echo.acknowledgehub.entity.Announcement;
 import com.echo.acknowledgehub.repository.AnnouncementRepository;
 import lombok.AllArgsConstructor;
@@ -67,7 +68,7 @@ public class AnnouncementService {
         return ANNOUNCEMENT_REPOSITORY.count();
     }
     public List<Announcement> findPendingAnnouncementsScheduledForNow(LocalDateTime now) {
-        return ANNOUNCEMENT_REPOSITORY.findByStatusAndScheduledTime(AnnouncementStatus.PENDING, now); // AnnouncementStatus.PENDING
+        return ANNOUNCEMENT_REPOSITORY.findByStatusAndScheduledTime(AnnouncementStatus.PENDING,IsSchedule.TRUE, now); // AnnouncementStatus.PENDING
     }
 
     public Map<String, List<Announcement>> getAnnouncementsForAugToOct2024() {

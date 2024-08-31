@@ -1,5 +1,6 @@
 package com.echo.acknowledgehub.controller;
 
+import com.echo.acknowledgehub.bean.CheckingBean;
 import com.echo.acknowledgehub.dto.UserDTO;
 import com.echo.acknowledgehub.dto.UsersDTO;
 import com.echo.acknowledgehub.entity.Employee;
@@ -21,6 +22,8 @@ public class EmployeeController {
     private static final Logger LOGGER = Logger.getLogger(EmployeeController.class.getName());
     private final EmployeeService EMPLOYEE_SERVICE;
     private final JWTService JWT_SERVICE;
+    private final CheckingBean CHECKING_BEAN;
+
 
     @GetMapping("/mr/users")
     private List<Employee> findAll(){
@@ -28,8 +31,9 @@ public class EmployeeController {
         return EMPLOYEE_SERVICE.findAll().join();
     }
 
-    @GetMapping("/user/get-user/{id}")
-    private Optional<Employee> findById(@PathVariable Long id){
+    @GetMapping("/user/profile")
+    private Optional<Employee> findById(){
+        long id = CHECKING_BEAN.getId();
         return EMPLOYEE_SERVICE.findById(id).join();
     }
 

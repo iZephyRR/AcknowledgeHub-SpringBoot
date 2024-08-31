@@ -2,6 +2,7 @@ package com.echo.acknowledgehub.repository;
 
 
 import com.echo.acknowledgehub.constant.AnnouncementStatus;
+import com.echo.acknowledgehub.constant.IsSchedule;
 import com.echo.acknowledgehub.entity.Announcement;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -22,4 +23,11 @@ public interface AnnouncementRepository extends JpaRepository <Announcement,Long
     @Query("SELECT a.id, a.createdAt, a.status, a.title, a.contentType, c.name as categoryName, e.name as creator,e.role as role,a.pdfLink FROM Announcement a " +
             "JOIN a.employee e JOIN a.category c order by a.createdAt DESC")
     List<Object[]> getAllAnnouncements();
+
+    @Query("SELECT a FROM Announcement a WHERE a.status = :status AND a.isSchedule = :isSchedule AND a.createdAt <= :now")
+    List<Announcement> findByStatusAndScheduledTime(
+            @Param("status") AnnouncementStatus status,
+            @Param("isSchedule") IsSchedule isSchedule,
+            @Param("now") LocalDateTime now
+    );
 }
