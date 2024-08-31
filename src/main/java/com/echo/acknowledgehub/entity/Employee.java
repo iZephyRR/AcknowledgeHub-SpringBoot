@@ -74,7 +74,6 @@ public class Employee implements UserDetails {
         return Collections.singleton(new SimpleGrantedAuthority(this.getRole().name()));
     }
 
-
     @Override
     public String getUsername() {
         return this.email;
