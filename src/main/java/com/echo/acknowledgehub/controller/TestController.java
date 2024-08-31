@@ -4,7 +4,7 @@ import com.echo.acknowledgehub.bean.CheckingBean;
 import com.echo.acknowledgehub.entity.Company;
 import com.echo.acknowledgehub.service.CompanyService;
 import com.echo.acknowledgehub.service.EmployeeService;
-import com.echo.acknowledgehub.service.TelegramService;
+//import com.echo.acknowledgehub.service.TelegramService;
 import com.echo.acknowledgehub.util.JWTService;
 import lombok.AllArgsConstructor;
 import org.springframework.http.MediaType;
@@ -28,7 +28,7 @@ public class TestController {
     private final EmployeeService EMPLOYEE_SERVICE;
     private final CheckingBean CHECKING_BEAN;
     private final CompanyService COMPANY_SERVICE;
-    private final TelegramService TELEGRAM_SERVICE;
+    //private final TelegramService TELEGRAM_SERVICE;
 
     @GetMapping(value = "/test", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public Flux<CheckingBean> streamSingleObject() {
@@ -78,10 +78,10 @@ public class TestController {
         return COMPANY_SERVICE.getAllCompanies();
     }
 
-    @GetMapping("/mr/send-message")
-    public void sendMessage(@RequestBody String text) throws TelegramApiException {
-        TELEGRAM_SERVICE.sendMessage(1655222570L,text);
-    }
+//    @GetMapping("/mr/send-message")
+//    public void sendMessage(@RequestBody String text) throws TelegramApiException {
+//        TELEGRAM_SERVICE.sendMessage(1655222570L,text);
+//    }
 
 //    @GetMapping("/test/sendMessageForNotice")
 //    public void sendMessageForNotice(@RequestBody Long chatId) throws TelegramApiException {

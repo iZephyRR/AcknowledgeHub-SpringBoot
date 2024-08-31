@@ -43,7 +43,7 @@ public class AnnouncementController {
     private final CompanyService COMPANY_SERVICE;
     private final DepartmentService DEPARTMENT_SERVICE;
     private final AnnouncementCategoryService ANNOUNCEMENT_CATEGORY_SERVICE;
-    private final TelegramService TELEGRAM_SERVICE;
+    //private final TelegramService TELEGRAM_SERVICE;
     private final TargetService TARGET_SERVICE;
 
     @Scheduled(fixedRate = 60000)
@@ -64,7 +64,7 @@ public class AnnouncementController {
                 } else if (receiverType.equals("DEPARTMENT")) {
                     chatIdsList = EMPLOYEE_SERVICE.getAllChatIdByDepartmentId(sendTo);
                 }
-                TELEGRAM_SERVICE.sendToTelegram(chatIdsList, announcement.getContentType().getFirstValue(), announcement.getId(), announcement.getPdfLink(), announcement.getTitle(), announcement.getEmployee().getName());
+                //TELEGRAM_SERVICE.sendToTelegram(chatIdsList, announcement.getContentType().getFirstValue(), announcement.getId(), announcement.getPdfLink(), announcement.getTitle(), announcement.getEmployee().getName());
             }
             targetStorage.remove(announcement.getId());
         }
@@ -152,7 +152,7 @@ public class AnnouncementController {
                 } else if (receiverType.equals("DEPARTMENT")) {
                     chatIdsList = EMPLOYEE_SERVICE.getAllChatIdByDepartmentId(sendTo);
                 }
-                TELEGRAM_SERVICE.sendToTelegram(chatIdsList, announcement.getContentType().getFirstValue(), announcement.getId(), announcement.getPdfLink(), announcement.getTitle(), announcement.getEmployee().getName());
+                //TELEGRAM_SERVICE.sendToTelegram(chatIdsList, announcement.getContentType().getFirstValue(), announcement.getId(), announcement.getPdfLink(), announcement.getTitle(), announcement.getEmployee().getName());
             }
         } else {
             targetStorage.put(announcement.getId(), targetList);
@@ -181,9 +181,19 @@ public class AnnouncementController {
         }
     }
 
-    @GetMapping("/aug-to-oct-2024")
+    @GetMapping(value = "/aug-to-oct-2024", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Map<String, List<Announcement>>> getAnnouncementsForAugToOct2024() {
         Map<String, List<Announcement>> announcementsByMonth = ANNOUNCEMENT_SERVICE.getAnnouncementsForAugToOct2024();
         return ResponseEntity.ok(announcementsByMonth);
+    }
+    //findall
+    @GetMapping(value = "/get-all", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<List<AnnouncementDTO>> getAllAnnouncements() {
+        return ResponseEntity.ok(ANNOUNCEMENT_SERVICE.getAllAnnouncements());
+    }
+    @GetMapping("/count")
+    public ResponseEntity<Long> countAnnouncements() {
+        long count = ANNOUNCEMENT_SERVICE.countAnnouncements();
+        return ResponseEntity.ok(count);
     }
 }
