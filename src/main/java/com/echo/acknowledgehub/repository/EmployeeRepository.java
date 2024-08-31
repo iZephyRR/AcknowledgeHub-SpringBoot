@@ -1,22 +1,37 @@
 package com.echo.acknowledgehub.repository;
 
+import com.echo.acknowledgehub.dto.EmployeeProfileDTO;
+import com.echo.acknowledgehub.constant.EmployeeRole;
 import com.echo.acknowledgehub.entity.Employee;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-
 import java.util.List;
 import java.util.Optional;
 
 public interface EmployeeRepository extends JpaRepository<Employee, Long> {
-    Optional<Employee> findByEmail(String email);
+
+   Optional<Employee> findByEmail(String email);
+  
+   @Query("SELECT new com.echo.acknowledgehub.dto.EmployeeProfileDTO(em, em.company.id, em.company.name, em.department.id, em.department.name) FROM Employee em WHERE em.id = :id")
+   EmployeeProfileDTO findByIdForProfile(@Param("id") Long id);
+
+   @Query("select em from Employee em where em.telegramUsername= :username")
+   Employee findByTelegramUsername (@Param("username")String username);
 
     @Query("select em from Employee em where em.telegramUsername= :username")
     Employee findByTelegramUsername(@Param("username") String username);
 
     @Query("select em.telegramUserId from Employee em where em.telegramUsername= :username")
     Long getTelegramChatId(@Param("username") String username);
+    
+   @Query ("select em.telegramUserId from Employee em where em.id= :userId")
+   Long getTelegramChatIdByUserId (@Param("userId")Long userId);
+
+   @Modifying
+   @Query ("update Employee em set em.telegramUserId= :telegramUserId where em.telegramUsername= :telegramUsername")
+   int updateTelegramUserId(@Param("telegramUserId")Long telegramUserId,@Param("telegramUsername") String telegramUsername);
 
     @Modifying
     @Query("update Employee em set em.telegramUserId= :telegramUserId where em.telegramUsername= :telegramUsername")
@@ -48,7 +63,7 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
 
     @Query("select em from Employee em where em.department.id = :departmentId")
     List<Employee> getByDepartmentId(@Param("departmentId") Long departmentId);
-
+    
     @Query("select em.telegramUserId from Employee em where em.company.id = :companyId")
     List<Long> getAllChatIdByCompanyId(@Param("companyId") Long companyId);
 
@@ -57,4 +72,14 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
 
     @Query("SELECT e.id FROM Employee e WHERE e.telegramUsername = :telegramUsername")
     Long getEmployeeIdByTelegramUsername(@Param("telegramUsername") String telegramUsername);
+
+   @Query("SELECT e.name, e.email, e.address, e.dob, e.gender, e.nRC, e.password, e.role, e.status, e.stuffId, e.telegramUsername, e.workEntryDate, c.name AS companyName, d.name AS departmentName " +
+           "FROM Employee e " +
+           "JOIN e.company c " +
+           "JOIN e.department d")
+   List<Object[]> getAllUsers();
+
+   @Query("SELECT e FROM Employee e WHERE e.role IN :roles")
+   List<Employee> findAllByRole(@Param("roles") List<EmployeeRole> roles);
 }
+

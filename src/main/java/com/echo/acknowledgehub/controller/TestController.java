@@ -1,10 +1,12 @@
-package com.echo.acknowledgehub.controller;
 
 import com.echo.acknowledgehub.bean.CheckingBean;
 import com.echo.acknowledgehub.bean.SystemDataBean;
 import com.echo.acknowledgehub.entity.Company;
+import com.echo.acknowledgehub.service.AnnouncementService;
 import com.echo.acknowledgehub.service.CompanyService;
+import com.echo.acknowledgehub.service.EmployeeService;
 //import com.echo.acknowledgehub.service.TelegramService;
+import com.echo.acknowledgehub.util.JWTService;
 import lombok.AllArgsConstructor;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
@@ -21,10 +23,8 @@ public class TestController {
     private static final Logger LOGGER = Logger.getLogger(TestController.class.getName());
     private final CheckingBean CHECKING_BEAN;
     private final CompanyService COMPANY_SERVICE;
-    private final SystemDataBean VOLATILE_TEST;
-
-
-
+    //private final TelegramService TELEGRAM_SERVICE;
+    private final AnnouncementService ANNOUNCEMENT_SERVICE;
 
     @GetMapping("/auth/test")
     public ResponseEntity<Void> downloadFile() throws IOException {
@@ -47,6 +47,24 @@ public class TestController {
     private String hrmhTest() {
         return "testComplete";
     }
+
+    @GetMapping(value = "/test", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public Flux<CheckingBean> streamSingleObject() {
+        return Flux.interval(Duration.ofSeconds(5))
+                .map(sequence -> {
+                    LOGGER.info("Emitting CheckingBean: " + CHECKING_BEAN);
+                    return CHECKING_BEAN;
+                });
+    }
+//    @GetMapping(value = "/test1", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+//    public Flux<String> streamEvents() {
+//        return Flux.interval(Duration.ofSeconds(5))
+//                .map(sequence -> {
+//                    LOGGER.info("Emitting CheckingBean: " + CHECKING_BEAN);
+//                    return CHECKING_BEAN;
+//                });
+//    }
+
 
     @GetMapping("/hr/test")
     private String hrTest() {
@@ -73,3 +91,4 @@ public class TestController {
         return COMPANY_SERVICE.getAllCompanies();
     }
 }
+
