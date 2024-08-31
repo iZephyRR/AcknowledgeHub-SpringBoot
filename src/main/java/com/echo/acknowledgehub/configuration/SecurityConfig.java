@@ -57,7 +57,7 @@ public class SecurityConfig {
                                         // Configure routes to allow access only for system admin.
                                         .requestMatchers(BASE_URL + "/ad/**").hasRole(EmployeeRole.ADMIN.name())
                                         // Configure routes to allow access only for the main HR section.
-                                        .requestMatchers(BASE_URL + "/mr/**").hasRole(EmployeeRole.MAIN_HR.name())
+                                        .requestMatchers(BASE_URL + "/mr/**", BASE_URL + "/announcement/get-all").hasRole(EmployeeRole.MAIN_HR.name())
                                         // Configure routes to allow access only for main HR assistance.
                                         .requestMatchers(BASE_URL + "/ma/**").hasRole(EmployeeRole.MAIN_HR_ASSISTANCE.name())
                                         //Configure routes to allow access only for the 'company/HR' subdirectory.
