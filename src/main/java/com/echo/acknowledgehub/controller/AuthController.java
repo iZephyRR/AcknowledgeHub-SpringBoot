@@ -6,8 +6,10 @@ import com.echo.acknowledgehub.entity.Employee;
 import com.echo.acknowledgehub.service.EmployeeService;
 import com.echo.acknowledgehub.util.EmailSender;
 import com.echo.acknowledgehub.util.JWTService;
+import jakarta.mail.MessagingException;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -15,6 +17,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.logging.Logger;
@@ -56,8 +59,8 @@ public class AuthController {
         return this.CHECKING_BEAN;
     }
 
-    @PostMapping("/send-email")
-    private CompletableFuture<Void> sendEmail(@RequestBody EmailDTO email) {
+    @PostMapping(value = "/send-email", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    private CompletableFuture<Void> sendEmail(@ModelAttribute EmailDTO email) throws IOException {
         LOGGER.info("Email : " + email);
         return EMAIL_SENDER.sendEmail(email);
     }
@@ -75,5 +78,10 @@ public class AuthController {
     @PostMapping("/find-name-by-email")
     private StringResponseDTO findNameByEmail(@RequestBody String email) {
        return EMPLOYEE_SERVICE.findNameByEmail(email).join();
+    }
+
+    @GetMapping("/sever-connection-test")
+    private StringResponseDTO severConnectionTest(){
+        return new StringResponseDTO("Test success");
     }
 }

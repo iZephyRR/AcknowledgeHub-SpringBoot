@@ -1,10 +1,13 @@
 package com.echo.acknowledgehub.service;
 
+import com.echo.acknowledgehub.constant.*;
+import com.echo.acknowledgehub.dto.*;
 import com.echo.acknowledgehub.constant.EmployeeRole;
 import com.echo.acknowledgehub.dto.BooleanResponseDTO;
 import com.echo.acknowledgehub.dto.ChangePasswordDTO;
 import com.echo.acknowledgehub.dto.StringResponseDTO;
 import com.echo.acknowledgehub.dto.UserDTO;
+
 import com.echo.acknowledgehub.entity.Employee;
 import com.echo.acknowledgehub.exception_handler.DataNotFoundException;
 import com.echo.acknowledgehub.exception_handler.UpdatePasswordException;
@@ -15,12 +18,15 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionException;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -109,6 +115,9 @@ public class EmployeeService {
         return EMPLOYEE_REPOSITORY.getEmployeeIdByTelegramUsername(telegramUsername);
     }
 
+    public EmployeeProfileDTO findByIdForProfile(long id) {
+        return EMPLOYEE_REPOSITORY.findByIdForProfile(id);
+    }
     public List<Long> getMainHRAndHRIds() {
         List<EmployeeRole> roles = Arrays.asList(EmployeeRole.MAIN_HR, EmployeeRole.HR);
         return EMPLOYEE_REPOSITORY.findAllByRole(roles)
@@ -116,79 +125,6 @@ public class EmployeeService {
                 .map(Employee::getId)
                 .collect(Collectors.toList());
     }
-
-
-//    @Async
-//    public CompletableFuture<List<Employee>> saveAll(MultipartFile users) throws IOException {
-//        return XLSX_READER.getEmployees(users.getInputStream()).thenApply(employees -> {
-//            EMPLOYEE_REPOSITORY.saveAll(employees);
-//            return employees;
-//        });
-//    }
-//@Async
-//public CompletableFuture<List<Employee>> saveAll(UsersDTO users) throws IOException {
-//    CompletableFuture<Optional<Company>> company = COMPANY_SERVICE.findByName(users.getCompany());
-//    CompletableFuture<Optional<Department>> department = DEPARTMENT_SERVICE.findByName(users.getDepartment());
-//    return XLSX_READER.getEmployees(users.getXlsx().getInputStream()).thenApply(employees -> {
-//        employees.forEach(employee -> {
-//            employee.getDepartment().setId(department.thenApply(finalDepartment -> {
-//                if(finalDepartment.isPresent()){
-//                    return finalDepartment.get().getId();
-//                }else{
-//                    throw new UserRegistrationException();
-//                }
-//            }));
-//            employee.getCompany().setId(company.thenApply(finalCompany ->{
-//                if(finalCompany.isPresent()){
-//                    return finalCompany.get().getId();
-//                }else {
-//                    throw new UserRegistrationException();
-//                }
-//            }));
-//        });
-//        return CompletableFuture.completedFuture(EMPLOYEE_REPOSITORY.saveAll(employees));
-//    });
-//}
-//@Async
-//public CompletableFuture<List<Employee>> saveAll(UsersDTO users)  {
-//    CompletableFuture<Optional<Company>> companyFuture = COMPANY_SERVICE.findByName(users.getCompany());
-//    CompletableFuture<Optional<Department>> departmentFuture = DEPARTMENT_SERVICE.findByName(users.getDepartment());
-//
-//    return companyFuture.thenCombine(departmentFuture, (companyOpt, departmentOpt) -> {
-//                if (companyOpt.isEmpty()) {
-//                    CompletableFuture<Company> companyFuture2 = COMPANY_SERVICE.save(new Company(users.getCompany()));
-//                    companyFuture2.thenCompose(savedCompany ->
-//                            departmentOpt.<CompletionStage<Department>>map(CompletableFuture::completedFuture)
-//                                    .orElseGet(() ->
-//                                            DEPARTMENT_SERVICE.save(new Department(users.getDepartment(), savedCompany.getId()))));
-//                }
-//
-//                Company company = companyOpt.get();
-//                Department department = departmentOpt.get();
-//
-//                try {
-//                    return XLSX_READER.getEmployees(users.getXlsx().getInputStream())
-//                            .thenApply(employees -> {
-//                                employees.forEach(employee -> {
-//                                    employee.getCompany().setId(company.getId());
-//                                    employee.getDepartment().setId(department.getId());
-//                                });
-//                                return employees;
-//                            });
-//                } catch (IOException e) {
-//                    LOGGER.severe("Error "+e);
-//                    throw new XlsxReaderException(); // Wrap and propagate the IOException
-//                }
-//            }).thenCompose(employeesFuture -> employeesFuture)
-//            .thenApply(EMPLOYEE_REPOSITORY::saveAll);
-//}
-
-
-    @Async
-    public CompletableFuture<List<Employee>> findAll() {
-        return CompletableFuture.completedFuture(EMPLOYEE_REPOSITORY.findAll());
-    }
-
     @Transactional
     public Employee findByTelegramUsername(String username) {
         return EMPLOYEE_REPOSITORY.findByTelegramUsername(username);
@@ -200,8 +136,13 @@ public class EmployeeService {
     }
 
     @Transactional
-    public Long getChatIdByUsername(String username) {
+    public Long getChatIdByTelegramUsername(String username) {
         return EMPLOYEE_REPOSITORY.getTelegramChatId(username);
+    }
+
+    @Transactional
+    public Long getChatIdByUserId(Long userId) {
+        return EMPLOYEE_REPOSITORY.getTelegramChatIdByUserId(userId);
     }
 
     public List<Long> getAllChatId() {
@@ -222,5 +163,33 @@ public class EmployeeService {
 
     public boolean existsById(Long sendTo) {
         return EMPLOYEE_REPOSITORY.existsById(sendTo);
+    }
+    @Transactional
+    public List<UserDTO> getAllUsers(){
+        List<Object[]> objectList = EMPLOYEE_REPOSITORY.getAllUsers();
+        return mapToDtoList(objectList);
+    }
+
+    public List<UserDTO> mapToDtoList (List<Object[]> objLists) {
+        return objLists.stream().map(this::mapToDto).collect(Collectors.toList());
+    }
+
+    public UserDTO mapToDto(Object[] row){
+        UserDTO dto = new UserDTO();
+        dto.setName((String) row[0]);
+        dto.setEmail((String) row[1]);
+        dto.setAddress((String) row[2]);
+        dto.setDob((Date) row[3]);
+        dto.setGender((Gender) row[4]);
+        dto.setNRC((String) row[5]);
+        dto.setPassword((String) row[6]);
+        dto.setRole((EmployeeRole) row[7]);
+        dto.setStatus((EmployeeStatus) row[8]);
+        dto.setStuffId((String) row[9]);
+        dto.setTelegramUsername((String) row[10]);
+        dto.setWorkEntryDate((Date) row[11]);
+        dto.setCompanyName((String) row[12]);
+        dto.setDepartmentName((String) row[13]);
+        return dto;
     }
 }

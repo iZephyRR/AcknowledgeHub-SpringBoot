@@ -12,7 +12,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.logging.Logger;
 
 @RestController
-@RequestMapping("${app.api.base-url}/mr/category")
+    @RequestMapping("${app.api.base-url}/mr/category")
 @AllArgsConstructor
 public class AnnouncementCategoryController {
 
@@ -36,9 +36,9 @@ public class AnnouncementCategoryController {
         return ANNOUNCEMENT_CATEGORY_SERVICE.softDelete(id).join();
     }
 
-    @PutMapping("/mr/undelete-category/{id}")
-    public CompletableFuture<Integer> softUndeleteCategory(@PathVariable("id") Long id) {
-        return ANNOUNCEMENT_CATEGORY_SERVICE.softUndelete(id);  // Implement soft undelete logic
+    @PutMapping("/enable/{id}")
+    public Integer softUndeleteCategory(@PathVariable("id") Long id) {
+        return ANNOUNCEMENT_CATEGORY_SERVICE.softUndelete(id).join();  // Implement soft undelete logic
     }
 
 }

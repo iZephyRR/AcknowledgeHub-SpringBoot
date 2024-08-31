@@ -1,6 +1,7 @@
 package com.echo.acknowledgehub.exception_handler;
 
 import com.echo.acknowledgehub.dto.ErrorResponseDTO;
+import jakarta.mail.MessagingException;
 import org.modelmapper.ConfigurationException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
