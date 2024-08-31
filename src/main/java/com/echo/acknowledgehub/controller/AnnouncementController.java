@@ -85,7 +85,8 @@ public class AnnouncementController {
     @PostMapping(value = "/create", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public void createAnnouncement(
             @ModelAttribute AnnouncementDTO announcementDTO,
-            @RequestHeader("Authorization") String authHeader) throws IOException {
+            @RequestHeader("Authorization") String authHeader
+    ) throws IOException {
         ObjectMapper objectMapper = new ObjectMapper();
         List<TargetDTO> targetDTOList = objectMapper.readValue(announcementDTO.getTarget(), new TypeReference<List<TargetDTO>>() {
         });

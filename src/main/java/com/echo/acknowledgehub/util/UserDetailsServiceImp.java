@@ -1,6 +1,7 @@
 package com.echo.acknowledgehub.util;
 
 import com.echo.acknowledgehub.bean.CheckingBean;
+import com.echo.acknowledgehub.constant.EmployeeRole;
 import com.echo.acknowledgehub.constant.EmployeeStatus;
 import com.echo.acknowledgehub.entity.Employee;
 import com.echo.acknowledgehub.exception_handler.UserDeactivatedException;
@@ -44,7 +45,8 @@ public class UserDetailsServiceImp implements UserDetailsService {
             CHECKING_BEAN.setStatus(optionalEmployee.get().getStatus());
             CHECKING_BEAN.setName(optionalEmployee.get().getName());
             CHECKING_BEAN.setId(optionalEmployee.get().getId());
-            CHECKING_BEAN.setCompanyId(optionalEmployee.get().getCompany().getId());
+            if(optionalEmployee.get().getCompany()!=null)
+                CHECKING_BEAN.setCompanyId(optionalEmployee.get().getCompany().getId());
             return new User(optionalEmployee.get().getId().toString(), optionalEmployee.get().getPassword(), authorities);
         }
     }

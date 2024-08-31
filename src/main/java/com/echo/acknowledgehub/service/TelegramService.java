@@ -1,4 +1,3 @@
-
 package com.echo.acknowledgehub.service;
 
 import com.echo.acknowledgehub.constant.ContentType;
@@ -17,7 +16,6 @@ import org.telegram.telegrambots.meta.api.objects.polls.PollAnswer;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -395,4 +393,3 @@ public class TelegramService extends TelegramLongPollingBot {
 
 
 }
-

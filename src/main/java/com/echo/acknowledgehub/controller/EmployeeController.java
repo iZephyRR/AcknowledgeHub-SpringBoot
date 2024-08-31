@@ -70,11 +70,4 @@ public class EmployeeController {
         LOGGER.info("Adding users...");
         return EMPLOYEE_SERVICE.saveAll(users);
     }
-
-    //Not finish yet!
-//    @PostMapping("/ad/add-excel-users")
-    private CompletableFuture<List<Employee>> register(@RequestBody UsersDTO users) throws IOException {
-        LOGGER.info("Adding users...");
-        return EMPLOYEE_SERVICE.saveAll(null);
-    }
 }
