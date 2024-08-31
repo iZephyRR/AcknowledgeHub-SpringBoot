@@ -30,6 +30,18 @@ public class EmployeeController {
     private final CheckingBean CHECKING_BEAN;
     private final EmployeeRepository employeeRepository;
 
+//     @GetMapping("/mr/users")
+//     private List<Employee> findAll() {
+//         LOGGER.info("Finding users..");
+//         return EMPLOYEE_SERVICE.findAll().join();
+//     }
+
+//     @GetMapping("/user/profile")
+//     private Optional<Employee> findById() {
+//         Long id = CHECKING_BEAN.getId();
+//         return EMPLOYEE_SERVICE.findById(id).join();
+
+    
 //    @GetMapping("/mr/users")
 //    private List<Employee> findAll() {
 //        LOGGER.info("Finding users..");

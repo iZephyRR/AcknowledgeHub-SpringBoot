@@ -35,4 +35,5 @@ public class Department {
     this.name=name;
     this.company.setId(companyId);
   }
+
 }

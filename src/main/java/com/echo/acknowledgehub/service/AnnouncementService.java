@@ -73,7 +73,8 @@ public class AnnouncementService {
     }
 
     public List<Announcement> findPendingAnnouncementsScheduledForNow(LocalDateTime now) {
-        return ANNOUNCEMENT_REPOSITORY.findByStatusAndScheduledTime(AnnouncementStatus.PENDING,IsSchedule.TRUE, now); // AnnouncementStatus.PENDING
+        return ANNOUNCEMENT_REPOSITORY.findByStatusAndScheduledTime( AnnouncementStatus.PENDING, now); // AnnouncementStatus.PENDING
+        //return ANNOUNCEMENT_REPOSITORY.findByStatusAndScheduledTime(AnnouncementStatus.PENDING,IsSchedule.TRUE, now); // AnnouncementStatus.PENDING
     }
 
     public Map<String, List<Announcement>> getAnnouncementsForAugToOct2024() {
@@ -95,6 +96,10 @@ public class AnnouncementService {
         return announcementsByMonth;
     }
 
+    public long count() {
+        return ANNOUNCEMENT_REPOSITORY.count();
+    }
+
     public List<AnnouncementDTO> mapToDtoList (List<Object[]> objLists) {
         return objLists.stream().map(this::mapToDto).collect(Collectors.toList());
     }
@@ -113,17 +118,5 @@ public class AnnouncementService {
         return dto;
     }
 
-    public AnnouncementDTO mapToDto(Object[] row){
-        AnnouncementDTO dto = new AnnouncementDTO();
-        dto.setId((Long) row[0]);
-        dto.setCreatedAt(LocalDateTime.parse(((LocalDateTime) row[1]).format(DateTimeFormatter.ISO_DATE_TIME)));
-        dto.setStatus((AnnouncementStatus) row[2]);
-        dto.setTitle((String) row[3]);
-        dto.setContentType((ContentType) row[4]);
-        dto.setCategoryName((String) row[5]);
-        dto.setCreatedBy((String) row[6]);
-        dto.setRole((EmployeeRole) row[7]);
-        dto.setFileUrl((String) row[8]);
-        return dto;
-    }
-}
+
+   

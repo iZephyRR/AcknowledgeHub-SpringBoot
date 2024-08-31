@@ -12,7 +12,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.logging.Logger;
 
 @RestController
-@RequestMapping("${app.api.base-url}/mr/category")
+    @RequestMapping("${app.api.base-url}/mr/category")
 @AllArgsConstructor
 public class AnnouncementCategoryController {
 
