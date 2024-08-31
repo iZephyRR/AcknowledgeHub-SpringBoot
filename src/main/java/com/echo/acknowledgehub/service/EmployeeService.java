@@ -190,8 +190,13 @@ public class EmployeeService {
     }
 
     @Transactional
-    public Long getChatIdByUsername(String username) {
+    public Long getChatIdByTelegramUsername(String username) {
         return EMPLOYEE_REPOSITORY.getTelegramChatId(username);
+    }
+
+    @Transactional
+    public Long getChatIdByUserId(Long userId) {
+        return EMPLOYEE_REPOSITORY.getTelegramChatIdByUserId(userId);
     }
 
     public List<Long> getAllChatId() {

@@ -16,6 +16,11 @@ import org.telegram.telegrambots.meta.api.objects.polls.PollAnswer;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -26,6 +31,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
+import java.util.zip.ZipInputStream;
 
 @Service
 @AllArgsConstructor
@@ -63,8 +69,8 @@ public class TelegramService extends TelegramLongPollingBot {
                 String username = user.getUserName();
                 Long chatId = user.getId();
                 Long employeeId = EMPLOYEE_SERVICE.getEmployeeIdByTelegramUsername(username); // to save firebase
-                LOGGER.info("User " + username +" userId "+ employeeId + " clicked for announcement " + announcementId + " at " + formattedNow);
-                updateCaption(callbackQuery,chatId);
+                LOGGER.info("User " + username + " userId " + employeeId + " clicked for announcement " + announcementId + " at " + formattedNow);
+                updateCaption(callbackQuery, chatId);
             }
         } else if (updateInfo.hasMessage()) {
             try {
@@ -77,7 +83,7 @@ public class TelegramService extends TelegramLongPollingBot {
         }
     }
 
-    private void updateCaption(CallbackQuery callbackQuery, Long chatId){
+    public void updateCaption(CallbackQuery callbackQuery, Long chatId){
         EditMessageCaption editMessage = new EditMessageCaption();
         editMessage.setChatId(callbackQuery.getMessage().getChatId().toString());
         editMessage.setMessageId(callbackQuery.getMessage().getMessageId());
@@ -125,8 +131,12 @@ public class TelegramService extends TelegramLongPollingBot {
         return CompletableFuture.completedFuture(null);
     }
 
+//    public Long getChatIdByUserId(Long userId) {
+//        return EMPLOYEE_SERVICE.getChatIdByUserId(userId);
+//    }
+
     private Long getChatIdByUsername(String username) {
-        return EMPLOYEE_SERVICE.getChatIdByUsername(username);
+        return EMPLOYEE_SERVICE.getChatIdByTelegramUsername(username);
     }
 
     @Async
@@ -146,14 +156,14 @@ public class TelegramService extends TelegramLongPollingBot {
             sendImageInBatches(chatIdsList, announcementId, filePathOrUrl, title, creator);
         } else if (contentType.equals(ContentType.PDF.getValues()[0]) ||
                 contentType.equals(ContentType.EXCEL.getValues()[0]) ||
-                contentType.equals(ContentType.EXCEL.getValues()[1])) {
-            LOGGER.info("send pdf or excel");
-            sendReportsInBatches(chatIdsList, announcementId, filePathOrUrl, title, creator);
+                contentType.equals(ContentType.EXCEL.getValues()[1]) ||
+                contentType.equals(ContentType.ZIP.getValues()[0])) {
+            LOGGER.info("send pdf or excel or zip");
+            sendReportsInBatches(chatIdsList, announcementId, filePathOrUrl, title, creator , contentType);
         } else {
             LOGGER.info("Unknown content type: " + contentType);
         }
     }
-
 
     // handle Poll Answer
     private void handlePollAnswer(PollAnswer pollAnswer) {
@@ -225,7 +235,7 @@ public class TelegramService extends TelegramLongPollingBot {
     }
 
     // send report pdf or excel if u want to send to more than one user, call ....InBatches
-    private void sendReports(Long chatId,Long announcementId, String filePathOrUrl, String title, String creator) throws TelegramApiException {
+    private void sendReports(Long chatId,Long announcementId, String filePathOrUrl, String title, String creator, String contentType) throws TelegramApiException {
         SendDocument sendDocumentRequest = new SendDocument();
         sendDocumentRequest.setChatId(chatId);
         InputFile file = new InputFile(filePathOrUrl);
@@ -243,9 +253,10 @@ public class TelegramService extends TelegramLongPollingBot {
         sendDocumentRequest.setReplyMarkup(markupInline);
         LOGGER.info("Before sending to : "+ chatId);
         execute(sendDocumentRequest);
+        LOGGER.info("After sending to : "+ chatId);
     }
 
-    private void sendReportsInBatches(List<Long> chatIds,Long announcementId, String filePath, String title, String creator) {
+    private void sendReportsInBatches(List<Long> chatIds,Long announcementId, String filePath, String title, String creator, String contentType) {
         int batchSize = 30;
         int delay = 1; // 1-second delay between batches
         ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
@@ -254,7 +265,7 @@ public class TelegramService extends TelegramLongPollingBot {
             executor.schedule(() -> {
                 for (Long chatId : batch) {
                     try {
-                        sendReports(chatId,announcementId, filePath, title, creator);
+                        sendReports(chatId,announcementId, filePath, title, creator, contentType);
                     } catch (TelegramApiException e) {
                         throw new RuntimeException(e);
                     }
@@ -380,4 +391,6 @@ public class TelegramService extends TelegramLongPollingBot {
         }
         executor.shutdown();
     }
+
+
 }

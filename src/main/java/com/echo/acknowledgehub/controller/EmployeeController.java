@@ -1,5 +1,6 @@
 package com.echo.acknowledgehub.controller;
 
+import com.echo.acknowledgehub.bean.CheckingBean;
 import com.echo.acknowledgehub.dto.UserDTO;
 import com.echo.acknowledgehub.dto.UsersDTO;
 import com.echo.acknowledgehub.entity.Employee;
@@ -21,15 +22,17 @@ public class EmployeeController {
     private static final Logger LOGGER = Logger.getLogger(EmployeeController.class.getName());
     private final EmployeeService EMPLOYEE_SERVICE;
     private final JWTService JWT_SERVICE;
+    private final CheckingBean CHECKING_BEAN;
 
     @GetMapping("/mr/users")
-    private List<Employee> findAll(){
+    private List<Employee> findAll() {
         LOGGER.info("Finding users..");
         return EMPLOYEE_SERVICE.findAll().join();
     }
 
-    @GetMapping("/user/get-user/{id}")
-    private Optional<Employee> findById(@PathVariable Long id){
+    @GetMapping("/user/profile")
+    private Optional<Employee> findById() {
+        Long id = CHECKING_BEAN.getId();
         return EMPLOYEE_SERVICE.findById(id).join();
     }
 
@@ -44,7 +47,8 @@ public class EmployeeController {
         LOGGER.info("Adding users...");
         return EMPLOYEE_SERVICE.saveAll(users);
     }
-//Not finish yet!
+
+    //Not finish yet!
 //    @PostMapping("/ad/add-excel-users")
     private CompletableFuture<List<Employee>> register(@RequestBody UsersDTO users) throws IOException {
         LOGGER.info("Adding users...");

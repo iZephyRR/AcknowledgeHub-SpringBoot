@@ -70,9 +70,11 @@ public class SecurityConfig {
     
                                     .requestMatchers(BASE_URL + "/mhr/**").hasAnyRole(EmployeeRole.MAIN_HR.name(), EmployeeRole.HR.name())
 
-                                        .requestMatchers(BASE_URL + "/announcement/create", BASE_URL + "/get-companies", BASE_URL + "/getCompanyById/**",
-                                                BASE_URL + "/get-categories").hasAnyRole(EmployeeRole.MAIN_HR.name(), EmployeeRole.HR.name(),
-                                                                                                                    EmployeeRole.MAIN_HR_ASSISTANCE.name(),EmployeeRole.HR_ASSISTANCE.name())
+                                        .requestMatchers(BASE_URL + "/announcement/create",BASE_URL + "/announcement/uploadDraft",
+                                                BASE_URL + "/announcement/get-drafts", BASE_URL + "/get-companies",
+                                                BASE_URL + "/getCompanyById/**", BASE_URL + "/get-categories", BASE_URL +"/announcement/getDraftById/**",
+                                                BASE_URL + "/announcement/delete-draft/**").hasAnyRole(EmployeeRole.MAIN_HR.name(),
+                                                    EmployeeRole.HR.name(),  EmployeeRole.MAIN_HR_ASSISTANCE.name(),EmployeeRole.HR_ASSISTANCE.name())
 
             )
                 .userDetailsService(USER_DETAILS_SERVICE)

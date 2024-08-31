@@ -5,7 +5,8 @@ public enum ContentType {
     VIDEO("video/"),
     PDF("application/pdf"),
     EXCEL("application/vnd.ms-excel", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"),
-    IMAGE("image/");
+    IMAGE("image/"),
+    ZIP("application/x-zip-compressed");
 
     private final String[] values;
 
