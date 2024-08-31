@@ -1,26 +1,34 @@
 package com.echo.acknowledgehub.service;
 
 import com.echo.acknowledgehub.constant.AnnouncementStatus;
+import com.echo.acknowledgehub.constant.ContentType;
+import com.echo.acknowledgehub.constant.EmployeeRole;
+import com.echo.acknowledgehub.dto.AnnouncementDTO;
 import com.echo.acknowledgehub.constant.IsSchedule;
 import com.echo.acknowledgehub.entity.Announcement;
+import com.echo.acknowledgehub.entity.AnnouncementCategory;
 import com.echo.acknowledgehub.repository.AnnouncementRepository;
+import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+
 import java.time.LocalDateTime;
 
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 @Service
 @AllArgsConstructor
@@ -35,8 +43,9 @@ public class AnnouncementService {
         return CompletableFuture.completedFuture(ANNOUNCEMENT_REPOSITORY.findById(id));
     }
 
+
     public Announcement save(Announcement announcement) throws IOException {
-         return ANNOUNCEMENT_REPOSITORY.save(announcement);
+        return ANNOUNCEMENT_REPOSITORY.save(announcement);
     }
 
     @Async
@@ -46,15 +55,26 @@ public class AnnouncementService {
 
     public String handleFileUpload(MultipartFile file) throws IOException {
         Map<String, String> result = CLOUD_SERVICE.upload(file);
-        return  result.get("url");
+        return result.get("url");
     }
 
     public List<Announcement> getAnnouncementsForMonth(LocalDateTime startDateTime, LocalDateTime endDateTime) {
         return ANNOUNCEMENT_REPOSITORY.findAllByDateBetween(startDateTime, endDateTime);
     }
 
+    @Transactional
+    public List<AnnouncementDTO> getAllAnnouncements() {
+        List<Object[]> objectList = ANNOUNCEMENT_REPOSITORY.getAllAnnouncements();
+        return mapToDtoList(objectList);
+    }
+
+    public long countAnnouncements() {
+        return ANNOUNCEMENT_REPOSITORY.count();
+    }
+
     public List<Announcement> findPendingAnnouncementsScheduledForNow(LocalDateTime now) {
-        return ANNOUNCEMENT_REPOSITORY.findByStatusAndScheduledTime(AnnouncementStatus.PENDING,IsSchedule.TRUE, now); // AnnouncementStatus.PENDING
+        return ANNOUNCEMENT_REPOSITORY.findByStatusAndScheduledTime(AnnouncementStatus.PENDING, now); // AnnouncementStatus.PENDING
+        //return ANNOUNCEMENT_REPOSITORY.findByStatusAndScheduledTime(AnnouncementStatus.PENDING,IsSchedule.TRUE, now); // AnnouncementStatus.PENDING
     }
 
     public Map<String, List<Announcement>> getAnnouncementsForAugToOct2024() {
@@ -76,5 +96,28 @@ public class AnnouncementService {
         return announcementsByMonth;
     }
 
+    public long count() {
+        return ANNOUNCEMENT_REPOSITORY.count();
+    }
 
+    public List<AnnouncementDTO> mapToDtoList(List<Object[]> objLists) {
+        return objLists.stream().map(this::mapToDto).collect(Collectors.toList());
+    }
+
+    public AnnouncementDTO mapToDto(Object[] row) {
+        AnnouncementDTO dto = new AnnouncementDTO();
+        dto.setId((Long) row[0]);
+        dto.setCreatedAt(LocalDateTime.parse(((LocalDateTime) row[1]).format(DateTimeFormatter.ISO_DATE_TIME)));
+        dto.setStatus((AnnouncementStatus) row[2]);
+        dto.setTitle((String) row[3]);
+        dto.setContentType((ContentType) row[4]);
+        dto.setCategoryName((String) row[5]);
+        dto.setCreatedBy((String) row[6]);
+        dto.setRole((EmployeeRole) row[7]);
+        dto.setFileUrl((String) row[8]);
+        return dto;
+    }
 }
+
+
+   
