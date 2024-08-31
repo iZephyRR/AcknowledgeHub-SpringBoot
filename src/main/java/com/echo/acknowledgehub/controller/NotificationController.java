@@ -3,9 +3,9 @@ package com.echo.acknowledgehub.controller;
 import com.echo.acknowledgehub.bean.CheckingBean;
 import com.echo.acknowledgehub.dto.NotificationDTO;
 import com.google.api.core.ApiFuture;
+import com.google.cloud.Timestamp;
 import com.google.cloud.firestore.DocumentReference;
 import com.google.cloud.firestore.Firestore;
-import com.google.cloud.firestore.QuerySnapshot;
 import com.google.firebase.cloud.FirestoreClient;
 import lombok.AllArgsConstructor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -24,56 +24,75 @@ public class NotificationController {
     private final SimpMessagingTemplate simpMessagingTemplate;
     private final CheckingBean CHECKING_BEAN;
 
-
     @PostMapping("/send")
-    public void sendNotification(@RequestBody NotificationDTO notificationDTO, @RequestParam Long loggedInId) {
-
+    public void sendNotification(@RequestBody NotificationDTO notificationDTO) {
         simpMessagingTemplate.convertAndSend("/topic/notifications", notificationDTO);
-        saveNotificationToFirestore(notificationDTO, loggedInId);
     }
 
-    private void saveNotificationToFirestore(NotificationDTO notificationDTO, Long loggedInId) {
-        Firestore db = FirestoreClient.getFirestore();
+    public void saveNotificationInFirebase(NotificationDTO notificationDTO) {
+        Firestore dbFirestore = FirestoreClient.getFirestore();
 
-        // Handling the "notifications" collection
-        ApiFuture<QuerySnapshot> notificationFuture = db.collection("notifications")
-                .whereEqualTo("targetId", notificationDTO.getTargetId())
-                .whereEqualTo("announcementId", notificationDTO.getAnnouncementId())
-                .get();
+        // Build the notification data
+        Map<String, Object> docData = buildNotificationData(notificationDTO);
 
+        // Save the notification in Firebase
+        ApiFuture<DocumentReference> future = dbFirestore.collection("notifications").add(docData);
         try {
-            if (!notificationFuture.get().isEmpty()) {
-                LOGGER.warning("Notification already exists for targetId: " + notificationDTO.getTargetId());
-                return;
-            }
+            DocumentReference documentReference = future.get();
+            LOGGER.info("Notification saved to Firestore with ID: " + documentReference.getId());
         } catch (InterruptedException | ExecutionException e) {
-            LOGGER.severe("Error checking for existing notification: " + e.getLocalizedMessage());
-            return;
+            LOGGER.severe("Error saving notification to Firestore: " + e.getLocalizedMessage());
         }
+    }
 
-        Map<String, String> docData = new HashMap<>();
+    private Map<String, Object> buildNotificationData(NotificationDTO notificationDTO) {
+        Map<String, Object> docData = new HashMap<>();
+
+        // Existing fields
         docData.put("title", notificationDTO.getTitle());
         docData.put("category", notificationDTO.getCategoryName());
-        LOGGER.info(notificationDTO.getCategoryName());
         docData.put("Sender", CHECKING_BEAN.getRole().toString());
         docData.put("SenderName", CHECKING_BEAN.getName());
-        docData.put("sentTo", notificationDTO.getTargetId().toString());
+        docData.put("userId", notificationDTO.getUserId());
         docData.put("announcementId", String.valueOf(notificationDTO.getAnnouncementId()));
         docData.put("status", notificationDTO.getStatus().toString());
         docData.put("type", notificationDTO.getType().toString());
         docData.put("noticeAt", notificationDTO.getNoticeAt().toString());
-        docData.put("userId", notificationDTO.getUserId().toString());
+        docData.put("timestamp", java.sql.Timestamp.valueOf(notificationDTO.getTimestamp())); // Ensure correct Timestamp type
+        docData.put("companyId", notificationDTO.getCompanyId());
 
-
-        ApiFuture<DocumentReference> addFuture = db.collection("notifications").add(docData);
-        try {
-            DocumentReference documentReference = addFuture.get();
-            LOGGER.info("Notification saved to Fire store with ID: " + documentReference.getId());
-        } catch (InterruptedException | ExecutionException e) {
-            LOGGER.severe("Error saving notification to Fire store: " + e.getLocalizedMessage());
+        // Adding the targetId field
+        if (notificationDTO.getTargetId() != null) {
+            docData.put("targetId", notificationDTO.getTargetId().toString());
         }
 
+        return docData;
     }
+
+}
+
+//
+//    private void saveNotificationToFirestore(NotificationDTO notificationDTO, Long loggedInId) {
+//        Firestore db = FirestoreClient.getFirestore();
+//
+//        // Handling the "notifications" collection
+//        ApiFuture<QuerySnapshot> notificationFuture = db.collection("notifications")
+//                .whereEqualTo("targetId", notificationDTO.getTargetId())
+//                .whereEqualTo("announcementId", notificationDTO.getAnnouncementId())
+//                .get();
+//
+//        try {
+//            if (!notificationFuture.get().isEmpty()) {
+//                LOGGER.warning("Notification already exists for targetId: " + notificationDTO.getTargetId());
+//                return;
+//            }
+//        } catch (InterruptedException | ExecutionException e) {
+//            LOGGER.severe("Error checking for existing notification: " + e.getLocalizedMessage());
+//            return;
+//        }
+//
+//        saveNotificationInFirebase(notificationDTO);  // Save only once if it doesn't exist
+//    }
 //        private void savenotedAtNotificationToFirestore (NotificationDTO notificationDTO, Long loggedInId){
 //            Firestore db2 = FirestoreClient.getFirestore();
 //
@@ -109,4 +128,4 @@ public class NotificationController {
 //            }
 //        }
 
-}
+

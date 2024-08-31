@@ -20,6 +20,12 @@ public class NotificationDTO {
     private String categoryName;
     private String title;
     private Long sentTo;
+    private LocalDateTime timestamp;
+    private Long CompanyId;
+    private Long employeeId;
+    private String employeeName;
+    private Long departmentId;
+    private String departmentName;
 
 
 

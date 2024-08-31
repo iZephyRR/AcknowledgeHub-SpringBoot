@@ -1,4 +1,3 @@
-package com.echo.acknowledgehub.controller;
 
 import com.echo.acknowledgehub.bean.CheckingBean;
 import com.echo.acknowledgehub.entity.Company;
@@ -43,17 +42,12 @@ public class TestController {
 //    @GetMapping(value = "/test1", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
 //    public Flux<String> streamEvents() {
 //        return Flux.interval(Duration.ofSeconds(5))
-//                .map(sequence -> "Server event at " + LocalTime.now());
+//                .map(sequence -> {
+//                    LOGGER.info("Emitting CheckingBean: " + CHECKING_BEAN);
+//                    return CHECKING_BEAN;
+//                });
 //    }
-    @GetMapping("/user/test")
-    private String test(){
-        return "testComplete";
-    }
 
-    @GetMapping("/hrmh/test")
-    private String hrmhTest(){
-        return "testComplete";
-    }
 
     @GetMapping("/hr/test")
     private String hrTest(){
@@ -93,24 +87,74 @@ public class TestController {
 //    @GetMapping("/test/sendMessageForNotice")
 //    public void sendMessageForNotice(@RequestBody Long chatId) throws TelegramApiException {
 //        TELEGRAM_SERVICE.sendMessageForNotice(chatId);
+  
+////    @GetMapping(value = "/test1", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+////    public Flux<String> streamEvents() {
+////        return Flux.interval(Duration.ofSeconds(5))
+////                .map(sequence -> "Server event at " + LocalTime.now());
+////    }
+//    @GetMapping("/user/test")
+//    private String test(){
+//        return "testComplete";
+
 //    }
-
-//@GetMapping(value = "/test", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-//public Flux<CheckingBean> streamEvents(@RequestHeader("Authorization") String token) {
-//    LOGGER.info("Starting request...");
-//    Long id = Long.parseLong(JWT_SERVICE.extractId(token.substring(7)));
 //
-//    return Flux.interval(Duration.ofSeconds(5))
-//            .flatMap(sequence -> Mono.fromFuture(EMPLOYEE_SERVICE.findById(id))
-//                    .flatMapMany(data -> data.map(employee ->
-//                                    Flux.just(new CheckingBean(employee.getStatus(), employee.getRole())))
-//                            .orElseGet(Flux::empty)
-//                    )
-//            );
+//    @GetMapping("/hrmh/test")
+//    private String hrmhTest(){
+//        return "testComplete";
+//    }
+//
+//    @GetMapping("/hr/test")
+//    private String hrTest(){
+//        return "testComplete";
+//    }
+//
+//    @GetMapping("/sf/test")
+//    private String sfTest(){
+//        return "testComplete";
+//    }
+//
+//    @GetMapping("/ad/test")
+//    private String adTest(){
+//        return "testComplete";
+//    }
+//
+//    @GetMapping("/bd/test")
+//    private String bdTest(){
+//        return "testComplete";
+//    }
+//
+//    @GetMapping("/test-get-companies")
+//    public List<Company> getCompanies () {
+//        return COMPANY_SERVICE.getAllCompanies();
+//    }
+//
+//    @GetMapping("/mr/send-message")
+//    public void sendMessage(@RequestBody String text) throws TelegramApiException {
+//        TELEGRAM_SERVICE.sendMessage(1655222570L,text);
+//    }
+//
+////    @GetMapping("/test/sendMessageForNotice")
+////    public void sendMessageForNotice(@RequestBody Long chatId) throws TelegramApiException {
+////        TELEGRAM_SERVICE.sendMessageForNotice(chatId);
+////    }
+//
+////@GetMapping(value = "/test", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+////public Flux<CheckingBean> streamEvents(@RequestHeader("Authorization") String token) {
+////    LOGGER.info("Starting request...");
+////    Long id = Long.parseLong(JWT_SERVICE.extractId(token.substring(7)));
+////
+////    return Flux.interval(Duration.ofSeconds(5))
+////            .flatMap(sequence -> Mono.fromFuture(EMPLOYEE_SERVICE.findById(id))
+////                    .flatMapMany(data -> data.map(employee ->
+////                                    Flux.just(new CheckingBean(employee.getStatus(), employee.getRole())))
+////                            .orElseGet(Flux::empty)
+////                    )
+////            );
+////}
+////@GetMapping("test")
+////    private void test(){
+////    LOGGER.info("Checking : "+CHECKING_BEAN);
+////}
+//
 //}
-//@GetMapping("test")
-//    private void test(){
-//    LOGGER.info("Checking : "+CHECKING_BEAN);
-//}
-
-}
