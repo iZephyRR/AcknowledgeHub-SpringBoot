@@ -4,6 +4,7 @@ import com.echo.acknowledgehub.constant.AnnouncementStatus;
 import com.echo.acknowledgehub.constant.ContentType;
 import com.echo.acknowledgehub.constant.EmployeeRole;
 import com.echo.acknowledgehub.dto.AnnouncementDTO;
+import com.echo.acknowledgehub.constant.IsSchedule;
 import com.echo.acknowledgehub.entity.Announcement;
 import com.echo.acknowledgehub.entity.AnnouncementCategory;
 import com.echo.acknowledgehub.repository.AnnouncementRepository;
@@ -12,6 +13,7 @@ import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import java.time.LocalDateTime;
 
@@ -59,13 +61,19 @@ public class AnnouncementService {
     public List<Announcement> getAnnouncementsForMonth(LocalDateTime startDateTime, LocalDateTime endDateTime) {
         return ANNOUNCEMENT_REPOSITORY.findAllByDateBetween(startDateTime, endDateTime);
     }
+
     @Transactional
     public List<AnnouncementDTO> getAllAnnouncements(){
         List<Object[]> objectList = ANNOUNCEMENT_REPOSITORY.getAllAnnouncements();
         return mapToDtoList(objectList);
     }
+
+    public long countAnnouncements() {
+        return ANNOUNCEMENT_REPOSITORY.count();
+    }
+
     public List<Announcement> findPendingAnnouncementsScheduledForNow(LocalDateTime now) {
-        return ANNOUNCEMENT_REPOSITORY.findByStatusAndScheduledTime(AnnouncementStatus.PENDING, now); // AnnouncementStatus.PENDING
+        return ANNOUNCEMENT_REPOSITORY.findByStatusAndScheduledTime(AnnouncementStatus.PENDING,IsSchedule.TRUE, now); // AnnouncementStatus.PENDING
     }
 
     public Map<String, List<Announcement>> getAnnouncementsForAugToOct2024() {
@@ -89,6 +97,20 @@ public class AnnouncementService {
 
     public List<AnnouncementDTO> mapToDtoList (List<Object[]> objLists) {
         return objLists.stream().map(this::mapToDto).collect(Collectors.toList());
+    }
+
+    public AnnouncementDTO mapToDto(Object[] row){
+        AnnouncementDTO dto = new AnnouncementDTO();
+        dto.setId((Long) row[0]);
+        dto.setCreatedAt(LocalDateTime.parse(((LocalDateTime) row[1]).format(DateTimeFormatter.ISO_DATE_TIME)));
+        dto.setStatus((AnnouncementStatus) row[2]);
+        dto.setTitle((String) row[3]);
+        dto.setContentType((ContentType) row[4]);
+        dto.setCategoryName((String) row[5]);
+        dto.setCreatedBy((String) row[6]);
+        dto.setRole((EmployeeRole) row[7]);
+        dto.setFileUrl((String) row[8]);
+        return dto;
     }
 
     public AnnouncementDTO mapToDto(Object[] row){

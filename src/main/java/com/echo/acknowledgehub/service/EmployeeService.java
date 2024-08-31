@@ -2,6 +2,12 @@ package com.echo.acknowledgehub.service;
 
 import com.echo.acknowledgehub.constant.*;
 import com.echo.acknowledgehub.dto.*;
+import com.echo.acknowledgehub.constant.EmployeeRole;
+import com.echo.acknowledgehub.dto.BooleanResponseDTO;
+import com.echo.acknowledgehub.dto.ChangePasswordDTO;
+import com.echo.acknowledgehub.dto.StringResponseDTO;
+import com.echo.acknowledgehub.dto.UserDTO;
+
 import com.echo.acknowledgehub.entity.Employee;
 import com.echo.acknowledgehub.exception_handler.DataNotFoundException;
 import com.echo.acknowledgehub.exception_handler.UpdatePasswordException;
@@ -17,6 +23,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -112,8 +119,14 @@ public class EmployeeService {
 
     public EmployeeProfileDTO findByIdForProfile(long id) {
         return EMPLOYEE_REPOSITORY.findByIdForProfile(id);
-    }
 
+    public List<Long> getMainHRAndHRIds() {
+        List<EmployeeRole> roles = Arrays.asList(EmployeeRole.MAIN_HR, EmployeeRole.HR);
+        return EMPLOYEE_REPOSITORY.findAllByRole(roles)
+                .stream()
+                .map(Employee::getId)
+                .collect(Collectors.toList());
+    }
 
 //    @Async
 //    public CompletableFuture<List<Employee>> saveAll(MultipartFile users) throws IOException {

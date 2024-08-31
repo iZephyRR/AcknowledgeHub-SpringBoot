@@ -77,7 +77,7 @@ public class AnnouncementController {
             @RequestHeader("Authorization") String authHeader) throws IOException {
         ObjectMapper objectMapper = new ObjectMapper();
         List<TargetDTO> targetDTOList = objectMapper.readValue(announcementDTO.getTarget(), new TypeReference<List<TargetDTO>>() {
-        });  
+        });
 
         String token = authHeader.substring(7);
         Long loggedInId = Long.parseLong(JWT_SERVICE.extractId(token));
@@ -93,7 +93,6 @@ public class AnnouncementController {
         }
         AnnouncementStatus status;
         IsSchedule isSchedule;
-        if (CHECKING_BEAN.getRole() == EmployeeRole.MAIN_HR || CHECKING_BEAN.getRole() == EmployeeRole.HR) {
             if (announcementDTO.getScheduleOption().equals("later")) {
                 status = AnnouncementStatus.PENDING;
                 isSchedule = IsSchedule.TRUE;
@@ -101,14 +100,7 @@ public class AnnouncementController {
                 status = AnnouncementStatus.APPROVED;
                 isSchedule = IsSchedule.FALSE;
             }
-        } else {
-            status = AnnouncementStatus.PENDING;
-            if (announcementDTO.getScheduleOption().equals("later")) {
-                isSchedule = IsSchedule.TRUE_PENDING;
-            } else {
-                isSchedule = IsSchedule.FALSE;
-            }
-        }
+
         announcementDTO.setStatus(status);
         announcementDTO.setIsSchedule(isSchedule);
         String contentType = announcementDTO.getFile().getContentType();
@@ -139,11 +131,12 @@ public class AnnouncementController {
                 })
                 .toList();
         LOGGER.info("getting target entity list");
-        TARGET_SERVICE.insertTargetWithNotifications(targetList, announcement);
+//        TARGET_SERVICE.insertTargetWithNotifications(targetList, announcement);
         if (status == AnnouncementStatus.APPROVED) {
             LOGGER.info("announcement status : " + status);
             List<Target> targets = TARGET_SERVICE.saveTargets(targetList);
-            TARGET_SERVICE.insertTargetWithNotifications(targets, announcement); // target save, send notification
+            handleTargetsAndNotifications(targets, announcement);
+            // target save, send notification
             List<Long> chatIdsList = List.of();
             for (Target target : targets) {
                 String receiverType = target.getReceiverType().name();
@@ -159,6 +152,11 @@ public class AnnouncementController {
             targetStorage.put(announcement.getId(), targetList);
         }
     }
+    private void handleTargetsAndNotifications(List<Target> targetList, Announcement announcement) {
+        // Insert all targets with notifications in one call
+        TARGET_SERVICE.insertTargetWithNotifications(targetList, announcement);
+    }
+
 
     private void validateTargets(List<TargetDTO> targetDTOList) {
         for (TargetDTO targetDTO : targetDTOList) {
@@ -187,9 +185,20 @@ public class AnnouncementController {
         return ResponseEntity.ok(ANNOUNCEMENT_SERVICE.getAllAnnouncements());
     }
 
-    @GetMapping("/aug-to-oct-2024")
+
+    @GetMapping(value = "/aug-to-oct-2024", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Map<String, List<Announcement>>> getAnnouncementsForAugToOct2024() {
         Map<String, List<Announcement>> announcementsByMonth = ANNOUNCEMENT_SERVICE.getAnnouncementsForAugToOct2024();
         return ResponseEntity.ok(announcementsByMonth);
+    }
+    //findall
+    @GetMapping(value = "/get-all", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<List<AnnouncementDTO>> getAllAnnouncements() {
+        return ResponseEntity.ok(ANNOUNCEMENT_SERVICE.getAllAnnouncements());
+    }
+    @GetMapping("/count")
+    public ResponseEntity<Long> countAnnouncements() {
+        long count = ANNOUNCEMENT_SERVICE.countAnnouncements();
+        return ResponseEntity.ok(count);
     }
 }
