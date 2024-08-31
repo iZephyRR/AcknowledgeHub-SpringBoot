@@ -57,7 +57,6 @@ public class AnnouncementController {
     private final TargetService TARGET_SERVICE;
     private final DraftService DRAFT_SERVICE;
 
-
     @Scheduled(fixedRate = 60000)
     public void checkPendingAnnouncements() throws IOException {
         List<Announcement> pendingAnnouncementsScheduled = ANNOUNCEMENT_SERVICE.findPendingAnnouncementsScheduledForNow(LocalDateTime.now());
@@ -118,7 +117,7 @@ public class AnnouncementController {
         entity.setEmployee(conFuEmployee.join());
         entity.setCategory(category);
         LOGGER.info("before get file");
-        if(announcementDTO.getFile() == null){
+        if (announcementDTO.getFile() == null) {
             MultipartFile file = convertToMultipartFile(announcementDTO.getFileUrl(), announcementDTO.getFilename());
             announcementDTO.setFile(file);
         }
@@ -172,11 +171,11 @@ public class AnnouncementController {
             targetStorage.put(announcement.getId(), targetList);
         }
     }
+
     private void handleTargetsAndNotifications(List<Target> targetList, Announcement announcement) {
         // Insert all targets with notifications in one call
         TARGET_SERVICE.insertTargetWithNotifications(targetList, announcement);
     }
-
 
     private void validateTargets(List<TargetDTO> targetDTOList) {
         for (TargetDTO targetDTO : targetDTOList) {
@@ -264,7 +263,7 @@ public class AnnouncementController {
         return ResponseEntity.ok(announcementDraftDTO);
     }
 
-    @DeleteMapping(value = "/delete-draft/{id}",produces = MediaType.APPLICATION_JSON_VALUE)
+    @DeleteMapping(value = "/delete-draft/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<StringResponseDTO> deleteDraft(@PathVariable("id") Long draftId) throws IOException {
         AnnouncementDraft announcementDraft = DRAFT_SERVICE.getById(draftId);
         String filePath = announcementDraft.getFileUrl();
@@ -276,7 +275,7 @@ public class AnnouncementController {
 
     private String saveFileAndGetUrl(MultipartFile file) throws IOException {
         if (file != null && !file.isEmpty()) {
-            String originalFilename = StringUtils.cleanPath(file.getOriginalFilename());
+            String originalFilename = StringUtils.cleanPath(Objects.requireNonNull(file.getOriginalFilename()));
 
             String timestamp = String.valueOf(System.currentTimeMillis());
             String filename = timestamp + "_" + originalFilename;
@@ -318,12 +317,6 @@ public class AnnouncementController {
         return new CustomMultipartFile(fileBytes, fileName, contentType);
     }
 
-}
-    //findall
-    @GetMapping(value = "/get-all", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<List<AnnouncementDTO>> getAllAnnouncements() {
-        return ResponseEntity.ok(ANNOUNCEMENT_SERVICE.getAllAnnouncements());
-    }
     @GetMapping("/count")
     public ResponseEntity<Long> countAnnouncements() {
         long count = ANNOUNCEMENT_SERVICE.countAnnouncements();

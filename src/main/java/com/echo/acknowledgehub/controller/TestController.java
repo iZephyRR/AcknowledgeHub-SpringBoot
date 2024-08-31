@@ -1,3 +1,4 @@
+package com.echo.acknowledgehub.controller;
 
 import com.echo.acknowledgehub.bean.CheckingBean;
 import com.echo.acknowledgehub.bean.SystemDataBean;
@@ -30,7 +31,7 @@ public class TestController {
     public ResponseEntity<Void> downloadFile() throws IOException {
 
         try {
-            Thread.sleep(80*1000);
+            Thread.sleep(80 * 1000);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
@@ -48,14 +49,15 @@ public class TestController {
         return "testComplete";
     }
 
-    @GetMapping(value = "/test", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public Flux<CheckingBean> streamSingleObject() {
-        return Flux.interval(Duration.ofSeconds(5))
-                .map(sequence -> {
-                    LOGGER.info("Emitting CheckingBean: " + CHECKING_BEAN);
-                    return CHECKING_BEAN;
-                });
-    }
+//    @GetMapping(value = "/test", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+//    public Flux<CheckingBean> streamSingleObject() {
+//        return Flux.interval(Duration.ofSeconds(5))
+//                .map(sequence -> {
+//                    LOGGER.info("Emitting CheckingBean: " + CHECKING_BEAN);
+//                    return CHECKING_BEAN;
+//                });
+//    }
+
 //    @GetMapping(value = "/test1", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
 //    public Flux<String> streamEvents() {
 //        return Flux.interval(Duration.ofSeconds(5))
@@ -64,7 +66,6 @@ public class TestController {
 //                    return CHECKING_BEAN;
 //                });
 //    }
-
 
     @GetMapping("/hr/test")
     private String hrTest() {
