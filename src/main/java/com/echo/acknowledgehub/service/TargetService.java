@@ -46,9 +46,9 @@ public class TargetService {
                     LOGGER.info("case company");
                     createNotificationsForCompany(target.getSendTo(), announcement);
                     break;
-                case CUSTOM:
-                    // Handle custom logic if necessary
-                    break;
+//                case CUSTOM:
+//                    // Handle custom logic if necessary
+//                    break;
                 default:
                     LOGGER.warning("Unknown receiver type: " + target.getReceiverType());
             }
