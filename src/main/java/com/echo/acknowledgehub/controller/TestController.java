@@ -1,5 +1,4 @@
 //package com.echo.acknowledgehub.controller;
-//
 //import com.echo.acknowledgehub.bean.CheckingBean;
 //import com.echo.acknowledgehub.entity.Company;
 //import com.echo.acknowledgehub.service.CompanyService;
@@ -38,6 +37,7 @@
 //                    return CHECKING_BEAN;
 //                });
 //    }
+
 ////    @GetMapping(value = "/test1", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
 ////    public Flux<String> streamEvents() {
 ////        return Flux.interval(Duration.ofSeconds(5))

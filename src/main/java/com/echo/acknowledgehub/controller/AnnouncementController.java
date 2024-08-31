@@ -179,9 +179,19 @@ public class AnnouncementController {
         }
     }
 
-    @GetMapping("/aug-to-oct-2024")
+    @GetMapping(value = "/aug-to-oct-2024", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Map<String, List<Announcement>>> getAnnouncementsForAugToOct2024() {
         Map<String, List<Announcement>> announcementsByMonth = ANNOUNCEMENT_SERVICE.getAnnouncementsForAugToOct2024();
         return ResponseEntity.ok(announcementsByMonth);
+    }
+    //findall
+    @GetMapping(value = "/get-all", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<List<AnnouncementDTO>> getAllAnnouncements() {
+        return ResponseEntity.ok(ANNOUNCEMENT_SERVICE.getAllAnnouncements());
+    }
+    @GetMapping("/count")
+    public ResponseEntity<Long> countAnnouncements() {
+        long count = ANNOUNCEMENT_SERVICE.countAnnouncements();
+        return ResponseEntity.ok(count);
     }
 }
