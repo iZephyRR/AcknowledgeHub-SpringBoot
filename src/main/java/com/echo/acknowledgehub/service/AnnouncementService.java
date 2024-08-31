@@ -6,7 +6,9 @@ import com.echo.acknowledgehub.constant.EmployeeRole;
 import com.echo.acknowledgehub.dto.AnnouncementDTO;
 import com.echo.acknowledgehub.constant.IsSchedule;
 import com.echo.acknowledgehub.entity.Announcement;
+import com.echo.acknowledgehub.entity.AnnouncementCategory;
 import com.echo.acknowledgehub.repository.AnnouncementRepository;
+import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
@@ -41,6 +43,7 @@ public class AnnouncementService {
         return CompletableFuture.completedFuture(ANNOUNCEMENT_REPOSITORY.findById(id));
     }
 
+
     public Announcement save(Announcement announcement) throws IOException {
          return ANNOUNCEMENT_REPOSITORY.save(announcement);
     }
@@ -64,9 +67,11 @@ public class AnnouncementService {
         List<Object[]> objectList = ANNOUNCEMENT_REPOSITORY.getAllAnnouncements();
         return mapToDtoList(objectList);
     }
+
     public long countAnnouncements() {
         return ANNOUNCEMENT_REPOSITORY.count();
     }
+
     public List<Announcement> findPendingAnnouncementsScheduledForNow(LocalDateTime now) {
         return ANNOUNCEMENT_REPOSITORY.findByStatusAndScheduledTime(AnnouncementStatus.PENDING,IsSchedule.TRUE, now); // AnnouncementStatus.PENDING
     }
@@ -108,5 +113,17 @@ public class AnnouncementService {
         return dto;
     }
 
-
+    public AnnouncementDTO mapToDto(Object[] row){
+        AnnouncementDTO dto = new AnnouncementDTO();
+        dto.setId((Long) row[0]);
+        dto.setCreatedAt(LocalDateTime.parse(((LocalDateTime) row[1]).format(DateTimeFormatter.ISO_DATE_TIME)));
+        dto.setStatus((AnnouncementStatus) row[2]);
+        dto.setTitle((String) row[3]);
+        dto.setContentType((ContentType) row[4]);
+        dto.setCategoryName((String) row[5]);
+        dto.setCreatedBy((String) row[6]);
+        dto.setRole((EmployeeRole) row[7]);
+        dto.setFileUrl((String) row[8]);
+        return dto;
+    }
 }

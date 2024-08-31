@@ -46,6 +46,7 @@ public class AnnouncementController {
     //private final TelegramService TELEGRAM_SERVICE;
     private final TargetService TARGET_SERVICE;
 
+
     @Scheduled(fixedRate = 60000)
     public void checkPendingAnnouncements() throws IOException {
         List<Announcement> pendingAnnouncementsScheduled = ANNOUNCEMENT_SERVICE.findPendingAnnouncementsScheduledForNow(LocalDateTime.now());
@@ -178,6 +179,12 @@ public class AnnouncementController {
             }
         }
     }
+
+    @GetMapping(value = "/get-all", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<List<AnnouncementDTO>> getAllAnnouncements() {
+        return ResponseEntity.ok(ANNOUNCEMENT_SERVICE.getAllAnnouncements());
+    }
+
 
     @GetMapping(value = "/aug-to-oct-2024", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Map<String, List<Announcement>>> getAnnouncementsForAugToOct2024() {

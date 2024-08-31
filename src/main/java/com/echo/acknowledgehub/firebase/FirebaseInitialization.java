@@ -17,6 +17,7 @@ public class FirebaseInitialization {
         FileInputStream serviceAccount =
                 null;
         try {
+          //serviceAccount = new FileInputStream("C:\\OJT14\\Final Project(Spring Boot)\\AcknowledgeHub\\src\\main\\resources\\serviceAccountKey.json");
 
           //serviceAccount = new FileInputStream("C:\\AcknowledgeHub\\AcknowledgeHub\\src\\main\\resources\\serviceAccountKey.json");
 

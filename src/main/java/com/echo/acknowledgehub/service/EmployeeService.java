@@ -1,10 +1,13 @@
 package com.echo.acknowledgehub.service;
 
+import com.echo.acknowledgehub.constant.*;
+import com.echo.acknowledgehub.dto.*;
 import com.echo.acknowledgehub.constant.EmployeeRole;
 import com.echo.acknowledgehub.dto.BooleanResponseDTO;
 import com.echo.acknowledgehub.dto.ChangePasswordDTO;
 import com.echo.acknowledgehub.dto.StringResponseDTO;
 import com.echo.acknowledgehub.dto.UserDTO;
+
 import com.echo.acknowledgehub.entity.Employee;
 import com.echo.acknowledgehub.exception_handler.DataNotFoundException;
 import com.echo.acknowledgehub.exception_handler.UpdatePasswordException;
@@ -15,7 +18,11 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -36,6 +43,7 @@ public class EmployeeService {
     public CompletableFuture<Optional<Employee>> findById(Long id) {
         return CompletableFuture.completedFuture(EMPLOYEE_REPOSITORY.findById(id));
     }
+
 
     @Async
     public CompletableFuture<Optional<Employee>> findByEmail(String email) {
@@ -109,6 +117,9 @@ public class EmployeeService {
         return EMPLOYEE_REPOSITORY.getEmployeeIdByTelegramUsername(telegramUsername);
     }
 
+    public EmployeeProfileDTO findByIdForProfile(long id) {
+        return EMPLOYEE_REPOSITORY.findByIdForProfile(id);
+
     public List<Long> getMainHRAndHRIds() {
         List<EmployeeRole> roles = Arrays.asList(EmployeeRole.MAIN_HR, EmployeeRole.HR);
         return EMPLOYEE_REPOSITORY.findAllByRole(roles)
@@ -116,7 +127,6 @@ public class EmployeeService {
                 .map(Employee::getId)
                 .collect(Collectors.toList());
     }
-
 
 //    @Async
 //    public CompletableFuture<List<Employee>> saveAll(MultipartFile users) throws IOException {
@@ -184,10 +194,10 @@ public class EmployeeService {
 //}
 
 
-    @Async
-    public CompletableFuture<List<Employee>> findAll() {
-        return CompletableFuture.completedFuture(EMPLOYEE_REPOSITORY.findAll());
-    }
+//    @Async
+//    public CompletableFuture<List<Employee>> findAll() {
+//        return CompletableFuture.completedFuture(EMPLOYEE_REPOSITORY.findAll());
+//    }
 
     @Transactional
     public Employee findByTelegramUsername(String username) {
@@ -222,5 +232,33 @@ public class EmployeeService {
 
     public boolean existsById(Long sendTo) {
         return EMPLOYEE_REPOSITORY.existsById(sendTo);
+    }
+    @Transactional
+    public List<UserDTO> getAllUsers(){
+        List<Object[]> objectList = EMPLOYEE_REPOSITORY.getAllUsers();
+        return mapToDtoList(objectList);
+    }
+
+    public List<UserDTO> mapToDtoList (List<Object[]> objLists) {
+        return objLists.stream().map(this::mapToDto).collect(Collectors.toList());
+    }
+
+    public UserDTO mapToDto(Object[] row){
+        UserDTO dto = new UserDTO();
+        dto.setName((String) row[0]);
+        dto.setEmail((String) row[1]);
+        dto.setAddress((String) row[2]);
+        dto.setDob((Date) row[3]);
+        dto.setGender((Gender) row[4]);
+        dto.setNRC((String) row[5]);
+        dto.setPassword((String) row[6]);
+        dto.setRole((EmployeeRole) row[7]);
+        dto.setStatus((EmployeeStatus) row[8]);
+        dto.setStuffId((String) row[9]);
+        dto.setTelegramUsername((String) row[10]);
+        dto.setWorkEntryDate((Date) row[11]);
+        dto.setCompanyName((String) row[12]);
+        dto.setDepartmentName((String) row[13]);
+        return dto;
     }
 }

@@ -26,3 +26,4 @@ public class AnnouncementDTO {
     private EmployeeRole role;
     private String fileUrl;
 }
+

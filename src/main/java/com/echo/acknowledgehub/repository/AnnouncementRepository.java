@@ -4,6 +4,7 @@ package com.echo.acknowledgehub.repository;
 import com.echo.acknowledgehub.constant.AnnouncementStatus;
 import com.echo.acknowledgehub.constant.IsSchedule;
 import com.echo.acknowledgehub.entity.Announcement;
+import com.echo.acknowledgehub.entity.AnnouncementCategory;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
