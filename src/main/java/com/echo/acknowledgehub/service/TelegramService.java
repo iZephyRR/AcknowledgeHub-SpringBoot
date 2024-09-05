@@ -6,6 +6,7 @@ import com.echo.acknowledgehub.entity.TelegramGroup;
 import lombok.AllArgsConstructor;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.groupadministration.SetChatPhoto;
 import org.telegram.telegrambots.meta.api.methods.polls.SendPoll;
@@ -241,15 +242,7 @@ public class TelegramService extends TelegramLongPollingBot {
         InputFile file = new InputFile(filePathOrUrl);
         sendDocumentRequest.setDocument(file);
         sendDocumentRequest.setCaption("Title : " + title + "\nSend By : " + creator);
-        InlineKeyboardMarkup markupInline = new InlineKeyboardMarkup();
-        List<List<InlineKeyboardButton>> rowsInline = new ArrayList<>();
-        List<InlineKeyboardButton> rowInline = new ArrayList<>();
-        InlineKeyboardButton button = new InlineKeyboardButton();
-        button.setText("Click For Your Confirmation");
-        button.setCallbackData("seen_confirmed:"+ announcementId);
-        rowInline.add(button);
-        rowsInline.add(rowInline);
-        markupInline.setKeyboard(rowsInline);
+        InlineKeyboardMarkup markupInline = getInlineKeyboardMarkup(announcementId);
         sendDocumentRequest.setReplyMarkup(markupInline);
         LOGGER.info("Before sending to : "+ chatId);
         execute(sendDocumentRequest);
@@ -281,15 +274,7 @@ public class TelegramService extends TelegramLongPollingBot {
         sendAudio.setChatId(chatId.toString());
         sendAudio.setAudio(new InputFile(fileUrl));
         sendAudio.setCaption("Title : " + title + "\nSent by: " + senderName);
-        InlineKeyboardMarkup markupInline = new InlineKeyboardMarkup();
-        List<List<InlineKeyboardButton>> rowsInline = new ArrayList<>();
-        List<InlineKeyboardButton> rowInline = new ArrayList<>();
-        InlineKeyboardButton button = new InlineKeyboardButton();
-        button.setText("Click For Your Confirmation");
-        button.setCallbackData("seen_confirmed:"+announcementId);
-        rowInline.add(button);
-        rowsInline.add(rowInline);
-        markupInline.setKeyboard(rowsInline);
+        InlineKeyboardMarkup markupInline = getInlineKeyboardMarkup(announcementId);
         sendAudio.setReplyMarkup(markupInline);
         LOGGER.info("Before sending to : "+chatId);
         execute(sendAudio);
@@ -320,15 +305,7 @@ public class TelegramService extends TelegramLongPollingBot {
         sendVideo.setChatId(chatId.toString());
         sendVideo.setVideo(new InputFile(fileUrl));
         sendVideo.setCaption("Title : " + title + "\nSent by: " + senderName);
-        InlineKeyboardMarkup markupInline = new InlineKeyboardMarkup();
-        List<List<InlineKeyboardButton>> rowsInline = new ArrayList<>();
-        List<InlineKeyboardButton> rowInline = new ArrayList<>();
-        InlineKeyboardButton button = new InlineKeyboardButton();
-        button.setText("Click For Your Confirmation");
-        button.setCallbackData("seen_confirmed:"+announcementId);
-        rowInline.add(button);
-        rowsInline.add(rowInline);
-        markupInline.setKeyboard(rowsInline);
+        InlineKeyboardMarkup markupInline = getInlineKeyboardMarkup(announcementId);
         sendVideo.setReplyMarkup(markupInline);
         LOGGER.info("Before sending to : "+chatId);
         execute(sendVideo);
@@ -359,15 +336,7 @@ public class TelegramService extends TelegramLongPollingBot {
         sendPhoto.setChatId(chatId.toString());
         sendPhoto.setPhoto(new InputFile(fileUrl));
         sendPhoto.setCaption("Title : " + title + "\nSent by: " + senderName);
-        InlineKeyboardMarkup markupInline = new InlineKeyboardMarkup();
-        List<List<InlineKeyboardButton>> rowsInline = new ArrayList<>();
-        List<InlineKeyboardButton> rowInline = new ArrayList<>();
-        InlineKeyboardButton button = new InlineKeyboardButton();
-        button.setText("Click For Your Confirmation");
-        button.setCallbackData("seen_confirmed:"+announcementId);
-        rowInline.add(button);
-        rowsInline.add(rowInline);
-        markupInline.setKeyboard(rowsInline);
+        InlineKeyboardMarkup markupInline = getInlineKeyboardMarkup(announcementId);
         sendPhoto.setReplyMarkup(markupInline);
         LOGGER.info("Before sending to :"+ chatId);
         execute(sendPhoto);
@@ -392,5 +361,48 @@ public class TelegramService extends TelegramLongPollingBot {
         executor.shutdown();
     }
 
+    // send zip if u want to send to more than one user, call ....InBatches
+    private void sendZip(Long chatId,Long announcementId, MultipartFile file, String title, String senderName) throws TelegramApiException, IOException {
+        SendPhoto sendPhoto = new SendPhoto();
+        sendPhoto.setChatId(chatId.toString());
+        sendPhoto.setPhoto(new InputFile(file.getResource().getInputStream(), file.getOriginalFilename()));
+        sendPhoto.setCaption("Title : " + title + "\nSent by: " + senderName);
+        InlineKeyboardMarkup markupInline = getInlineKeyboardMarkup(announcementId);
+        sendPhoto.setReplyMarkup(markupInline);
+        LOGGER.info("Before sending to :"+ chatId);
+        execute(sendPhoto);
+    }
+
+    public void sendZipInBatches(List<Long> chatIds, Long announcementId, MultipartFile file, String title, String senderName) {
+        int batchSize = 30;
+        int delay = 1; // 1-second delay between batches
+        ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
+        for (int i = 0; i < chatIds.size(); i += batchSize) {
+            List<Long> batch = chatIds.subList(i, Math.min(i + batchSize, chatIds.size()));
+            executor.schedule(() -> {
+                for (Long chatId : batch) {
+                    try {
+                        sendZip(chatId,announcementId, file, title, senderName);
+                    } catch (TelegramApiException | IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+            }, delay * (i / batchSize), TimeUnit.SECONDS);
+        }
+        executor.shutdown();
+    }
+
+    private InlineKeyboardMarkup getInlineKeyboardMarkup(Long announcementId) {
+        InlineKeyboardMarkup markupInline = new InlineKeyboardMarkup();
+        List<List<InlineKeyboardButton>> rowsInline = new ArrayList<>();
+        List<InlineKeyboardButton> rowInline = new ArrayList<>();
+        InlineKeyboardButton button = new InlineKeyboardButton();
+        button.setText("Click For Your Confirmation");
+        button.setCallbackData("seen_confirmed:"+ announcementId);
+        rowInline.add(button);
+        rowsInline.add(rowInline);
+        markupInline.setKeyboard(rowsInline);
+        return markupInline;
+    }
 
 }

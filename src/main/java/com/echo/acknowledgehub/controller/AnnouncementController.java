@@ -53,7 +53,7 @@ public class AnnouncementController {
     private final CompanyService COMPANY_SERVICE;
     private final DepartmentService DEPARTMENT_SERVICE;
     private final AnnouncementCategoryService ANNOUNCEMENT_CATEGORY_SERVICE;
-    //private final TelegramService TELEGRAM_SERVICE;
+    private final TelegramService TELEGRAM_SERVICE;
     private final TargetService TARGET_SERVICE;
     private final DraftService DRAFT_SERVICE;
 
@@ -62,7 +62,7 @@ public class AnnouncementController {
         List<Announcement> pendingAnnouncementsScheduled = ANNOUNCEMENT_SERVICE.findPendingAnnouncementsScheduledForNow(LocalDateTime.now());
         LOGGER.info("in schedule");
         for (Announcement announcement : pendingAnnouncementsScheduled) {
-            announcement.setStatus(AnnouncementStatus.APPROVED);
+            announcement.setStatus(AnnouncementStatus.UPLOADED);
             ANNOUNCEMENT_SERVICE.save(announcement);
             List<Target> targetList = targetStorage.get(announcement.getId());
             TARGET_SERVICE.insertTargetWithNotifications(targetList, announcement);
@@ -75,7 +75,10 @@ public class AnnouncementController {
                 } else if (receiverType.equals("DEPARTMENT")) {
                     chatIdsList = EMPLOYEE_SERVICE.getAllChatIdByDepartmentId(sendTo);
                 }
-                //TELEGRAM_SERVICE.sendToTelegram(chatIdsList, announcement.getContentType().getFirstValue(), announcement.getId(), announcement.getPdfLink(), announcement.getTitle(), announcement.getEmployee().getName());
+//                if(contentType.startsWith("application/x-zip-compressed")) {
+//                    TELEGRAM_SERVICE.sendZipInBatches(chatIdsList, announcement.getId(), announcementDTO.getFile(), announcement.getTitle(), announcement.getEmployee().getName());
+//                }
+                TELEGRAM_SERVICE.sendToTelegram(chatIdsList, announcement.getContentType().getFirstValue(), announcement.getId(), announcement.getPdfLink(), announcement.getTitle(), announcement.getEmployee().getName());
             }
             targetStorage.remove(announcement.getId());
         }
@@ -108,7 +111,7 @@ public class AnnouncementController {
             status = AnnouncementStatus.PENDING;
             isSchedule = IsSchedule.TRUE;
         } else {
-            status = AnnouncementStatus.APPROVED;
+            status = AnnouncementStatus.UPLOADED;
             isSchedule = IsSchedule.FALSE;
         }
         announcementDTO.setStatus(status);
@@ -149,7 +152,7 @@ public class AnnouncementController {
                 })
                 .toList();
 
-        if (status == AnnouncementStatus.APPROVED) {
+        if (status == AnnouncementStatus.UPLOADED) {
             LOGGER.info("announcement status : " + status);
             List<Target> targets = TARGET_SERVICE.saveTargets(targetList);
             handleTargetsAndNotifications(targets, announcement);
@@ -165,7 +168,10 @@ public class AnnouncementController {
                     chatIdsList = EMPLOYEE_SERVICE.getAllChatIdByDepartmentId(sendTo);
                     LOGGER.info("Chat IDs for DEPARTMENT with ID " + sendTo + ": " + chatIdsList);
                 }
-                //TELEGRAM_SERVICE.sendToTelegram(chatIdsList, announcement.getContentType().getFirstValue(), announcement.getId(), announcement.getPdfLink(), announcement.getTitle(), announcement.getEmployee().getName());
+                if(contentType.startsWith("application/x-zip-compressed")) {
+                    TELEGRAM_SERVICE.sendZipInBatches(chatIdsList, announcement.getId(), announcementDTO.getFile(), announcement.getTitle(), announcement.getEmployee().getName());
+                }
+                TELEGRAM_SERVICE.sendToTelegram(chatIdsList, announcement.getContentType().getFirstValue(), announcement.getId(), announcement.getPdfLink(), announcement.getTitle(), announcement.getEmployee().getName());
             }
         } else {
             targetStorage.put(announcement.getId(), targetList);
@@ -173,7 +179,6 @@ public class AnnouncementController {
     }
 
     private void handleTargetsAndNotifications(List<Target> targetList, Announcement announcement) {
-        // Insert all targets with notifications in one call
         TARGET_SERVICE.insertTargetWithNotifications(targetList, announcement);
     }
 
@@ -313,7 +318,6 @@ public class AnnouncementController {
         if (contentType == null) {
             contentType = "application/octet-stream"; // Default content type
         }
-
         return new CustomMultipartFile(fileBytes, fileName, contentType);
     }
 
