@@ -3,6 +3,7 @@ package com.echo.acknowledgehub.entity;
 import com.echo.acknowledgehub.constant.AnnouncementStatus;
 import com.echo.acknowledgehub.constant.ContentType;
 import com.echo.acknowledgehub.constant.IsSchedule;
+import com.echo.acknowledgehub.constant.SelectAll;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
@@ -29,6 +30,9 @@ public class Announcement {
     @Enumerated(EnumType.STRING)
     @Column(name = "contentType", nullable = false)
     private ContentType contentType;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "selectAll", nullable = false)
+    private SelectAll selectAll;
     @Enumerated(EnumType.STRING)
     @Column(name ="isSchedule", nullable = false)
     private IsSchedule isSchedule;

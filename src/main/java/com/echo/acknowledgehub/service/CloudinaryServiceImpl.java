@@ -23,14 +23,19 @@ public class CloudinaryServiceImpl implements CloudinaryService {
     }
 
     @Override
-    public Map<String, String> upload(MultipartFile file) throws IOException {
+    public Map<String, String> upload(MultipartFile file, String customFileName) throws IOException {
 
+        // Determine folder based on file type (images or PDFs)
         String folder = file.getContentType().startsWith("image/") ? "images/" : "pdfs/";
+
+        // Define Cloudinary options with custom public_id
         Map<String, Object> options = ObjectUtils.asMap(
                 "resource_type", "auto",
-                "folder", folder
+                "folder", folder,
+                "public_id", customFileName // Use custom file name as public ID
         );
 
+        // Upload the file to Cloudinary with the custom public_id
         return cloudinary.uploader().upload(file.getBytes(), options);
     }
 
@@ -44,8 +49,8 @@ public class CloudinaryServiceImpl implements CloudinaryService {
         }
     }
 
+    @Override
     public String generateImageUrl(String publicId) {
         return cloudinary.url().generate(publicId);
     }
 }
-

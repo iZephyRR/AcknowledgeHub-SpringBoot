@@ -41,6 +41,7 @@ public class TelegramService extends TelegramLongPollingBot {
     private final String BOT_TOKEN;
     private final EmployeeService EMPLOYEE_SERVICE;
     private final TelegramGroupService TELEGRAM_GROUP_SERVICE;
+    private final FirebaseNotificationService FIREBASENOTIFICATION_SERVICE;
 
 
     @Override
@@ -61,15 +62,20 @@ public class TelegramService extends TelegramLongPollingBot {
             String callbackData = callbackQuery.getData();
             LocalDateTime now = LocalDateTime.now();
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-            String formattedNow = now.format(formatter); // to save firebase
+            String formattedNow = now.format(formatter); // to save in Firebase
+
             if (callbackData.startsWith("seen_confirmed:")) {
                 String[] dataParts = callbackData.split(":");
-                long announcementId = Long.parseLong(dataParts[1]); // to save firebase
+                long announcementId = Long.parseLong(dataParts[1]); // to save in Firebase
                 User user = callbackQuery.getFrom();
                 String username = user.getUserName();
                 Long chatId = user.getId();
-                Long employeeId = EMPLOYEE_SERVICE.getEmployeeIdByTelegramUsername(username); // to save firebase
+                Long employeeId = EMPLOYEE_SERVICE.getEmployeeIdByTelegramUsername(username); // to save in Firebase
                 LOGGER.info("User " + username + " userId " + employeeId + " clicked for announcement " + announcementId + " at " + formattedNow);
+
+                // Update the noticeAt time in Firebase
+                FIREBASENOTIFICATION_SERVICE.updateNoticeAtInFirebase(employeeId, announcementId, formattedNow);
+
                 updateCaption(callbackQuery, chatId);
             }
         } else if (updateInfo.hasMessage()) {

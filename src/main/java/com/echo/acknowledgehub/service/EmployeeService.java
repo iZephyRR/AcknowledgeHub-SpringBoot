@@ -8,11 +8,14 @@ import com.echo.acknowledgehub.dto.ChangePasswordDTO;
 import com.echo.acknowledgehub.dto.StringResponseDTO;
 import com.echo.acknowledgehub.dto.UserDTO;
 
+import com.echo.acknowledgehub.entity.Announcement;
 import com.echo.acknowledgehub.entity.Employee;
 import com.echo.acknowledgehub.exception_handler.DataNotFoundException;
 import com.echo.acknowledgehub.exception_handler.UpdatePasswordException;
+import com.echo.acknowledgehub.repository.AnnouncementRepository;
 import com.echo.acknowledgehub.repository.EmployeeRepository;
 import lombok.AllArgsConstructor;
+import org.apache.catalina.User;
 import org.modelmapper.ModelMapper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -21,11 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -35,8 +34,10 @@ import java.util.stream.Collectors;
 public class EmployeeService {
     private static final Logger LOGGER = Logger.getLogger(EmployeeService.class.getName());
     private final EmployeeRepository EMPLOYEE_REPOSITORY;
+    private final AnnouncementRepository ANNOUNCEMENT_REPOSITORY;
     private final ModelMapper MAPPER;
     private final PasswordEncoder PASSWORD_ENCODER;
+    private final FirebaseNotificationService FIREBASE_NOTIFICATION_SERVICE;
 
     @Async
     public CompletableFuture<Optional<Employee>> findById(Long id) {
@@ -164,11 +165,44 @@ public class EmployeeService {
     public boolean existsById(Long sendTo) {
         return EMPLOYEE_REPOSITORY.existsById(sendTo);
     }
+
     @Transactional
     public List<UserDTO> getAllUsers(){
         List<Object[]> objectList = EMPLOYEE_REPOSITORY.getAllUsers();
         return mapToDtoList(objectList);
     }
+
+    @Transactional
+    public List<EmployeeNotedDTO> getEmployeeWhoNoted (List<Long> userIdList){
+        Map<Long, LocalDateTime> notedAtStorage = FIREBASE_NOTIFICATION_SERVICE.getNotedAtStorage();
+        List<EmployeeNotedDTO> employeeNotedDTOS = new ArrayList<>();
+        for (Long userId : userIdList) {
+            EmployeeNotedDTO employeeNotedDTO = EMPLOYEE_REPOSITORY.getEmployeeById(userId);
+            LocalDateTime notedAt = notedAtStorage.get(userId);
+            employeeNotedDTO.setNotedAt(notedAt);
+            employeeNotedDTOS.add(employeeNotedDTO);
+        }
+        return employeeNotedDTOS;
+    }
+
+
+//    @Async
+//    public CompletableFuture<AnnouncementAndEmployeesDTO> getAnnouncementAndEmployees(Long announcementId, int days) {
+//        // Fetch announcement details
+//        Announcement announcement = ANNOUNCEMENT_REPOSITORY.findById(announcementId)
+//                .orElseThrow(() -> new DataNotFoundException("Announcement not found"));
+//
+//        // Fetch employee IDs based on the announcement ID and days
+//        List<Long> userIdList = FIREBASE_NOTIFICATION_SERVICE.getNotificationsAndMatchWithEmployees(announcementId, days);
+//
+//        // Fetch employee details
+//        List<EmployeeNotedDTO> employees = getEmployeeWhoNoted(userIdList);
+//
+//        // Combine announcement and employee data
+//        AnnouncementAndEmployeesDTO result = new AnnouncementAndEmployeesDTO(announcement, employees);
+//        return CompletableFuture.completedFuture(result);
+//    }
+//
 
     public List<UserDTO> mapToDtoList (List<Object[]> objLists) {
         return objLists.stream().map(this::mapToDto).collect(Collectors.toList());

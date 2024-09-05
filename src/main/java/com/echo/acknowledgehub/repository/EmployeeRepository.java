@@ -1,5 +1,6 @@
 package com.echo.acknowledgehub.repository;
 
+import com.echo.acknowledgehub.dto.EmployeeNotedDTO;
 import com.echo.acknowledgehub.dto.EmployeeProfileDTO;
 import com.echo.acknowledgehub.constant.EmployeeRole;
 import com.echo.acknowledgehub.entity.Employee;
@@ -75,5 +76,14 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
 
     @Query("SELECT e FROM Employee e WHERE e.role IN :roles")
     List<Employee> findAllByRole(@Param("roles") List<EmployeeRole> roles);
+
+    @Query("SELECT new com.echo.acknowledgehub.dto.EmployeeNotedDTO(e.id,e.name, e.gender, e.role, e.status, e.stuffId, c.name AS companyName, d.name AS departmentName) " +
+            "FROM Employee e " +
+            "JOIN e.company c " +
+            "JOIN e.department d WHERE e.id = :id")
+    EmployeeNotedDTO getEmployeeById(@Param("id") Long id);
+
+
+
 }
 
