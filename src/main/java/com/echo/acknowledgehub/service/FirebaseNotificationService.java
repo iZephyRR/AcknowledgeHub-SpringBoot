@@ -22,14 +22,13 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.logging.Logger;
 
-
 @Service
 @AllArgsConstructor
 public class FirebaseNotificationService {
 
     private static final Logger LOGGER = Logger.getLogger(FirebaseNotificationService.class.getName());
     public final Map<Long, LocalDateTime> notedAtStorage = new HashMap<>();
-    public final Map<Long, Long> allCompanyNotedAtStorage = new HashMap<>();
+    public final Map<Long, Integer> employeeCountMap = new HashMap<>();
     private final EmployeeService EMPLOYEE_SERVICE;
     private final FirebaseDatabase FIREBASE_DATABASE;
     private final AnnouncementService ANNOUNCEMENT_SERVICE;
@@ -115,7 +114,7 @@ public class FirebaseNotificationService {
         Firestore dbFirestore = FirestoreClient.getFirestore();
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
         List<Long> announcementIds = ANNOUNCEMENT_SERVICE.getSelectedAllAnnouncements();
-
+        int announcementCount = ANNOUNCEMENT_SERVICE.getCountSelectAllAnnouncements();
         for (Long announcementId : announcementIds) {
             ApiFuture<QuerySnapshot> future = dbFirestore.collection("notifications")
                     .whereEqualTo("announcementId", String.valueOf(announcementId))
@@ -137,15 +136,15 @@ public class FirebaseNotificationService {
                     CompletableFuture<Employee> comFuEmployee = EMPLOYEE_SERVICE.findById(userId)
                             .thenApply(employee -> employee.orElseThrow(() -> new NoSuchElementException("Employee not found")));
                     Long companyId = comFuEmployee.join().getCompany().getId();
-                    if (allCompanyNotedAtStorage.containsKey(companyId)) {
-
+                    if (employeeCountMap.containsKey(companyId)) {
+                        int currentCount = employeeCountMap.getOrDefault(companyId, 0);
+                        employeeCountMap.put(companyId, currentCount + 1 );
                     }
                 }
-
             }
         }
-    }
 
+    }
 
     public void updateNoticeAtInFirebase(Long employeeId, long announcementId, String formattedNow) {
         Firestore dbFirestore = FirestoreClient.getFirestore();

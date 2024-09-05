@@ -1,10 +1,7 @@
 package com.echo.acknowledgehub.service;
 
-import com.echo.acknowledgehub.constant.AnnouncementStatus;
-import com.echo.acknowledgehub.constant.ContentType;
-import com.echo.acknowledgehub.constant.EmployeeRole;
+import com.echo.acknowledgehub.constant.*;
 import com.echo.acknowledgehub.dto.AnnouncementDTO;
-import com.echo.acknowledgehub.constant.IsSchedule;
 import com.echo.acknowledgehub.entity.Announcement;
 import com.echo.acknowledgehub.entity.AnnouncementCategory;
 import com.echo.acknowledgehub.repository.AnnouncementRepository;
@@ -102,7 +99,12 @@ public class AnnouncementService {
 
     @Transactional
     public List<Long> getSelectedAllAnnouncements() {
-        return ANNOUNCEMENT_REPOSITORY.getSelectedAllAnnouncements();
+        return ANNOUNCEMENT_REPOSITORY.getSelectedAllAnnouncements(SelectAll.TRUE);
+    }
+
+    @Transactional
+    public int getCountSelectAllAnnouncements() {
+        return ANNOUNCEMENT_REPOSITORY.getSelectAllCountAnnouncements(SelectAll.TRUE);
     }
 
     public List<AnnouncementDTO> mapToDtoList(List<Object[]> objLists) {

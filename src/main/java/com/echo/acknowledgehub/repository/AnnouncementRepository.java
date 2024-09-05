@@ -3,6 +3,7 @@ package com.echo.acknowledgehub.repository;
 
 import com.echo.acknowledgehub.constant.AnnouncementStatus;
 import com.echo.acknowledgehub.constant.IsSchedule;
+import com.echo.acknowledgehub.constant.SelectAll;
 import com.echo.acknowledgehub.entity.Announcement;
 import com.echo.acknowledgehub.entity.AnnouncementCategory;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -33,7 +34,10 @@ public interface AnnouncementRepository extends JpaRepository <Announcement,Long
             @Param("now") LocalDateTime now
     );
 
-    @Query("select id from Announcement where selectAll=TRUE")
-    List<Long> getSelectedAllAnnouncements();
+    @Query("select id from Announcement where selectAll=: selectAll")
+    List<Long> getSelectedAllAnnouncements(@Param("selectAll") SelectAll selectAll);
+
+    @Query("select count from Announcement where selectAll=:selectAll")
+    int getSelectAllCountAnnouncements(@Param("selectAll") SelectAll selectAll);
 
 }
