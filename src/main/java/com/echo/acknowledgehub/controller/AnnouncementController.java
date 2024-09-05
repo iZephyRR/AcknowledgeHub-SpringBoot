@@ -33,6 +33,7 @@ import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.logging.Logger;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -56,6 +57,7 @@ public class AnnouncementController {
     private final TelegramService TELEGRAM_SERVICE;
     private final TargetService TARGET_SERVICE;
     private final DraftService DRAFT_SERVICE;
+    private final FirebaseNotificationService FIREBASE_NOTIFICATION_SERVICE;
 
     @Scheduled(fixedRate = 60000)
     public void checkPendingAnnouncements() throws IOException {
@@ -322,5 +324,11 @@ public class AnnouncementController {
         long count = ANNOUNCEMENT_SERVICE.countAnnouncements();
         return ResponseEntity.ok(count);
     }
+
+    @GetMapping("/iDontKnowWhy")
+    public Map<String, Double> getPercentage() throws ExecutionException, InterruptedException {
+        return FIREBASE_NOTIFICATION_SERVICE.getPercentage();
+    }
+
 }
 

@@ -185,6 +185,10 @@ public class EmployeeService {
         return employeeNotedDTOS;
     }
 
+    public int employeeCountByCompany(Long companyId) {
+        return EMPLOYEE_REPOSITORY.getEmployeeCountByCompanyId(companyId);
+    }
+
 
 //    @Async
 //    public CompletableFuture<AnnouncementAndEmployeesDTO> getAnnouncementAndEmployees(Long announcementId, int days) {

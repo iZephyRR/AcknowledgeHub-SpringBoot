@@ -37,7 +37,7 @@ public interface AnnouncementRepository extends JpaRepository <Announcement,Long
     @Query("select id from Announcement where selectAll=: selectAll")
     List<Long> getSelectedAllAnnouncements(@Param("selectAll") SelectAll selectAll);
 
-    @Query("select count from Announcement where selectAll=:selectAll")
+    @Query("select count(a) from Announcement a where a.selectAll=:selectAll")
     int getSelectAllCountAnnouncements(@Param("selectAll") SelectAll selectAll);
 
 }

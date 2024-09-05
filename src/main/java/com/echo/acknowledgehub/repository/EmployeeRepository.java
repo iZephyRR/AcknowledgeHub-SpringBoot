@@ -83,6 +83,8 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
             "JOIN e.department d WHERE e.id = :id")
     EmployeeNotedDTO getEmployeeById(@Param("id") Long id);
 
+    @Query("Select count(a) From Employee e where e.company.id=:id")
+    int getEmployeeCountByCompanyId(@Param("id") Long id);
 
 
 }
