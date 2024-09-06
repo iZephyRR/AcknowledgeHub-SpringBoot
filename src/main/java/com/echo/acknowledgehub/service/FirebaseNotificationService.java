@@ -1,6 +1,7 @@
 package com.echo.acknowledgehub.service;
 
 import com.echo.acknowledgehub.entity.Employee;
+import com.echo.acknowledgehub.repository.EmployeeRepository;
 import com.google.api.core.ApiFuture;
 import com.google.cloud.firestore.*;
 import com.google.cloud.firestore.Query;
@@ -22,10 +23,8 @@ public class FirebaseNotificationService {
 
     private static final Logger LOGGER = Logger.getLogger(FirebaseNotificationService.class.getName());
     public final Map<Long, LocalDateTime> notedAtStorage = new HashMap<>();
-    private final EmployeeService EMPLOYEE_SERVICE;
     private final FirebaseDatabase FIREBASE_DATABASE;
-    private final AnnouncementService ANNOUNCEMENT_SERVICE;
-    private final CompanyService COMPANY_SERVICE;
+
 
     public Map<Long, LocalDateTime> getNotedAtStorage() {
         return notedAtStorage;
@@ -97,59 +96,15 @@ public class FirebaseNotificationService {
                 }
                 LOGGER.info("Final Status for User ID " + userId + ": " + status);
             }
-
         } catch (InterruptedException | ExecutionException e) {
             LOGGER.severe("Error retrieving or matching data: " + e.getLocalizedMessage());
         }
         return userIdList;
     }
 
-    public void getSelectedAllAnnouncements(Map<Long, Integer> employeeCountMap) throws ExecutionException, InterruptedException {
-        Firestore dbFirestore = FirestoreClient.getFirestore();
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-        List<Long> announcementIds = ANNOUNCEMENT_SERVICE.getSelectedAllAnnouncements();
-        int announcementCount = ANNOUNCEMENT_SERVICE.getCountSelectAllAnnouncements();
-        for (Long announcementId : announcementIds) {
-            ApiFuture<QuerySnapshot> future = dbFirestore.collection("notifications")
-                    .whereEqualTo("announcementId", String.valueOf(announcementId))
-                    .orderBy("noticeAt", Query.Direction.DESCENDING)
-                    .orderBy("timestamp", Query.Direction.DESCENDING)
-                    .get();
-            List<QueryDocumentSnapshot> documents = future.get().getDocuments();
-            for (DocumentSnapshot document : documents) {
-                Long userId = document.getLong("userId");
-                LOGGER.info("User ID from Firebase service: " + userId);
-                LocalDateTime noticeAt = LocalDateTime.parse(
-                        Objects.requireNonNull(document.getString("noticeAt")), formatter);
-                LocalDateTime timestamp = LocalDateTime.parse(
-                        Objects.requireNonNull(document.getString("timestamp")), formatter);
-                if (noticeAt.isAfter(timestamp)) {
-                    CompletableFuture<Employee> comFuEmployee = EMPLOYEE_SERVICE.findById(userId)
-                            .thenApply(employee -> employee.orElseThrow(() -> new NoSuchElementException("Employee not found")));
-                    Long companyId = comFuEmployee.join().getCompany().getId();
-                    if (employeeCountMap.containsKey(companyId)) {
-                        int notedCount = employeeCountMap.getOrDefault(companyId, 0);
-                        employeeCountMap.put(companyId, notedCount + 1 );
-                    }
-                }
-            }
-        }
-    }
-
-    public Map<String, Double> getPercentage() throws ExecutionException, InterruptedException {
-        Map<Long, Integer> employeeCountMap = new HashMap<>();
-        Map<String, Double> notedPercentageMap = new HashMap<>();
-        getSelectedAllAnnouncements(employeeCountMap);
-        int announcementCount = ANNOUNCEMENT_SERVICE.getCountSelectAllAnnouncements();
-        employeeCountMap.forEach((companyId,notedCount)-> {
-            String companyName = COMPANY_SERVICE.getCompanyName(companyId);
-            int employeeCount = EMPLOYEE_SERVICE.employeeCountByCompany(companyId);
-            int expectedCount = employeeCount * announcementCount;
-            double notedPercentage = (double) (notedCount * 100) /expectedCount;
-            notedPercentageMap.put(companyName,notedPercentage);
-        });
-        return notedPercentageMap;
-    }
+//    public int employeeCountByCompany(Long companyId) {
+//        return EMPLOYEE_REPOSITORY.getEmployeeCountByCompanyId(companyId);
+//    }
 
     public void updateNoticeAtInFirebase(Long employeeId, long announcementId, String formattedNow) {
         Firestore dbFirestore = FirestoreClient.getFirestore();

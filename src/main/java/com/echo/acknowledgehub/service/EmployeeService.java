@@ -13,7 +13,11 @@ import com.echo.acknowledgehub.entity.Employee;
 import com.echo.acknowledgehub.exception_handler.DataNotFoundException;
 import com.echo.acknowledgehub.exception_handler.UpdatePasswordException;
 import com.echo.acknowledgehub.repository.AnnouncementRepository;
+import com.echo.acknowledgehub.repository.CompanyRepository;
 import com.echo.acknowledgehub.repository.EmployeeRepository;
+import com.google.api.core.ApiFuture;
+import com.google.cloud.firestore.*;
+import com.google.firebase.cloud.FirestoreClient;
 import lombok.AllArgsConstructor;
 import org.apache.catalina.User;
 import org.modelmapper.ModelMapper;
@@ -26,6 +30,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -38,6 +43,7 @@ public class EmployeeService {
     private final ModelMapper MAPPER;
     private final PasswordEncoder PASSWORD_ENCODER;
     private final FirebaseNotificationService FIREBASE_NOTIFICATION_SERVICE;
+    private final CompanyRepository COMPANY_REPOSITORY;
 
     @Async
     public CompletableFuture<Optional<Employee>> findById(Long id) {
@@ -189,6 +195,53 @@ public class EmployeeService {
         return EMPLOYEE_REPOSITORY.getEmployeeCountByCompanyId(companyId);
     }
 
+    public Map<Long, Integer> getSelectedAllAnnouncements() throws ExecutionException, InterruptedException {
+        Firestore dbFirestore = FirestoreClient.getFirestore();
+        Map<Long, Integer> employeeCountMap = new HashMap<>();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        List<Long> announcementIds = ANNOUNCEMENT_REPOSITORY.getSelectedAllAnnouncements(SelectAll.TRUE);
+        int announcementCount = ANNOUNCEMENT_REPOSITORY.getSelectAllCountAnnouncements(SelectAll.TRUE);
+        for (Long announcementId : announcementIds) {
+            ApiFuture<QuerySnapshot> future = dbFirestore.collection("notifications")
+                    .whereEqualTo("announcementId", String.valueOf(announcementId))
+                    .orderBy("noticeAt", Query.Direction.DESCENDING)
+                    .orderBy("timestamp", Query.Direction.DESCENDING)
+                    .get();
+            List<QueryDocumentSnapshot> documents = future.get().getDocuments();
+            for (DocumentSnapshot document : documents) {
+                Long userId = document.getLong("userId");
+                LOGGER.info("User ID from Firebase service: " + userId);
+                LocalDateTime noticeAt = LocalDateTime.parse(
+                        Objects.requireNonNull(document.getString("noticeAt")), formatter);
+                LocalDateTime timestamp = LocalDateTime.parse(
+                        Objects.requireNonNull(document.getString("timestamp")), formatter);
+                if (noticeAt.isAfter(timestamp)) {
+                    CompletableFuture<Employee> comFuEmployee = findById(userId)
+                            .thenApply(employee -> employee.orElseThrow(() -> new NoSuchElementException("Employee not found")));
+                    Long companyId = comFuEmployee.join().getCompany().getId();
+                    if (employeeCountMap.containsKey(companyId)) {
+                        int notedCount = employeeCountMap.getOrDefault(companyId, 0);
+                        employeeCountMap.put(companyId, notedCount + 1 );
+                    }
+                }
+            }
+        }
+        return employeeCountMap;
+    }
+
+    public Map<String, Double> getPercentage() throws ExecutionException, InterruptedException {
+        Map<String, Double> notedPercentageMap = new HashMap<>();
+        Map<Long,Integer> employeeCountMap = getSelectedAllAnnouncements();
+        int announcementCount = ANNOUNCEMENT_REPOSITORY.getSelectAllCountAnnouncements(SelectAll.TRUE);
+        employeeCountMap.forEach((companyId,notedCount)-> {
+            String companyName = COMPANY_REPOSITORY.findCompanyNameById(companyId);
+            int employeeCount = employeeCountByCompany(companyId);
+            int expectedCount = employeeCount * announcementCount;
+            double notedPercentage = (double) (notedCount * 100) /expectedCount;
+            notedPercentageMap.put(companyName,notedPercentage);
+        });
+        return notedPercentageMap;
+    }
 
 //    @Async
 //    public CompletableFuture<AnnouncementAndEmployeesDTO> getAnnouncementAndEmployees(Long announcementId, int days) {

@@ -57,7 +57,6 @@ public class AnnouncementController {
     private final TelegramService TELEGRAM_SERVICE;
     private final TargetService TARGET_SERVICE;
     private final DraftService DRAFT_SERVICE;
-    private final FirebaseNotificationService FIREBASE_NOTIFICATION_SERVICE;
 
     @Scheduled(fixedRate = 60000)
     public void checkPendingAnnouncements() throws IOException {
@@ -325,10 +324,10 @@ public class AnnouncementController {
         return ResponseEntity.ok(count);
     }
 
-    @GetMapping("/iDontKnowWhy")
-    public Map<String, Double> getPercentage() throws ExecutionException, InterruptedException {
-        return FIREBASE_NOTIFICATION_SERVICE.getPercentage();
-    }
+//    @GetMapping("/iDontKnowWhy")
+//    public Map<String, Double> getPercentage() throws ExecutionException, InterruptedException {
+//        return EMPLOYEE_SERVICE.getPercentage();
+//    }
 
 }
 
