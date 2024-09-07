@@ -141,10 +141,9 @@ public class TelegramService extends TelegramLongPollingBot {
     }
 
     @Async
-    public void sendToTelegram(List<Long> chatIdsList, String contentType, Long announcementId, String filePathOrUrl, String title, String creator) {
+    public void sendToTelegram(List<Long> chatIdsList, MultipartFile file ,String contentType, Long announcementId, String filePathOrUrl, String title, String creator) {
         LOGGER.info("in send to telegram");
-        LOGGER.info("Content Type: " + contentType); // Log the contentType for debugging
-        // Trim any whitespace from contentType before comparison
+        LOGGER.info("Content Type: " + contentType);
         contentType = contentType.trim();
         if (contentType.startsWith(ContentType.AUDIO.getValues()[0])) {
             LOGGER.info("send audio");
@@ -157,10 +156,12 @@ public class TelegramService extends TelegramLongPollingBot {
             sendImageInBatches(chatIdsList, announcementId, filePathOrUrl, title, creator);
         } else if (contentType.equals(ContentType.PDF.getValues()[0]) ||
                 contentType.equals(ContentType.EXCEL.getValues()[0]) ||
-                contentType.equals(ContentType.EXCEL.getValues()[1]) ||
-                contentType.equals(ContentType.ZIP.getValues()[0])) {
-            LOGGER.info("send pdf or excel or zip");
-            sendReportsInBatches(chatIdsList, announcementId, filePathOrUrl, title, creator , contentType);
+                contentType.equals(ContentType.EXCEL.getValues()[1])) {
+            LOGGER.info("send pdf or excel ");
+            sendReportsInBatches(chatIdsList, announcementId, filePathOrUrl, title, creator );
+        } else if (contentType.equals(ContentType.ZIP.getValues()[0])) {
+            LOGGER.info("send zip ");
+            sendZipInBatches(chatIdsList, announcementId,file,title, creator);
         } else {
             LOGGER.info("Unknown content type: " + contentType);
         }
@@ -236,7 +237,7 @@ public class TelegramService extends TelegramLongPollingBot {
     }
 
     // send report pdf or excel if u want to send to more than one user, call ....InBatches
-    private void sendReports(Long chatId,Long announcementId, String filePathOrUrl, String title, String creator, String contentType) throws TelegramApiException {
+    private void sendReports(Long chatId,Long announcementId, String filePathOrUrl, String title, String creator) throws TelegramApiException {
         SendDocument sendDocumentRequest = new SendDocument();
         sendDocumentRequest.setChatId(chatId);
         InputFile file = new InputFile(filePathOrUrl);
@@ -249,7 +250,7 @@ public class TelegramService extends TelegramLongPollingBot {
         LOGGER.info("After sending to : "+ chatId);
     }
 
-    private void sendReportsInBatches(List<Long> chatIds,Long announcementId, String filePath, String title, String creator, String contentType) {
+    private void sendReportsInBatches(List<Long> chatIds,Long announcementId, String filePath, String title, String creator) {
         int batchSize = 30;
         int delay = 1; // 1-second delay between batches
         ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
@@ -258,7 +259,7 @@ public class TelegramService extends TelegramLongPollingBot {
             executor.schedule(() -> {
                 for (Long chatId : batch) {
                     try {
-                        sendReports(chatId,announcementId, filePath, title, creator, contentType);
+                        sendReports(chatId,announcementId, filePath, title, creator);
                     } catch (TelegramApiException e) {
                         throw new RuntimeException(e);
                     }

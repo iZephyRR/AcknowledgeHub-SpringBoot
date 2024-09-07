@@ -19,6 +19,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.swing.*;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -164,9 +165,16 @@ public class EmployeeService {
     public boolean existsById(Long sendTo) {
         return EMPLOYEE_REPOSITORY.existsById(sendTo);
     }
+
     @Transactional
     public List<UserDTO> getAllUsers(){
         List<Object[]> objectList = EMPLOYEE_REPOSITORY.getAllUsers();
+        return mapToDtoList(objectList);
+    }
+
+    @Transactional
+    public List<UserDTO> getUserByCompanyId(Long companyId){
+        List<Object[]> objectList = EMPLOYEE_REPOSITORY.getUserByCompanyId(companyId);
         return mapToDtoList(objectList);
     }
 
@@ -190,6 +198,7 @@ public class EmployeeService {
         dto.setWorkEntryDate((Date) row[11]);
         dto.setCompanyName((String) row[12]);
         dto.setDepartmentName((String) row[13]);
+        dto.setId((Long) row[14]);
         return dto;
     }
 }

@@ -78,7 +78,7 @@ public class AnnouncementController {
 //                if(contentType.startsWith("application/x-zip-compressed")) {
 //                    TELEGRAM_SERVICE.sendZipInBatches(chatIdsList, announcement.getId(), announcementDTO.getFile(), announcement.getTitle(), announcement.getEmployee().getName());
 //                }
-                TELEGRAM_SERVICE.sendToTelegram(chatIdsList, announcement.getContentType().getFirstValue(), announcement.getId(), announcement.getPdfLink(), announcement.getTitle(), announcement.getEmployee().getName());
+                //TELEGRAM_SERVICE.sendToTelegram(chatIdsList, announcement.getContentType().getFirstValue(), announcement.getId(), announcement.getPdfLink(), announcement.getTitle(), announcement.getEmployee().getName());
             }
             targetStorage.remove(announcement.getId());
         }
@@ -86,21 +86,22 @@ public class AnnouncementController {
 
     @PostMapping(value = "/create", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public void createAnnouncement(
-            @ModelAttribute AnnouncementDTO announcementDTO,
-            @RequestHeader("Authorization") String authHeader
+            @ModelAttribute AnnouncementDTO announcementDTO
     ) throws IOException {
         ObjectMapper objectMapper = new ObjectMapper();
+        List<String> selectedChannels = objectMapper.readValue(announcementDTO.getChannel(), new TypeReference<List<String>>() {
+        });
+        LOGGER.info("selected channels : " + selectedChannels);
+        validateChannels(selectedChannels);
         List<TargetDTO> targetDTOList = objectMapper.readValue(announcementDTO.getTarget(), new TypeReference<List<TargetDTO>>() {
         });
-
-        String token = authHeader.substring(7);
-        Long loggedInId = Long.parseLong(JWT_SERVICE.extractId(token));
-
+        Long loggedInId = CHECKING_BEAN.getId();
         CompletableFuture<Employee> conFuEmployee = EMPLOYEE_SERVICE.findById(loggedInId)
                 .thenApply(optionalEmployee -> optionalEmployee.orElseThrow(() -> new NoSuchElementException("Employee not found")));
         Optional<AnnouncementCategory> optionalAnnouncementCategory = ANNOUNCEMENT_CATEGORY_SERVICE.findById(announcementDTO.getCategoryId());
         AnnouncementCategory category = optionalAnnouncementCategory.orElse(null);
         validateTargets(targetDTOList); // validate targets are exist or not
+
         String scheduleOption = announcementDTO.getScheduleOption();
         if (!"later".equals(scheduleOption) && !"now".equals(scheduleOption)) {
             throw new IllegalArgumentException("Invalid option");
@@ -151,12 +152,10 @@ public class AnnouncementController {
                     return target;
                 })
                 .toList();
-
         if (status == AnnouncementStatus.UPLOADED) {
             LOGGER.info("announcement status : " + status);
             List<Target> targets = TARGET_SERVICE.saveTargets(targetList);
-            handleTargetsAndNotifications(targets, announcement);
-            // target save, send notification
+            handleTargetsAndNotifications(targets, announcement); // target save, send notification
             List<Long> chatIdsList = List.of();
             for (Target target : targets) {
                 String receiverType = target.getReceiverType().name();
@@ -168,10 +167,14 @@ public class AnnouncementController {
                     chatIdsList = EMPLOYEE_SERVICE.getAllChatIdByDepartmentId(sendTo);
                     LOGGER.info("Chat IDs for DEPARTMENT with ID " + sendTo + ": " + chatIdsList);
                 }
-                if(contentType.startsWith("application/x-zip-compressed")) {
-                    TELEGRAM_SERVICE.sendZipInBatches(chatIdsList, announcement.getId(), announcementDTO.getFile(), announcement.getTitle(), announcement.getEmployee().getName());
+                for (String channel : selectedChannels) {
+                    if ("Telegram".equalsIgnoreCase(channel)) {
+                        TELEGRAM_SERVICE.sendToTelegram(chatIdsList, announcementDTO.getFile(), announcement.getContentType().getFirstValue(), announcement.getId(), announcement.getPdfLink(), announcement.getTitle(), announcement.getEmployee().getName());
+                    }
+                    if ("Email".equalsIgnoreCase(channel)) {
+                        // email service
+                    }
                 }
-                TELEGRAM_SERVICE.sendToTelegram(chatIdsList, announcement.getContentType().getFirstValue(), announcement.getId(), announcement.getPdfLink(), announcement.getTitle(), announcement.getEmployee().getName());
             }
         } else {
             targetStorage.put(announcement.getId(), targetList);
@@ -200,6 +203,15 @@ public class AnnouncementController {
                 }
             } else {
                 throw new IllegalArgumentException("Invalid receiver type: " + receiverType);
+            }
+        }
+    }
+
+    private void validateChannels(List<String> selectedChannels) {
+        List<String> allowedChannels = Arrays.asList("Telegram", "Email");
+        for (String channel : selectedChannels) {
+            if (!allowedChannels.contains(channel)) {
+                throw new IllegalArgumentException("Invalid channel selected: " + channel);
             }
         }
     }

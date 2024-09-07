@@ -9,7 +9,7 @@ import java.util.Date;
 
 @Data
 public class UserDTO {
-
+    private Long id;
     private String telegramUsername;
     private String email;
     private String stuffId;
