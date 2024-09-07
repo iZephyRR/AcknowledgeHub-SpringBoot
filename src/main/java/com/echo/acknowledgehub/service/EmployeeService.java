@@ -200,7 +200,6 @@ public class EmployeeService {
         Map<Long, Integer> employeeCountMap = new HashMap<>();
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
         List<Long> announcementIds = ANNOUNCEMENT_REPOSITORY.getSelectedAllAnnouncements(SelectAll.TRUE);
-        int announcementCount = ANNOUNCEMENT_REPOSITORY.getSelectAllCountAnnouncements(SelectAll.TRUE);
         for (Long announcementId : announcementIds) {
             ApiFuture<QuerySnapshot> future = dbFirestore.collection("notifications")
                     .whereEqualTo("announcementId", String.valueOf(announcementId))
@@ -219,10 +218,7 @@ public class EmployeeService {
                     CompletableFuture<Employee> comFuEmployee = findById(userId)
                             .thenApply(employee -> employee.orElseThrow(() -> new NoSuchElementException("Employee not found")));
                     Long companyId = comFuEmployee.join().getCompany().getId();
-                    if (employeeCountMap.containsKey(companyId)) {
-                        int notedCount = employeeCountMap.getOrDefault(companyId, 0);
-                        employeeCountMap.put(companyId, notedCount + 1 );
-                    }
+                    employeeCountMap.merge(companyId, 1 , Integer::sum);
                 }
             }
         }
