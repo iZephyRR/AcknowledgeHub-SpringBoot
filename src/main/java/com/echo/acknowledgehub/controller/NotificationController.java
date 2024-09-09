@@ -2,16 +2,22 @@ package com.echo.acknowledgehub.controller;
 
 import com.echo.acknowledgehub.bean.CheckingBean;
 import com.echo.acknowledgehub.dto.NotificationDTO;
+import com.echo.acknowledgehub.dto.UserDTO;
+import com.echo.acknowledgehub.entity.Employee;
+import com.echo.acknowledgehub.service.FirebaseNotificationService;
 import com.google.api.core.ApiFuture;
-import com.google.cloud.Timestamp;
-import com.google.cloud.firestore.DocumentReference;
-import com.google.cloud.firestore.Firestore;
+import com.google.cloud.firestore.*;
 import com.google.firebase.cloud.FirestoreClient;
 import lombok.AllArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.logging.Logger;
@@ -20,6 +26,7 @@ import java.util.logging.Logger;
 @RequestMapping("/notifications")
 @AllArgsConstructor
 public class NotificationController {
+
     private static final Logger LOGGER = Logger.getLogger(NotificationController.class.getName());
     private final SimpMessagingTemplate simpMessagingTemplate;
     private final CheckingBean CHECKING_BEAN;
@@ -47,29 +54,32 @@ public class NotificationController {
 
     private Map<String, Object> buildNotificationData(NotificationDTO notificationDTO) {
         Map<String, Object> docData = new HashMap<>();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
         // Existing fields
         docData.put("title", notificationDTO.getTitle());
         docData.put("category", notificationDTO.getCategoryName());
         docData.put("Sender", CHECKING_BEAN.getRole().toString());
         docData.put("SenderName", CHECKING_BEAN.getName());
+        LOGGER.info("noti user get id : "+ notificationDTO.getUserId());
         docData.put("userId", notificationDTO.getUserId());
         docData.put("announcementId", String.valueOf(notificationDTO.getAnnouncementId()));
-        docData.put("status", notificationDTO.getStatus().toString());
+        //docData.put("status", notificationDTO.getStatus().toString());
         docData.put("type", notificationDTO.getType().toString());
-        docData.put("noticeAt", notificationDTO.getNoticeAt().toString());
-        docData.put("timestamp", java.sql.Timestamp.valueOf(notificationDTO.getTimestamp())); // Ensure correct Timestamp type
-        docData.put("companyId", notificationDTO.getCompanyId());
-
+        docData.put("noticeAt", notificationDTO.getNoticeAt().format(formatter));
+        docData.put("timestamp", notificationDTO.getTimestamp().format(formatter));
+        docData.put("receiverType", notificationDTO.getReceiverType());
+        docData.put("receiverId", notificationDTO.getReceiverId());
         // Adding the targetId field
         if (notificationDTO.getTargetId() != null) {
             docData.put("targetId", notificationDTO.getTargetId().toString());
+            docData.put("targetName", notificationDTO.getTargetName());
         }
 
         return docData;
     }
-
 }
+
 
 //
 //    private void saveNotificationToFirestore(NotificationDTO notificationDTO, Long loggedInId) {

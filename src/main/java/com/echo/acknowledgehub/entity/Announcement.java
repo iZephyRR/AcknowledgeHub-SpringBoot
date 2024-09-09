@@ -31,6 +31,9 @@ public class Announcement {
     @Column(name = "contentType", nullable = false)
     private ContentType contentType;
     @Enumerated(EnumType.STRING)
+    @Column(name = "selectAll", nullable = false)
+    private SelectAll selectAll;
+    @Enumerated(EnumType.STRING)
     @Column(name ="isSchedule", nullable = false)
     private IsSchedule isSchedule;
     @Enumerated(EnumType.STRING)

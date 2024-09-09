@@ -62,8 +62,6 @@ public class CloudinaryServiceImpl implements CloudinaryService {
                     "folder", folder
             );
         }
-
-        // Upload the file with the determined options
         return cloudinary.uploader().upload(file.getBytes(), options);
     }
 
@@ -77,8 +75,8 @@ public class CloudinaryServiceImpl implements CloudinaryService {
         }
     }
 
+    @Override
     public String generateImageUrl(String publicId) {
         return cloudinary.url().generate(publicId);
     }
 }
-
