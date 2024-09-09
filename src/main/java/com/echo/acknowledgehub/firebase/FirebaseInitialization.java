@@ -15,7 +15,7 @@ public class FirebaseInitialization {
     @PostConstruct
     public void initialization() {
         try {
-            FileInputStream serviceAccount = new FileInputStream("C:\\OJT-14\\Final Project\\AcknowledgeHub\\src\\main\\resources\\serviceAccountKey.json") ;
+            FileInputStream serviceAccount = new FileInputStream("E:\\AcknowledgeHub - TeamEcho\\acknowledgehub\\src\\main\\resources\\serviceAccountKey.json") ;
             FirebaseOptions options = new FirebaseOptions.Builder()
                     .setCredentials(GoogleCredentials.fromStream(serviceAccount))
                     .setDatabaseUrl("https://cheatsheet1-d5b26.firebaseio.com/")
