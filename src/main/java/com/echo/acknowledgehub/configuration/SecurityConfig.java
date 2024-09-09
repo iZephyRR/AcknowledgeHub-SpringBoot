@@ -51,7 +51,9 @@ public class SecurityConfig {
                 // Configure routes to allow access only for system admin.
                 .requestMatchers(BASE_URL + "/ad/**").hasRole(EmployeeRole.ADMIN.name())
                 // Configure routes to allow access only for the main HR section.
-                 .requestMatchers(BASE_URL + "/mr/**",BASE_URL + "/announcement/aug-to-oct-2024",BASE_URL + "/announcement/get-all",BASE_URL + "/announcement/count").hasRole(EmployeeRole.MAIN_HR.name())
+                 .requestMatchers(BASE_URL + "/mr/**",BASE_URL + "/announcement/aug-to-oct-2024",BASE_URL + "/announcement/get-all",
+                         BASE_URL + "/announcement/count",BASE_URL + "/getEmployeesWho1DNoted/**",
+                         BASE_URL+ "/getEmployeesWho3DNoted/**", BASE_URL + "/announcement/pieChart").hasRole(EmployeeRole.MAIN_HR.name())
                 // Configure routes to allow access only for main HR assistance.
                 .requestMatchers(BASE_URL + "/ma/**").hasRole(EmployeeRole.MAIN_HR_ASSISTANCE.name())
                 //Configure routes to allow access only for the 'company/HR' subdirectory.
@@ -64,8 +66,9 @@ public class SecurityConfig {
                 .requestMatchers(BASE_URL + "/mhr/**").hasAnyRole(EmployeeRole.MAIN_HR.name(), EmployeeRole.HR.name())
                  .requestMatchers(BASE_URL + "/announcement/create",BASE_URL + "/announcement/uploadDraft",
                                                 BASE_URL + "/announcement/get-drafts", BASE_URL + "/get-companies",
-                                                BASE_URL + "/getCompanyById/**", BASE_URL + "/get-categories", BASE_URL +"/announcement/getDraftById/**",
-                                                BASE_URL + "/announcement/delete-draft/**", BASE_URL + "/custom-target/**").hasAnyRole(EmployeeRole.MAIN_HR.name(),
+                                                BASE_URL + "/getCompanyById", BASE_URL + "/get-categories", BASE_URL +"/announcement/getDraftById/**",
+                                                BASE_URL + "/announcement/delete-draft/**", BASE_URL + "/custom-target/**",
+                         BASE_URL+ "/getUsersByCompanyId").hasAnyRole(EmployeeRole.MAIN_HR.name(),
                                                     EmployeeRole.HR.name(),  EmployeeRole.MAIN_HR_ASSISTANCE.name(),EmployeeRole.HR_ASSISTANCE.name())
         ).userDetailsService(USER_DETAILS_SERVICE).sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)).addFilterBefore(JWT_AUTHENTICATION_FILTER, UsernamePasswordAuthenticationFilter.class).build();
 

@@ -31,6 +31,7 @@ public class AnnouncementDTO {
     private IsSchedule isSchedule;
     private ContentType contentType;
     private EmployeeRole role;
-
+    private String channel;
+    private boolean selectAll;
 }
 

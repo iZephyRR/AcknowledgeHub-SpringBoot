@@ -21,10 +21,7 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -53,9 +50,12 @@ public class AnnouncementService {
     }
 
     public String handleFileUpload(MultipartFile file) throws IOException {
-        Map<String, String> result = CLOUD_SERVICE.upload(file);
-        return result.get("url");
+        String customFileName = Objects.requireNonNull(file.getOriginalFilename()).split("\\.") [0] ;
+        LOGGER.info("original file name" + customFileName);// Custom file name you want to use
+        Map<String, String> result = CLOUD_SERVICE.upload(file, customFileName);
+        return result.get("url");  // Return the file URL
     }
+
 
     public List<Announcement> getAnnouncementsForMonth(LocalDateTime startDateTime, LocalDateTime endDateTime) {
         return ANNOUNCEMENT_REPOSITORY.findAllByDateBetween(startDateTime, endDateTime);
@@ -102,6 +102,15 @@ public class AnnouncementService {
     @Transactional
     public List<AnnouncementDTOForShowing> getAnnouncementByReceiverTypeAndId(ReceiverType receiverType ,Long receiverId) {
         return ANNOUNCEMENT_REPOSITORY.findAnnouncementDTOsByReceiverType(receiverType, receiverId);
+    }
+  
+    public List<Long> getSelectedAllAnnouncements() {
+        return ANNOUNCEMENT_REPOSITORY.getSelectedAllAnnouncements(SelectAll.TRUE);
+    }
+
+    @Transactional
+    public int getCountSelectAllAnnouncements() {
+        return ANNOUNCEMENT_REPOSITORY.getSelectAllCountAnnouncements(SelectAll.TRUE);
     }
 
     public List<AnnouncementDTO> mapToDtoList(List<Object[]> objLists) {

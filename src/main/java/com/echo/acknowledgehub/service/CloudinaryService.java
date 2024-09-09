@@ -6,9 +6,11 @@ import java.io.IOException;
 import java.util.Map;
 
 public interface CloudinaryService {
-    Map<String, String> upload(MultipartFile multipartFile) throws IOException;
+    // Method with custom file name parameter
+    Map<String, String> upload(MultipartFile multipartFile, String customFileName) throws IOException;
 
     Map<String, Object> delete(String publicId) throws IOException;
 
     String generateImageUrl(String publicId);
 }
+

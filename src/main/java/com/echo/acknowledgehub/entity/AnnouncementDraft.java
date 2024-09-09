@@ -30,8 +30,8 @@ public class AnnouncementDraft {
     @Column(name = "filename", nullable = false)
     private String filename;
 
-    @Column(name="target", nullable = false)
-    private String target;
+    @Column(name="target", nullable = false, columnDefinition = "MEDIUMBLOB")
+    private byte[] target;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "contentType", nullable = false)

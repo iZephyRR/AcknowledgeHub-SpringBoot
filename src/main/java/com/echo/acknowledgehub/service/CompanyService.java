@@ -2,6 +2,7 @@ package com.echo.acknowledgehub.service;
 
 import com.echo.acknowledgehub.entity.Company;
 import com.echo.acknowledgehub.repository.CompanyRepository;
+import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
@@ -42,5 +43,10 @@ public class CompanyService {
 
     public boolean existsById(Long sendTo) {
         return COMPANY_REPOSITORY.existsById(sendTo);
+    }
+
+    @Transactional
+    public String getCompanyName(Long compayId) {
+        return COMPANY_REPOSITORY.findCompanyNameById(compayId);
     }
 }

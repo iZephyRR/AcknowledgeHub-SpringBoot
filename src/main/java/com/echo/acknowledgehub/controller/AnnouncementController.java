@@ -5,6 +5,7 @@ import com.echo.acknowledgehub.constant.AnnouncementStatus;
 import com.echo.acknowledgehub.constant.ContentType;
 import com.echo.acknowledgehub.constant.IsSchedule;
 import com.echo.acknowledgehub.constant.ReceiverType;
+import com.echo.acknowledgehub.constant.SelectAll;
 import com.echo.acknowledgehub.dto.*;
 import com.echo.acknowledgehub.entity.*;
 import com.echo.acknowledgehub.service.*;
@@ -25,12 +26,14 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.logging.Logger;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -42,7 +45,7 @@ import org.springframework.web.multipart.MultipartFile;
 public class AnnouncementController {
 
     private static final Logger LOGGER = Logger.getLogger(AnnouncementController.class.getName());
-    private final Map<Long, List<Target>> targetStorage = new HashMap<>();
+    private final Map<Long, SaveTargetsForSchedule> targetStorage = new HashMap<>();
     private final AnnouncementService ANNOUNCEMENT_SERVICE;
     private final JWTService JWT_SERVICE;
     private final CheckingBean CHECKING_BEAN;
@@ -51,7 +54,7 @@ public class AnnouncementController {
     private final CompanyService COMPANY_SERVICE;
     private final DepartmentService DEPARTMENT_SERVICE;
     private final AnnouncementCategoryService ANNOUNCEMENT_CATEGORY_SERVICE;
-    //private final TelegramService TELEGRAM_SERVICE;
+    private final TelegramService TELEGRAM_SERVICE;
     private final TargetService TARGET_SERVICE;
     private final DraftService DRAFT_SERVICE;
 
@@ -60,9 +63,11 @@ public class AnnouncementController {
         List<Announcement> pendingAnnouncementsScheduled = ANNOUNCEMENT_SERVICE.findPendingAnnouncementsScheduledForNow(LocalDateTime.now());
         LOGGER.info("in schedule");
         for (Announcement announcement : pendingAnnouncementsScheduled) {
-            announcement.setStatus(AnnouncementStatus.APPROVED);
+            announcement.setStatus(AnnouncementStatus.UPLOADED);
             ANNOUNCEMENT_SERVICE.save(announcement);
-            List<Target> targetList = targetStorage.get(announcement.getId());
+            SaveTargetsForSchedule saveTargetsForSchedule = targetStorage.get(announcement.getId());
+            List<Target> targetList = saveTargetsForSchedule.getTargets();
+            List<String> selectedChannels = saveTargetsForSchedule.getSelectedChannels();
             TARGET_SERVICE.insertTargetWithNotifications(targetList, announcement);
             List<Long> chatIdsList = List.of();
             for (Target target : targetList) {
@@ -73,7 +78,15 @@ public class AnnouncementController {
                 } else if (receiverType.equals("DEPARTMENT")) {
                     chatIdsList = EMPLOYEE_SERVICE.getAllChatIdByDepartmentId(sendTo);
                 }
-                //TELEGRAM_SERVICE.sendToTelegram(chatIdsList, announcement.getContentType().getFirstValue(), announcement.getId(), announcement.getPdfLink(), announcement.getTitle(), announcement.getEmployee().getName());
+                for (String channel : selectedChannels) {
+                    if ("Telegram".equalsIgnoreCase(channel)) {
+                        LOGGER.info("link : " + announcement.getPdfLink());
+                        TELEGRAM_SERVICE.sendToTelegram(chatIdsList, announcement.getContentType().getFirstValue(), announcement.getId(), announcement.getPdfLink(), announcement.getTitle(), announcement.getEmployee().getName());
+                    }
+                    if ("Email".equalsIgnoreCase(channel)) {
+                        // email service
+                    }
+                }
             }
             targetStorage.remove(announcement.getId());
         }
@@ -81,16 +94,13 @@ public class AnnouncementController {
 
     @PostMapping(value = "/create", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public void createAnnouncement(
-            @ModelAttribute AnnouncementDTO announcementDTO,
-            @RequestHeader("Authorization") String authHeader
+            @ModelAttribute AnnouncementDTO announcementDTO
     ) throws IOException {
         ObjectMapper objectMapper = new ObjectMapper();
-        List<TargetDTO> targetDTOList = objectMapper.readValue(announcementDTO.getTarget(), new TypeReference<List<TargetDTO>>() {
-        });
-
-        String token = authHeader.substring(7);
-        Long loggedInId = Long.parseLong(JWT_SERVICE.extractId(token));
-
+        List<String> selectedChannels = objectMapper.readValue(announcementDTO.getChannel(), new TypeReference<List<String>>() {});
+        validateChannels(selectedChannels);
+        List<TargetDTO> targetDTOList = objectMapper.readValue(announcementDTO.getTarget(), new TypeReference<List<TargetDTO>>() {});
+        Long loggedInId = CHECKING_BEAN.getId();
         CompletableFuture<Employee> conFuEmployee = EMPLOYEE_SERVICE.findById(loggedInId)
                 .thenApply(optionalEmployee -> optionalEmployee.orElseThrow(() -> new NoSuchElementException("Employee not found")));
         Optional<AnnouncementCategory> optionalAnnouncementCategory = ANNOUNCEMENT_CATEGORY_SERVICE.findById(announcementDTO.getCategoryId());
@@ -106,7 +116,7 @@ public class AnnouncementController {
             status = AnnouncementStatus.PENDING;
             isSchedule = IsSchedule.TRUE;
         } else {
-            status = AnnouncementStatus.APPROVED;
+            status = AnnouncementStatus.UPLOADED;
             isSchedule = IsSchedule.FALSE;
         }
         announcementDTO.setStatus(status);
@@ -114,8 +124,13 @@ public class AnnouncementController {
         Announcement entity = MODEL_MAPPER.map(announcementDTO, Announcement.class);
         entity.setEmployee(conFuEmployee.join());
         entity.setCategory(category);
-        LOGGER.info("before get file");
+        if (announcementDTO.isSelectAll()) {
+            entity.setSelectAll(SelectAll.TRUE);
+        }else {
+            entity.setSelectAll(SelectAll.FALSE);
+        }
         if (announcementDTO.getFile() == null) {
+            LOGGER.info("getting file");
             MultipartFile file = convertToMultipartFile(announcementDTO.getFileUrl(), announcementDTO.getFilename());
             announcementDTO.setFile(file);
         }
@@ -146,12 +161,10 @@ public class AnnouncementController {
                     return target;
                 })
                 .toList();
-
-        if (status == AnnouncementStatus.APPROVED) {
+        if (status == AnnouncementStatus.UPLOADED) {
             LOGGER.info("announcement status : " + status);
             List<Target> targets = TARGET_SERVICE.saveTargets(targetList);
-            handleTargetsAndNotifications(targets, announcement);
-            // target save, send notification
+            handleTargetsAndNotifications(targets, announcement); // target save, send notification
             List<Long> chatIdsList = List.of();
             for (Target target : targets) {
                 String receiverType = target.getReceiverType().name();
@@ -163,15 +176,25 @@ public class AnnouncementController {
                     chatIdsList = EMPLOYEE_SERVICE.getAllChatIdByDepartmentId(sendTo);
                     LOGGER.info("Chat IDs for DEPARTMENT with ID " + sendTo + ": " + chatIdsList);
                 }
-                //TELEGRAM_SERVICE.sendToTelegram(chatIdsList, announcement.getContentType().getFirstValue(), announcement.getId(), announcement.getPdfLink(), announcement.getTitle(), announcement.getEmployee().getName());
+                for (String channel : selectedChannels) {
+                    if ("Telegram".equalsIgnoreCase(channel)) {
+                        TELEGRAM_SERVICE.sendToTelegram(chatIdsList, announcement.getContentType().getFirstValue(), announcement.getId(), announcement.getPdfLink(), announcement.getTitle(), announcement.getEmployee().getName());
+                    }
+                    if ("Email".equalsIgnoreCase(channel)) {
+                        // email service
+                    }
+                }
             }
         } else {
-            targetStorage.put(announcement.getId(), targetList);
+            LOGGER.info("announcement status : " + status);
+            SaveTargetsForSchedule saveTargetsForSchedule = new SaveTargetsForSchedule();
+            saveTargetsForSchedule.setTargets(targetList);
+            saveTargetsForSchedule.setSelectedChannels(selectedChannels);
+            targetStorage.put(announcement.getId(), saveTargetsForSchedule);
         }
     }
 
     private void handleTargetsAndNotifications(List<Target> targetList, Announcement announcement) {
-        // Insert all targets with notifications in one call
         TARGET_SERVICE.insertTargetWithNotifications(targetList, announcement);
     }
 
@@ -197,11 +220,18 @@ public class AnnouncementController {
         }
     }
 
+    private void validateChannels(List<String> selectedChannels) {
+        List<String> allowedChannels = Arrays.asList("telegram", "email");
+        for (String channel : selectedChannels) {
+            if (!allowedChannels.contains(channel)) {
+                throw new IllegalArgumentException("Invalid channel selected: " + channel);
+            }
+        }
+    }
+
     @PostMapping(value = "/uploadDraft", consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<AnnouncementDraft> uploadDraft(@ModelAttribute AnnouncementDraftDTO announcementDraftDTO,
-                                                         @RequestHeader("Authorization") String authHeader) throws IOException {
-        String token = authHeader.substring(7);
-        Long loggedInId = Long.parseLong(JWT_SERVICE.extractId(token));
+    public ResponseEntity<AnnouncementDraft> uploadDraft(@ModelAttribute AnnouncementDraftDTO announcementDraftDTO) throws IOException {
+        Long loggedInId = CHECKING_BEAN.getId();
         CompletableFuture<Employee> conFuEmployee = EMPLOYEE_SERVICE.findById(loggedInId)
                 .thenApply(optionalEmployee -> optionalEmployee.orElseThrow(() -> new NoSuchElementException("Employee not found")));
         Optional<AnnouncementCategory> optionalAnnouncementCategory = ANNOUNCEMENT_CATEGORY_SERVICE.findById(announcementDraftDTO.getCategoryId());
@@ -225,6 +255,7 @@ public class AnnouncementController {
             announcementDraftDTO.setContentType(ContentType.ZIP);
         }
         AnnouncementDraft announcementDraft = MODEL_MAPPER.map(announcementDraftDTO, AnnouncementDraft.class);
+        announcementDraft.setTarget(Base64.getEncoder().encode(announcementDraftDTO.getTarget().getBytes(StandardCharsets.UTF_8)));
         announcementDraft.setEmployee(conFuEmployee.join());
         announcementDraft.setCategory(category);
         AnnouncementDraft saveAnnouncementDraft = DRAFT_SERVICE.saveDraft(announcementDraft);
@@ -236,9 +267,8 @@ public class AnnouncementController {
     }
 
     @GetMapping(value = "/get-drafts", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<List<AnnouncementDraftDTO>> getDrafts(@RequestHeader("Authorization") String authHeader) {
-        String token = authHeader.substring(7);
-        Long loggedInId = Long.parseLong(JWT_SERVICE.extractId(token));
+    public ResponseEntity<List<AnnouncementDraftDTO>> getDrafts() {
+        Long loggedInId = CHECKING_BEAN.getId();
         return ResponseEntity.ok(DRAFT_SERVICE.getDrafts(loggedInId));
     }
 
@@ -258,6 +288,8 @@ public class AnnouncementController {
         AnnouncementDraft announcementDraft = DRAFT_SERVICE.getById(draftId);
         AnnouncementDraftDTO announcementDraftDTO = MODEL_MAPPER.map(announcementDraft, AnnouncementDraftDTO.class);
         announcementDraftDTO.setCategoryId(announcementDraft.getCategory().getId());
+        byte[] decodeBytes = Base64.getDecoder().decode(announcementDraft.getTarget());
+        announcementDraftDTO.setTarget(new String(decodeBytes, StandardCharsets.UTF_8));
         return ResponseEntity.ok(announcementDraftDTO);
     }
 
@@ -311,7 +343,6 @@ public class AnnouncementController {
         if (contentType == null) {
             contentType = "application/octet-stream"; // Default content type
         }
-
         return new CustomMultipartFile(fileBytes, fileName, contentType);
     }
 
@@ -339,5 +370,10 @@ public class AnnouncementController {
     public ResponseEntity<List<AnnouncementDTOForShowing>> getAnnouncementsByEmployeeId() {
         return ResponseEntity.ok(ANNOUNCEMENT_SERVICE.getAnnouncementByReceiverTypeAndId(ReceiverType.EMPLOYEE,CHECKING_BEAN.getId()));
     }
+    @GetMapping(value = "/pieChart" ,  produces = MediaType.APPLICATION_JSON_VALUE)
+    public Map<String, Double> getPercentage() throws ExecutionException, InterruptedException {
+        return EMPLOYEE_SERVICE.getPercentage();
+    }
+
 }
 
