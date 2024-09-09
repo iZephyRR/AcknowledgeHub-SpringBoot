@@ -4,10 +4,8 @@ import com.echo.acknowledgehub.bean.CheckingBean;
 import com.echo.acknowledgehub.constant.AnnouncementStatus;
 import com.echo.acknowledgehub.constant.ContentType;
 import com.echo.acknowledgehub.constant.IsSchedule;
-import com.echo.acknowledgehub.dto.AnnouncementDTO;
-import com.echo.acknowledgehub.dto.AnnouncementDraftDTO;
-import com.echo.acknowledgehub.dto.StringResponseDTO;
-import com.echo.acknowledgehub.dto.TargetDTO;
+import com.echo.acknowledgehub.constant.ReceiverType;
+import com.echo.acknowledgehub.dto.*;
 import com.echo.acknowledgehub.entity.*;
 import com.echo.acknowledgehub.service.*;
 import com.echo.acknowledgehub.util.CustomMultipartFile;
@@ -317,10 +315,29 @@ public class AnnouncementController {
         return new CustomMultipartFile(fileBytes, fileName, contentType);
     }
 
-    @GetMapping("/count")
+    @GetMapping(value = "/{id}" , produces = MediaType.APPLICATION_JSON_VALUE)
+    private Optional<Announcement> findById(@PathVariable("id") Long id){
+        return ANNOUNCEMENT_SERVICE.findById(id).join();
+    }
+
+    @GetMapping(value = "/count", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Long> countAnnouncements() {
         long count = ANNOUNCEMENT_SERVICE.countAnnouncements();
         return ResponseEntity.ok(count);
+    }
+
+    @GetMapping(value = "/getAnnouncementsByCompanyId", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<List<AnnouncementDTOForShowing>> getAnnouncementsByCompanyId() {
+        return ResponseEntity.ok(ANNOUNCEMENT_SERVICE.getAnnouncementByReceiverTypeAndId(ReceiverType.COMPANY,CHECKING_BEAN.getCompanyId()));
+    }
+    @GetMapping(value = "/getAnnouncementsByDepartmentId", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<List<AnnouncementDTOForShowing>> getAnnouncementsByDepartmentId() {
+        return ResponseEntity.ok(ANNOUNCEMENT_SERVICE.getAnnouncementByReceiverTypeAndId(ReceiverType.DEPARTMENT,CHECKING_BEAN.getDepartmentId()));
+    }
+
+    @GetMapping(value = "/get-By-EmployeeId", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<List<AnnouncementDTOForShowing>> getAnnouncementsByEmployeeId() {
+        return ResponseEntity.ok(ANNOUNCEMENT_SERVICE.getAnnouncementByReceiverTypeAndId(ReceiverType.EMPLOYEE,CHECKING_BEAN.getId()));
     }
 }
 
