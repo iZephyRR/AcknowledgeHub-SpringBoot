@@ -40,7 +40,11 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
 
     @Modifying
     @Query("UPDATE Employee em SET em.password= :newPassword WHERE em.email= :email")
-    int updatePassword(@Param("email") String email, @Param("newPassword") String password);
+    int updatePasswordByEmail(@Param("email") String email, @Param("newPassword") String password);
+
+    @Modifying
+    @Query("UPDATE Employee em SET em.password= :newPassword WHERE em.id= :id")
+    int updatePasswordById(@Param("id") Long id, @Param("newPassword") String password);
 
     @Query("select em.id from Employee em where em.department.id = :departmentId")
     List<Long> findByDepartmentId(@Param("departmentId") Long departmentId);
@@ -52,6 +56,9 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
 
     @Query("SELECT em.password from Employee em WHERE em.email = :email")
     String findPasswordByEmail(@Param("email") String email);
+
+    @Query("SELECT em.password from Employee em WHERE em.id = :id")
+    String findPasswordById(@Param("id") Long id);
 
     @Query("SELECT em.name from Employee em WHERE em.email = :email")
     String findNameByEmail(@Param("email") String email);

@@ -66,7 +66,10 @@ public class EmployeeController {
         return employeeRepository.findByIdForProfile(id);
     }
 
-
+    @GetMapping("/count")
+    public long getEmployeeCount() {
+        return EMPLOYEE_SERVICE.countEmployees();
+    }
     @PostMapping("/ad/add-user")
     private Employee register(@RequestBody UserDTO user) {
         return EMPLOYEE_SERVICE.save(user).join();
