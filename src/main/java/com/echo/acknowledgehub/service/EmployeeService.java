@@ -26,6 +26,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.swing.*;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -261,6 +262,13 @@ public class EmployeeService {
 //    }
 //
 
+
+    public List<UserDTO> getUsersByCompanyId(Long companyId){
+        List<Object[]> objectList = EMPLOYEE_REPOSITORY.getUserByCompanyId(companyId);
+        return mapToDtoList(objectList);
+    }
+
+
     public List<UserDTO> mapToDtoList (List<Object[]> objLists) {
         return objLists.stream().map(this::mapToDto).collect(Collectors.toList());
     }
@@ -281,6 +289,7 @@ public class EmployeeService {
         dto.setWorkEntryDate((Date) row[11]);
         dto.setCompanyName((String) row[12]);
         dto.setDepartmentName((String) row[13]);
+        dto.setId((Long) row[14]);
         return dto;
     }
 }

@@ -36,6 +36,9 @@ public class Announcement {
     @Enumerated(EnumType.STRING)
     @Column(name ="isSchedule", nullable = false)
     private IsSchedule isSchedule;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "is_select_all", nullable = false)
+    private SelectAll selectAll;
     @JsonIgnore
     @ManyToOne(cascade = CascadeType.MERGE)
     @JoinColumn(name = "hr_id" ,nullable = false)

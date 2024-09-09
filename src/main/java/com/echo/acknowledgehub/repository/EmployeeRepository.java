@@ -68,11 +68,17 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
     @Query("SELECT e.id FROM Employee e WHERE e.telegramUsername = :telegramUsername")
     Long getEmployeeIdByTelegramUsername(@Param("telegramUsername") String telegramUsername);
 
-    @Query("SELECT e.name, e.email, e.address, e.dob, e.gender, e.nRC, e.password, e.role, e.status, e.stuffId, e.telegramUsername, e.workEntryDate, c.name AS companyName, d.name AS departmentName " +
+    @Query("SELECT e.name, e.email, e.address, e.dob, e.gender, e.nRC, e.password, e.role, e.status, e.stuffId, e.telegramUsername, e.workEntryDate, c.name AS companyName, d.name AS departmentName ,e.id " +
             "FROM Employee e " +
             "JOIN e.company c " +
             "JOIN e.department d")
     List<Object[]> getAllUsers();
+
+    @Query("SELECT e.name, e.email, e.address, e.dob, e.gender, e.nRC, e.password, e.role, e.status, e.stuffId, e.telegramUsername, e.workEntryDate, c.name AS companyName, d.name AS departmentName ,e.id " +
+            "FROM Employee e " +
+            "JOIN e.company c " +
+            "JOIN e.department d where e.company.id=:companyId")
+    List<Object[]> getUserByCompanyId(@Param("companyId") Long companyId);
 
     @Query("SELECT e FROM Employee e WHERE e.role IN :roles")
     List<Employee> findAllByRole(@Param("roles") List<EmployeeRole> roles);
