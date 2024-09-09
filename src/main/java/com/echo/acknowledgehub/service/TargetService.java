@@ -1,7 +1,6 @@
 package com.echo.acknowledgehub.service;
 
 import com.echo.acknowledgehub.bean.CheckingBean;
-import com.echo.acknowledgehub.constant.NotificationStatus;
 import com.echo.acknowledgehub.constant.NotificationType;
 import com.echo.acknowledgehub.constant.ReceiverType;
 import com.echo.acknowledgehub.controller.NotificationController;
