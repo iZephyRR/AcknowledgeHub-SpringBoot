@@ -53,9 +53,9 @@ public class EmployeeController {
         return ResponseEntity.ok(EMPLOYEE_SERVICE.getAllUsers());
     }
 
-    @GetMapping(value = "/getUserByCompanyId", produces = MediaType.APPLICATION_JSON_VALUE)
+    @GetMapping(value = "/getUsersByCompanyId", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<List<UserDTO>> getUserByCompanyId () {
-        return ResponseEntity.ok(EMPLOYEE_SERVICE.getUserByCompanyId(CHECKING_BEAN.getCompanyId()));
+        return ResponseEntity.ok(EMPLOYEE_SERVICE.getUsersByCompanyId(CHECKING_BEAN.getCompanyId()));
     }
 
     @GetMapping("/user/profile")

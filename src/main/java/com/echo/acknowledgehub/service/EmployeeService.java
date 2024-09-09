@@ -173,7 +173,7 @@ public class EmployeeService {
     }
 
     @Transactional
-    public List<UserDTO> getUserByCompanyId(Long companyId){
+    public List<UserDTO> getUsersByCompanyId(Long companyId){
         List<Object[]> objectList = EMPLOYEE_REPOSITORY.getUserByCompanyId(companyId);
         return mapToDtoList(objectList);
     }

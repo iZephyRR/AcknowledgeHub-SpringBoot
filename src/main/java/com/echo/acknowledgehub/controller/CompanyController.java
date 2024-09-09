@@ -57,7 +57,7 @@ public class CompanyController {
         return ANNOUNCEMENT_CATEGORY_SERVICE.findAll();
     }
 
-    @GetMapping(value = "/getCompanyById/" , produces = MediaType.APPLICATION_JSON_VALUE)
+    @GetMapping(value = "/getCompanyById" , produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Company> getCompanyById() {
         Optional<Company> optionalCompany = COMPANY_SERVICE.getCompanyById(CHECKING_BEAN.getCompanyId());
         return optionalCompany.map(company -> new ResponseEntity<>(company, HttpStatus.OK)).orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
