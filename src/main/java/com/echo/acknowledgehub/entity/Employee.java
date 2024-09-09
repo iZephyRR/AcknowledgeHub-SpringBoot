@@ -28,10 +28,10 @@ public class Employee implements UserDetails {
     private Long telegramUserId;
     @Column(name = "email", unique = true, nullable = false, columnDefinition = "VARCHAR(100)")
     private String email;
-    @Column(name = "stuff_id", unique = true, columnDefinition = "VARCHAR(12)")
-    private String stuffId;
+    @Column(name = "staff_id", unique = true, columnDefinition = "VARCHAR(12)")
+    private String staffId;
     @Column(name = "nrc", unique = true, columnDefinition = "VARCHAR(20)")
-    private String nRC;
+    private String nrc;
     @Column(name = "name", nullable = false, columnDefinition = "VARCHAR(75)")
     private String name;
     @Column(name = "password", columnDefinition = "VARCHAR(200)")
@@ -40,7 +40,7 @@ public class Employee implements UserDetails {
     @Column(name = "role", nullable = false, columnDefinition = "ENUM('ADMIN', 'MAIN_HR', 'MAIN_HR_ASSISTANCE', 'HR', 'HR_ASSISTANCE', 'STAFF')")
     private EmployeeRole role;
     @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false, columnDefinition = "ENUM('ACTIVATED', 'DEACTIVATED', 'DEPARTED')")
+    @Column(name = "status", nullable = false, columnDefinition = "ENUM('DEFAULT', 'ACTIVATED', 'DEACTIVATED', 'DEPARTED')")
     private EmployeeStatus status;
     @Enumerated(EnumType.STRING)
     @Column(name = "gender", columnDefinition = "ENUM('MALE', 'FEMALE', 'CUSTOM')")

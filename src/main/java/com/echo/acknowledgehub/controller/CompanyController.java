@@ -1,5 +1,6 @@
 package com.echo.acknowledgehub.controller;
 
+import com.echo.acknowledgehub.dto.CompanyDTO;
 import com.echo.acknowledgehub.bean.CheckingBean;
 import com.echo.acknowledgehub.dto.UserDTO;
 import com.echo.acknowledgehub.entity.AnnouncementCategory;
@@ -35,15 +36,26 @@ public class CompanyController {
     private final ModelMapper MODEL_MAPPER;
     private final CheckingBean CHECKING_BEAN;
 
-    @GetMapping("/mr/get-company")
-    private CompletableFuture<Optional<Company>> getCompany(@RequestBody String id){
+    @GetMapping("/mr/get-company/{id}")
+    private CompletableFuture<Optional<Company>> getCompany(@PathVariable Long id){
         LOGGER.info("Company id : "+id);
-        return COMPANY_SERVICE.findById(Long.parseLong(id));
+        return COMPANY_SERVICE.findById(id);
     }
 
-    @GetMapping(value = "/get-companies", produces = MediaType.APPLICATION_JSON_VALUE)
+    @GetMapping("/user/get-company-dto/{id}")
+    private CompanyDTO getCompanyDTO(@PathVariable Long id){
+        LOGGER.info("CompanyDTO id : "+id);
+        return COMPANY_SERVICE.findDTOById(id).join();
+    }
+
+    @GetMapping("/mha/get-companies")
     public List<Company> getCompanies () {
-        return COMPANY_SERVICE.getAllCompanies();
+        return COMPANY_SERVICE.getAll();
+    }
+
+    @GetMapping("/mha/get-company-dtos")
+    public List<CompanyDTO> getCompanyDTOS (){
+        return COMPANY_SERVICE.getAllDTO();
     }
 
     @GetMapping(value = "/get-departments", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -63,13 +75,7 @@ public class CompanyController {
         return optionalCompany.map(company -> new ResponseEntity<>(company, HttpStatus.OK)).orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
     }
 
-    @GetMapping(value = "/get-Employees/{departmentId}")
-    public List<UserDTO> getEmployeesByDepartmentId(@PathVariable Long departmentId) {
-        List<Employee> employees = EMPLOYEE_SERVICE.getEmployeesByDepartmentId(departmentId);
-        return employees.stream()
-                .map(employee -> MODEL_MAPPER.map(employee, UserDTO.class))
-                .collect(Collectors.toList());
-    }
+
 
 
 }

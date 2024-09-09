@@ -11,8 +11,6 @@ public class Phone {
     @Id
     @Column(name = "phone",unique = true,nullable = false, columnDefinition = "VARCHAR(15)")
     private String phone;
-    @Column(name = "count",nullable = false, columnDefinition = "TINYINT")
-    private Byte count;
 
     @JsonIgnore
     @ManyToOne(cascade = CascadeType.MERGE)
