@@ -1,5 +1,6 @@
 package com.echo.acknowledgehub.repository;
 
+import com.echo.acknowledgehub.dto.EmployeeNotedDTO;
 import com.echo.acknowledgehub.dto.EmployeeProfileDTO;
 import com.echo.acknowledgehub.constant.EmployeeRole;
 import com.echo.acknowledgehub.dto.UniqueFieldsDTO;
@@ -47,8 +48,9 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
     @Query("UPDATE Employee em SET em.password= :newPassword WHERE em.id= :id")
     int updatePasswordById(@Param("id") Long id, @Param("newPassword") String password);
 
-    @Query("SELECT em.password FROM Employee em WHERE em.email= :email")
-    String getPasswordByEmail(@Param("email") String email);
+
+//     @Query("SELECT em.password FROM Employee em WHERE em.email= :email")
+//     String getPasswordByEmail(@Param("email") String email);
 
     @Query("select em.id from Employee em where em.department.id = :departmentId")
     List<Long> findByDepartmentId(@Param("departmentId") Long departmentId);
@@ -57,6 +59,13 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
     List<Long> findByCompanyId(@Param("companyId") Long companyId);
 
     boolean existsByEmail(String email);
+
+    @Query("SELECT em.password from Employee em WHERE em.email = :email")
+    String findPasswordByEmail(@Param("email") String email);
+
+    @Query("SELECT em.password from Employee em WHERE em.id = :id")
+    String findPasswordById(@Param("id") Long id);
+
 
     @Query("SELECT em.name from Employee em WHERE em.email = :email")
     String findNameByEmail(@Param("email") String email);
@@ -73,11 +82,18 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
     @Query("SELECT e.id FROM Employee e WHERE e.telegramUsername = :telegramUsername")
     Long getEmployeeIdByTelegramUsername(@Param("telegramUsername") String telegramUsername);
 
-    @Query("SELECT e.name, e.email, e.address, e.dob, e.gender, e.nrc, e.password, e.role, e.status, e.staffId, e.telegramUsername, e.workEntryDate, c.name AS companyName, d.name AS departmentName " +
+
+    @Query("SELECT e.name, e.email, e.address, e.dob, e.gender, e.nrc, e.password, e.role, e.status, e.stuffId, e.telegramUsername, e.workEntryDate, c.name AS companyName, d.name AS departmentName ,e.id " +
             "FROM Employee e " +
             "JOIN e.company c " +
             "JOIN e.department d")
     List<Object[]> getAllUsers();
+
+    @Query("SELECT e.name, e.email, e.address, e.dob, e.gender, e.nrc, e.password, e.role, e.status, e.stuffId, e.telegramUsername, e.workEntryDate, c.name AS companyName, d.name AS departmentName ,e.id " +
+            "FROM Employee e " +
+            "JOIN e.company c " +
+            "JOIN e.department d where e.company.id=:companyId")
+    List<Object[]> getUserByCompanyId(@Param("companyId") Long companyId);
 
     @Query("SELECT e FROM Employee e WHERE e.role IN :roles")
     List<Employee> findAllByRole(@Param("roles") List<EmployeeRole> roles);
@@ -93,6 +109,16 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
 
     @Query("SELECT DISTINCT e.telegramUsername FROM Employee e")
     List<String> findDistinctTelegramUsernames();
+
+    @Query("SELECT new com.echo.acknowledgehub.dto.EmployeeNotedDTO(e.id,e.name, e.gender, e.role, e.status, e.stuffId, c.name AS companyName, d.name AS departmentName) " +
+            "FROM Employee e " +
+            "JOIN e.company c " +
+            "JOIN e.department d WHERE e.id = :id")
+    EmployeeNotedDTO getEmployeeById(@Param("id") Long id);
+
+    @Query("Select count(e) From Employee e where e.company.id=:id")
+    int getEmployeeCountByCompanyId(@Param("id") Long id);
+
 
 }
 

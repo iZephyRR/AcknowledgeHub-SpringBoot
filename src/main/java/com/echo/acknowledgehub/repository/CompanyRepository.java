@@ -18,4 +18,8 @@ public interface CompanyRepository extends JpaRepository<Company, Long> {
 
     @Query("SELECT new com.echo.acknowledgehub.dto.CompanyDTO(c.id, c.name) FROM Company c")
     List<CompanyDTO> findAllDTO();
+  
+    @Query("SELECT c.name FROM Company c WHERE c.id = :id")
+    String findCompanyNameById(@Param("id") Long id);
+
 }

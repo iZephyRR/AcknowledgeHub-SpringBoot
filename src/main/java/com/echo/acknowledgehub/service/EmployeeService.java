@@ -1,41 +1,46 @@
 package com.echo.acknowledgehub.service;
 
 import com.echo.acknowledgehub.bean.SystemDataBean;
+import com.echo.acknowledgehub.bean.CheckingBean;
 import com.echo.acknowledgehub.constant.*;
 import com.echo.acknowledgehub.dto.*;
-import com.echo.acknowledgehub.constant.EmployeeRole;
-import com.echo.acknowledgehub.dto.ChangePasswordDTO;
-import com.echo.acknowledgehub.dto.StringResponseDTO;
-import com.echo.acknowledgehub.dto.UserDTO;
 import com.echo.acknowledgehub.entity.Department;
+import com.echo.acknowledgehub.entity.Announcement;
 import com.echo.acknowledgehub.entity.Employee;
 import com.echo.acknowledgehub.exception_handler.DataNotFoundException;
 import com.echo.acknowledgehub.exception_handler.UpdatePasswordException;
+import com.echo.acknowledgehub.repository.AnnouncementRepository;
+import com.echo.acknowledgehub.repository.CompanyRepository;
 import com.echo.acknowledgehub.repository.EmployeeRepository;
+import com.google.api.core.ApiFuture;
+import com.google.cloud.firestore.*;
+import com.google.firebase.cloud.FirestoreClient;
 import lombok.AllArgsConstructor;
+import org.apache.catalina.User;
 import org.modelmapper.ModelMapper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
-import java.util.logging.Logger;
-import java.util.stream.Collectors;
+import javax.swing.*;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
 
 @Service
 @AllArgsConstructor
 public class EmployeeService {
     private static final Logger LOGGER = Logger.getLogger(EmployeeService.class.getName());
     private final EmployeeRepository EMPLOYEE_REPOSITORY;
+    private final AnnouncementRepository ANNOUNCEMENT_REPOSITORY;
     private final ModelMapper MAPPER;
     private final PasswordEncoder PASSWORD_ENCODER;
     private final SystemDataBean SYSTEM_DATA_BEAN;
     private final DepartmentService DEPARTMENT_SERVICE;
+    private final CheckingBean CHECKING_BEAN;
+    private final FirebaseNotificationService FIREBASE_NOTIFICATION_SERVICE;
+    private final CompanyRepository COMPANY_REPOSITORY;
+
 
     @Async
     public CompletableFuture<Optional<Employee>> findById(Long id) {
@@ -45,7 +50,6 @@ public class EmployeeService {
     public CompletableFuture<List<Employee>> getAll(){
         return CompletableFuture.completedFuture(EMPLOYEE_REPOSITORY.findAll());
     }
-
 
     @Async
     public CompletableFuture<Optional<Employee>> findByEmail(String email) {
@@ -78,10 +82,22 @@ public class EmployeeService {
     }
 
     @Async
+    public CompletableFuture<BooleanResponseDTO> checkPassword(String password) {
+        String responsePassword = EMPLOYEE_REPOSITORY.getPasswordById(CHECKING_BEAN.getId());
+        return CompletableFuture.completedFuture(new BooleanResponseDTO(PASSWORD_ENCODER.matches(password, responsePassword)));
+    }
+
+    @Async
     @Transactional
     public CompletableFuture<Void> updatePassword(ChangePasswordDTO changePasswordDTO) {
         LOGGER.info("Requested change password : " + changePasswordDTO);
-        int updatedRows = EMPLOYEE_REPOSITORY.updatePasswordByEmail(changePasswordDTO.getEmail(), PASSWORD_ENCODER.encode(changePasswordDTO.getPassword()));
+     //   int updatedRows = EMPLOYEE_REPOSITORY.updatePasswordByEmail(changePasswordDTO.getEmail(), PASSWORD_ENCODER.encode(changePasswordDTO.getPassword()));
+        int updatedRows;
+        if (changePasswordDTO.getEmail() != null) {
+            updatedRows = EMPLOYEE_REPOSITORY.updatePasswordByEmail(changePasswordDTO.getEmail(), PASSWORD_ENCODER.encode(changePasswordDTO.getPassword()));
+        } else {
+            updatedRows = EMPLOYEE_REPOSITORY.updatePasswordById(CHECKING_BEAN.getId(), PASSWORD_ENCODER.encode(changePasswordDTO.getPassword()));
+        }
         LOGGER.info("Updated rows : " + updatedRows);
         if (updatedRows > 0) {
             return CompletableFuture.completedFuture(null);
@@ -89,6 +105,7 @@ public class EmployeeService {
             throw new UpdatePasswordException("Failed to update password.");
         }
     }
+
 
     @Async
     @Transactional
@@ -139,6 +156,12 @@ public class EmployeeService {
 
     public EmployeeProfileDTO findByIdForProfile(long id) {
         return EMPLOYEE_REPOSITORY.findByIdForProfile(id);
+    }
+
+    public long countEmployees() {
+        long count=EMPLOYEE_REPOSITORY.count();
+        LOGGER.info("Count : "+count);
+        return count;
     }
 
     public List<Long> getMainHRAndHRIds() {
@@ -206,7 +229,96 @@ public class EmployeeService {
         return mapToDtoList(objectList);
     }
 
-    public List<UserDTO> mapToDtoList(List<Object[]> objLists) {
+    @Transactional
+    public List<EmployeeNotedDTO> getEmployeeWhoNoted (List<Long> userIdList){
+        Map<Long, LocalDateTime> notedAtStorage = FIREBASE_NOTIFICATION_SERVICE.getNotedAtStorage();
+        List<EmployeeNotedDTO> employeeNotedDTOS = new ArrayList<>();
+        for (Long userId : userIdList) {
+            EmployeeNotedDTO employeeNotedDTO = EMPLOYEE_REPOSITORY.getEmployeeById(userId);
+            LocalDateTime notedAt = notedAtStorage.get(userId);
+            employeeNotedDTO.setNotedAt(notedAt);
+            employeeNotedDTOS.add(employeeNotedDTO);
+        }
+        return employeeNotedDTOS;
+    }
+
+    public int employeeCountByCompany(Long companyId) {
+        return EMPLOYEE_REPOSITORY.getEmployeeCountByCompanyId(companyId);
+    }
+
+    public Map<Long, Integer> getSelectedAllAnnouncements() throws ExecutionException, InterruptedException {
+        Firestore dbFirestore = FirestoreClient.getFirestore();
+        Map<Long, Integer> employeeCountMap = new HashMap<>();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        LOGGER.info("before announcement ids");
+        List<Long> announcementIds = ANNOUNCEMENT_REPOSITORY.getSelectedAllAnnouncements(SelectAll.TRUE);
+        for (Long announcementId : announcementIds) {
+            ApiFuture<QuerySnapshot> future = dbFirestore.collection("notifications")
+                    .whereEqualTo("announcementId", String.valueOf(announcementId))
+                    .orderBy("noticeAt", Query.Direction.DESCENDING)
+                    .orderBy("timestamp", Query.Direction.DESCENDING)
+                    .get();
+            List<QueryDocumentSnapshot> documents = future.get().getDocuments();
+            for (DocumentSnapshot document : documents) {
+                Long userId = document.getLong("userId");
+                LOGGER.info("User ID from Firebase service: " + userId);
+                LocalDateTime noticeAt = LocalDateTime.parse(
+                        Objects.requireNonNull(document.getString("noticeAt")), formatter);
+                LocalDateTime timestamp = LocalDateTime.parse(
+                        Objects.requireNonNull(document.getString("timestamp")), formatter);
+                if (noticeAt.isAfter(timestamp)) {
+                    CompletableFuture<Employee> comFuEmployee = findById(userId)
+                            .thenApply(employee -> employee.orElseThrow(() -> new NoSuchElementException("Employee not found")));
+                    Long companyId = comFuEmployee.join().getCompany().getId();
+                    employeeCountMap.merge(companyId,1,Integer::sum);
+
+
+                }
+            }
+        }
+        return employeeCountMap;
+    }
+
+    public Map<String, Double> getPercentage() throws ExecutionException, InterruptedException {
+        Map<String, Double> notedPercentageMap = new HashMap<>();
+        Map<Long,Integer> employeeCountMap = getSelectedAllAnnouncements();
+        LOGGER.info("before announcement count");
+        int announcementCount = ANNOUNCEMENT_REPOSITORY.getSelectAllCountAnnouncements(SelectAll.TRUE);
+        employeeCountMap.forEach((companyId,notedCount)-> {
+            String companyName = COMPANY_REPOSITORY.findCompanyNameById(companyId);
+            int employeeCount = employeeCountByCompany(companyId);
+            int expectedCount = employeeCount * announcementCount;
+            double notedPercentage = (double) (notedCount * 100) /expectedCount;
+            notedPercentageMap.put(companyName,notedPercentage);
+        });
+        return notedPercentageMap;
+    }
+
+//    @Async
+//    public CompletableFuture<AnnouncementAndEmployeesDTO> getAnnouncementAndEmployees(Long announcementId, int days) {
+//        // Fetch announcement details
+//        Announcement announcement = ANNOUNCEMENT_REPOSITORY.findById(announcementId)
+//                .orElseThrow(() -> new DataNotFoundException("Announcement not found"));
+//
+//        // Fetch employee IDs based on the announcement ID and days
+//        List<Long> userIdList = FIREBASE_NOTIFICATION_SERVICE.getNotificationsAndMatchWithEmployees(announcementId, days);
+//
+//        // Fetch employee details
+//        List<EmployeeNotedDTO> employees = getEmployeeWhoNoted(userIdList);
+//
+//        // Combine announcement and employee data
+//        AnnouncementAndEmployeesDTO result = new AnnouncementAndEmployeesDTO(announcement, employees);
+//        return CompletableFuture.completedFuture(result);
+//    }
+//
+
+    public List<UserDTO> getUsersByCompanyId(Long companyId){
+        List<Object[]> objectList = EMPLOYEE_REPOSITORY.getUserByCompanyId(companyId);
+        return mapToDtoList(objectList);
+    }
+
+    public List<UserDTO> mapToDtoList (List<Object[]> objLists) {
+
         return objLists.stream().map(this::mapToDto).collect(Collectors.toList());
     }
 
@@ -226,6 +338,7 @@ public class EmployeeService {
         dto.setWorkEntryDate((Date) row[11]);
         dto.setCompanyName((String) row[12]);
         dto.setDepartmentName((String) row[13]);
+        dto.setId((Long) row[14]);
         return dto;
     }
 

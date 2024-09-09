@@ -17,7 +17,6 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.web.bind.annotation.*;
-
 import java.io.IOException;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -77,6 +76,7 @@ public class AuthController {
         return new BooleanResponseDTO(EMPLOYEE_SERVICE.isPasswordDefault(email).join());
     }
 
+
     @GetMapping("ad/default-password")
     private StringResponseDTO getDefaultPassword(){
         return new StringResponseDTO(SYSTEM_DATA_BEAN.getDefaultPassword());
@@ -89,6 +89,16 @@ public class AuthController {
     @PutMapping("ad/make-password-as-default")
     private BooleanResponseDTO makePasswordAsDefault(@RequestBody Long id){
         return new BooleanResponseDTO(EMPLOYEE_SERVICE.makePasswordAsDefault(id).join()>0);
+
+    @PostMapping("/user/check-password")
+    private BooleanResponseDTO checkPassword(@RequestBody String password){
+        return EMPLOYEE_SERVICE.checkPassword(password).join();
+    }
+
+    @PostMapping("/auth/find-name-by-email")
+    private StringResponseDTO findNameByEmail(@RequestBody String email) {
+       return EMPLOYEE_SERVICE.findNameByEmail(email).join();
+
     }
 
     @GetMapping("/auth/sever-connection-test")
