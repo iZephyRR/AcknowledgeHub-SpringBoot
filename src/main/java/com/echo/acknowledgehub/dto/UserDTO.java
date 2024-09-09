@@ -10,9 +10,10 @@ import java.util.Date;
 @Data
 public class UserDTO {
 
+    private Long id;
     private String telegramUsername;
     private String email;
-    private String stuffId;
+    private String staffId;
     private String nRC;
     private String name;
     private String password;
@@ -26,4 +27,5 @@ public class UserDTO {
     private String departmentName;
     private Long companyId;
     private String companyName;
+    
 }

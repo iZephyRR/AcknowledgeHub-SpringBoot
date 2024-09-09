@@ -4,6 +4,7 @@ import com.echo.acknowledgehub.bean.CheckingBean;
 import com.echo.acknowledgehub.constant.AnnouncementStatus;
 import com.echo.acknowledgehub.constant.ContentType;
 import com.echo.acknowledgehub.constant.IsSchedule;
+import com.echo.acknowledgehub.constant.ReceiverType;
 import com.echo.acknowledgehub.dto.AnnouncementDTO;
 import com.echo.acknowledgehub.dto.AnnouncementDraftDTO;
 import com.echo.acknowledgehub.dto.StringResponseDTO;
@@ -179,17 +180,17 @@ public class AnnouncementController {
 
     private void validateTargets(List<TargetDTO> targetDTOList) {
         for (TargetDTO targetDTO : targetDTOList) {
-            String receiverType = targetDTO.getReceiverType();
+            ReceiverType receiverType = targetDTO.getReceiverType();
             Long sendTo = targetDTO.getSendTo();
-            if ("COMPANY".equals(receiverType)) {
+            if (receiverType==ReceiverType.COMPANY) {
                 if (!COMPANY_SERVICE.existsById(sendTo)) {
                     throw new NoSuchElementException("Company does not exist.");
                 }
-            } else if ("DEPARTMENT".equals(receiverType)) {
+            } else if (receiverType==ReceiverType.DEPARTMENT) {
                 if (!DEPARTMENT_SERVICE.existsById(sendTo)) {
                     throw new NoSuchElementException("Department does not exist.");
                 }
-            } else if ("EMPLOYEE".equals(receiverType)) {
+            } else if (receiverType==ReceiverType.EMPLOYEE) {
                 if (!EMPLOYEE_SERVICE.existsById(sendTo)) {
                     throw new NoSuchElementException("Employee does not exist.");
                 }

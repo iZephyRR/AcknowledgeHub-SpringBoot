@@ -2,6 +2,7 @@ package com.echo.acknowledgehub.repository;
 
 import com.echo.acknowledgehub.dto.EmployeeProfileDTO;
 import com.echo.acknowledgehub.constant.EmployeeRole;
+import com.echo.acknowledgehub.dto.UniqueFieldsDTO;
 import com.echo.acknowledgehub.entity.Employee;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -34,12 +35,20 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
     @Query("select em.telegramUserId from Employee em")
     List<Long> getAllChatId();
 
-    @Query("SELECT em.password from Employee em where em.id= :id")
-    String getPasswordById(@Param("id") Long id);
+    @Modifying
+    @Query("UPDATE Employee em set em.password= :defaultPassword WHERE em.status= 'DEFAULT'")
+    int changeDefaultPassword(@Param("defaultPassword") String encodedDefaultPassword);
 
     @Modifying
     @Query("UPDATE Employee em SET em.password= :newPassword WHERE em.email= :email")
-    int updatePassword(@Param("email") String email, @Param("newPassword") String password);
+    int updatePasswordByEmail(@Param("email") String email, @Param("newPassword") String password);
+
+    @Modifying
+    @Query("UPDATE Employee em SET em.password= :newPassword WHERE em.id= :id")
+    int updatePasswordById(@Param("id") Long id, @Param("newPassword") String password);
+
+    @Query("SELECT em.password FROM Employee em WHERE em.email= :email")
+    String getPasswordByEmail(@Param("email") String email);
 
     @Query("select em.id from Employee em where em.department.id = :departmentId")
     List<Long> findByDepartmentId(@Param("departmentId") Long departmentId);
@@ -48,9 +57,6 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
     List<Long> findByCompanyId(@Param("companyId") Long companyId);
 
     boolean existsByEmail(String email);
-
-    @Query("SELECT em.password from Employee em WHERE em.email = :email")
-    String findPasswordByEmail(@Param("email") String email);
 
     @Query("SELECT em.name from Employee em WHERE em.email = :email")
     String findNameByEmail(@Param("email") String email);
@@ -67,7 +73,7 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
     @Query("SELECT e.id FROM Employee e WHERE e.telegramUsername = :telegramUsername")
     Long getEmployeeIdByTelegramUsername(@Param("telegramUsername") String telegramUsername);
 
-    @Query("SELECT e.name, e.email, e.address, e.dob, e.gender, e.nRC, e.password, e.role, e.status, e.stuffId, e.telegramUsername, e.workEntryDate, c.name AS companyName, d.name AS departmentName " +
+    @Query("SELECT e.name, e.email, e.address, e.dob, e.gender, e.nrc, e.password, e.role, e.status, e.staffId, e.telegramUsername, e.workEntryDate, c.name AS companyName, d.name AS departmentName " +
             "FROM Employee e " +
             "JOIN e.company c " +
             "JOIN e.department d")
@@ -75,5 +81,18 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
 
     @Query("SELECT e FROM Employee e WHERE e.role IN :roles")
     List<Employee> findAllByRole(@Param("roles") List<EmployeeRole> roles);
+
+    @Query("SELECT DISTINCT e.email FROM Employee e")
+    List<String> findDistinctEmails();
+
+    @Query("SELECT DISTINCT e.nrc FROM Employee e")
+    List<String> findDistinctNrc();
+
+    @Query("SELECT DISTINCT e.staffId FROM Employee e")
+    List<String> findDistinctStaffIds();
+
+    @Query("SELECT DISTINCT e.telegramUsername FROM Employee e")
+    List<String> findDistinctTelegramUsernames();
+
 }
 
