@@ -106,7 +106,7 @@ public class TargetService {
         notificationDTO.setCategoryName(announcement.getCategory().getName());
         notificationDTO.setAnnouncementId(announcement.getId());
         //notificationDTO.setStatus(NotificationStatus.SEND);
-        notificationDTO.setType(NotificationType.RECEIVED);
+        notificationDTO.setType(NotificationType.NEW);
         notificationDTO.setNoticeAt(LocalDateTime.now());
         notificationDTO.setTimestamp(LocalDateTime.now());
         notificationDTO.setCompanyId(CHECKING_BEAN.getCompanyId());
@@ -121,7 +121,7 @@ public class TargetService {
         clone.setUserId(original.getUserId());
         clone.setAnnouncementId(original.getAnnouncementId());
         clone.setCategoryName(original.getCategoryName());
-        //clone.setStatus(original.getStatus());
+       // clone.setStatus(original.getStatus());
         clone.setType(original.getType());
         clone.setNoticeAt(original.getNoticeAt());
         clone.setTimestamp(original.getTimestamp());

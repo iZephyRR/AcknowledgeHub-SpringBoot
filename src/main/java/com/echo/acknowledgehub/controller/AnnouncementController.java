@@ -76,7 +76,7 @@ public class AnnouncementController {
                 } else if (receiverType.equals("DEPARTMENT")) {
                     chatIdsList = EMPLOYEE_SERVICE.getAllChatIdByDepartmentId(sendTo);
                 }
-               TELEGRAM_SERVICE.sendToTelegram(chatIdsList, announcement.getContentType().getFirstValue(), announcement.getId(), announcement.getPdfLink(), announcement.getTitle(), announcement.getEmployee().getName());
+               //TELEGRAM_SERVICE.sendToTelegram(chatIdsList, announcement.getContentType().getFirstValue(), announcement.getId(), announcement.getPdfLink(), announcement.getTitle(), announcement.getEmployee().getName());
             }
             targetStorage.remove(announcement.getId());
         }
@@ -324,10 +324,10 @@ public class AnnouncementController {
         return ResponseEntity.ok(count);
     }
 
-//    @GetMapping("/iDontKnowWhy")
-//    public Map<String, Double> getPercentage() throws ExecutionException, InterruptedException {
-//        return EMPLOYEE_SERVICE.getPercentage();
-//    }
+    @GetMapping(value = "/pieChart" ,  produces = MediaType.APPLICATION_JSON_VALUE)
+    public Map<String, Double> getPercentage() throws ExecutionException, InterruptedException {
+        return EMPLOYEE_SERVICE.getPercentage();
+    }
 
 }
 
