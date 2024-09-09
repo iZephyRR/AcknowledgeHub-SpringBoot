@@ -1,5 +1,6 @@
 package com.echo.acknowledgehub.service;
 
+import com.echo.acknowledgehub.bean.CheckingBean;
 import com.echo.acknowledgehub.constant.*;
 import com.echo.acknowledgehub.dto.*;
 import com.echo.acknowledgehub.constant.EmployeeRole;
@@ -37,6 +38,7 @@ public class EmployeeService {
     private final EmployeeRepository EMPLOYEE_REPOSITORY;
     private final ModelMapper MAPPER;
     private final PasswordEncoder PASSWORD_ENCODER;
+    private final CheckingBean CHECKING_BEAN;
 
     @Async
     public CompletableFuture<Optional<Employee>> findById(Long id) {
@@ -79,10 +81,21 @@ public class EmployeeService {
     }
 
     @Async
+    public CompletableFuture<BooleanResponseDTO> checkPassword(String password) {
+        String responsePassword = EMPLOYEE_REPOSITORY.getPasswordById(CHECKING_BEAN.getId());
+        return CompletableFuture.completedFuture(new BooleanResponseDTO(PASSWORD_ENCODER.matches(password, responsePassword)));
+    }
+
+    @Async
     @Transactional
     public CompletableFuture<Void> updatePassword(ChangePasswordDTO changePasswordDTO) {
         LOGGER.info("Requested change password : " + changePasswordDTO);
-        int updatedRows = EMPLOYEE_REPOSITORY.updatePassword(changePasswordDTO.getEmail(), PASSWORD_ENCODER.encode(changePasswordDTO.getPassword()));
+        int updatedRows;
+        if (changePasswordDTO.getEmail() != null) {
+            updatedRows = EMPLOYEE_REPOSITORY.updatePasswordByEmail(changePasswordDTO.getEmail(), PASSWORD_ENCODER.encode(changePasswordDTO.getPassword()));
+        } else {
+            updatedRows = EMPLOYEE_REPOSITORY.updatePasswordById(CHECKING_BEAN.getId(), PASSWORD_ENCODER.encode(changePasswordDTO.getPassword()));
+        }
         LOGGER.info("Updated rows : " + updatedRows);
         if (updatedRows > 0) {
             return CompletableFuture.completedFuture(null);
@@ -90,6 +103,13 @@ public class EmployeeService {
             throw new UpdatePasswordException("Failed to update password.");
         }
     }
+//    public void updatePassword(ChangePasswordDTO changePasswordDTO) {
+//        Employee employee = EMPLOYEE_REPOSITORY.findById(changePasswordDTO.getId())
+//                .orElseThrow(() -> new RuntimeException("User not found"));
+//        employee.setPassword(PASSWORD_ENCODER.encode(changePasswordDTO.getPassword()));
+//        EMPLOYEE_REPOSITORY.save(employee);
+//    }
+
 
     @Async
     public CompletableFuture<Employee> save(UserDTO user) {
@@ -118,6 +138,12 @@ public class EmployeeService {
     public EmployeeProfileDTO findByIdForProfile(long id) {
         return EMPLOYEE_REPOSITORY.findByIdForProfile(id);
     }
+
+    public long countEmployees() {
+        long count=EMPLOYEE_REPOSITORY.count();
+        LOGGER.info("Count : "+count);
+        return count;
+    }
     public List<Long> getMainHRAndHRIds() {
         List<EmployeeRole> roles = Arrays.asList(EmployeeRole.MAIN_HR, EmployeeRole.HR);
         return EMPLOYEE_REPOSITORY.findAllByRole(roles)
@@ -125,6 +151,7 @@ public class EmployeeService {
                 .map(Employee::getId)
                 .collect(Collectors.toList());
     }
+
     @Transactional
     public Employee findByTelegramUsername(String username) {
         return EMPLOYEE_REPOSITORY.findByTelegramUsername(username);
@@ -164,17 +191,18 @@ public class EmployeeService {
     public boolean existsById(Long sendTo) {
         return EMPLOYEE_REPOSITORY.existsById(sendTo);
     }
+
     @Transactional
-    public List<UserDTO> getAllUsers(){
+    public List<UserDTO> getAllUsers() {
         List<Object[]> objectList = EMPLOYEE_REPOSITORY.getAllUsers();
         return mapToDtoList(objectList);
     }
 
-    public List<UserDTO> mapToDtoList (List<Object[]> objLists) {
+    public List<UserDTO> mapToDtoList(List<Object[]> objLists) {
         return objLists.stream().map(this::mapToDto).collect(Collectors.toList());
     }
 
-    public UserDTO mapToDto(Object[] row){
+    public UserDTO mapToDto(Object[] row) {
         UserDTO dto = new UserDTO();
         dto.setName((String) row[0]);
         dto.setEmail((String) row[1]);

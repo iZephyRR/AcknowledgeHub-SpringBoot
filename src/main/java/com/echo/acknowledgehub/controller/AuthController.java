@@ -23,7 +23,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.logging.Logger;
 
 @RestController
-@RequestMapping("${app.api.base-url}/auth")
+@RequestMapping("${app.api.base-url}")
 @AllArgsConstructor
 public class AuthController {
     private static final Logger LOGGER = Logger.getLogger(AuthController.class.getName());
@@ -34,7 +34,7 @@ public class AuthController {
     private final EmailSender EMAIL_SENDER;
     private final EmployeeService EMPLOYEE_SERVICE;
 
-    @PostMapping("/login")
+    @PostMapping("/auth/login")
     private StringResponseDTO login(@RequestBody LoginDTO login) {
         LOGGER.info("Login info : " + login);
         AUTHENTICATION_MANAGER.authenticate(new UsernamePasswordAuthenticationToken(login.getEmail(), login.getPassword()));
@@ -49,38 +49,44 @@ public class AuthController {
         }
     }
 
-    @PutMapping("/change-password")
+    @PutMapping("/auth/change-password")
     private ResponseEntity<Void> updatePassword(@RequestBody ChangePasswordDTO changePasswordDTO) {
         return ResponseEntity.ok(EMPLOYEE_SERVICE.updatePassword(changePasswordDTO).join());
     }
 
-    @GetMapping("/check")
+
+    @GetMapping("/auth/check")
     private CheckingBean check() {
         return this.CHECKING_BEAN;
     }
 
-    @PostMapping(value = "/send-email", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(value = "/auth/send-email", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     private CompletableFuture<Void> sendEmail(@ModelAttribute EmailDTO email) throws IOException {
         LOGGER.info("Email : " + email);
         return EMAIL_SENDER.sendEmail(email);
     }
 
-    @GetMapping("/check-email")
+    @GetMapping("/auth/check-email")
     private ResponseEntity<Boolean> checkEmail(@RequestBody String email) {
         return ResponseEntity.ok(EMPLOYEE_SERVICE.checkEmail(email).join());
     }
 
-    @PostMapping("/is-password-default")
+    @PostMapping("/auth/is-password-default")
     private BooleanResponseDTO isPasswordDefault(@RequestBody String email){
         return EMPLOYEE_SERVICE.isPasswordDefault(email).join();
     }
 
-    @PostMapping("/find-name-by-email")
+    @PostMapping("/user/check-password")
+    private BooleanResponseDTO checkPassword(@RequestBody String password){
+        return EMPLOYEE_SERVICE.checkPassword(password).join();
+    }
+
+    @PostMapping("/auth/find-name-by-email")
     private StringResponseDTO findNameByEmail(@RequestBody String email) {
        return EMPLOYEE_SERVICE.findNameByEmail(email).join();
     }
 
-    @GetMapping("/sever-connection-test")
+    @GetMapping("/auth/sever-connection-test")
     private StringResponseDTO severConnectionTest(){
         return new StringResponseDTO("Test success");
     }
