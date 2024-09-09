@@ -24,13 +24,44 @@ public class CloudinaryServiceImpl implements CloudinaryService {
 
     @Override
     public Map<String, String> upload(MultipartFile file) throws IOException {
+        String folder;
+        String format = null; // Default format is null
+        Map<String, Object> options;
 
-        String folder = file.getContentType().startsWith("image/") ? "images/" : "pdfs/";
-        Map<String, Object> options = ObjectUtils.asMap(
-                "resource_type", "auto",
-                "folder", folder
-        );
+        // Determine folder based on file type
+        String contentType = file.getContentType();
 
+        if (contentType.startsWith("image/")) {
+            folder = "images/";
+        } else if (contentType.startsWith("application/pdf")) {
+            folder = "pdfs/";
+        } else if (contentType.startsWith("application/x-zip-compressed")) {
+            folder = "zips/";
+            format = "zip"; // Explicitly set format to zip
+        } else if (contentType.startsWith("application/vnd.ms-excel") ||
+                contentType.startsWith("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")) {
+            folder = "excels/";
+            format = "xlsx"; // Explicitly set format to xlsx for Excel files
+        } else if (contentType.startsWith("video/")) {
+            folder = "videos/";
+            format = "mp4";
+        } else {
+            folder = "other/";
+        }
+
+        // Prepare the upload options
+        if (format != null) {
+            options = ObjectUtils.asMap(
+                    "resource_type", "raw",  // Use raw resource type for non-image files
+                    "folder", folder,
+                    "format", format         // Explicitly set format for the file extension
+            );
+        } else {
+            options = ObjectUtils.asMap(
+                    "resource_type", "auto",  // Automatically determine the resource type for other files
+                    "folder", folder
+            );
+        }
         return cloudinary.uploader().upload(file.getBytes(), options);
     }
 
@@ -44,8 +75,8 @@ public class CloudinaryServiceImpl implements CloudinaryService {
         }
     }
 
+    @Override
     public String generateImageUrl(String publicId) {
         return cloudinary.url().generate(publicId);
     }
 }
-
