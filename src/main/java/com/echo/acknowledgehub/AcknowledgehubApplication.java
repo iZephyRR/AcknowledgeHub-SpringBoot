@@ -9,7 +9,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 
 @SpringBootApplication
-//@EnableAsync
+@EnableAsync
 @EnableScheduling
 public class AcknowledgehubApplication {
 

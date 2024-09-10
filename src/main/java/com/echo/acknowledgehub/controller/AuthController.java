@@ -87,9 +87,9 @@ public class AuthController {
         return new StringResponseDTO(SYSTEM_DATA_BEAN.getDefaultPassword());
     }
     @PutMapping("ad/make-password-as-default")
-    private BooleanResponseDTO makePasswordAsDefault(@RequestBody Long id){
-        return new BooleanResponseDTO(EMPLOYEE_SERVICE.makePasswordAsDefault(id).join()>0);
-
+    private BooleanResponseDTO makePasswordAsDefault(@RequestBody Long id) {
+        return new BooleanResponseDTO(EMPLOYEE_SERVICE.makePasswordAsDefault(id).join() > 0);
+    }
     @PostMapping("/user/check-password")
     private BooleanResponseDTO checkPassword(@RequestBody String password){
         return EMPLOYEE_SERVICE.checkPassword(password).join();

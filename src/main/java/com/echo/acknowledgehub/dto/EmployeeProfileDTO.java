@@ -1,5 +1,6 @@
 package com.echo.acknowledgehub.dto;
 
+import com.echo.acknowledgehub.constant.EmployeeRole;
 import com.echo.acknowledgehub.entity.Employee;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -9,10 +10,10 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class EmployeeProfileDTO {
-    private Employee employee;
-    private Long companyId;
+    private String name;
+    private EmployeeRole role;
+    private String email;
     private String companyName;
-    private Long departmentId;
     private String departmentName;
 
 }

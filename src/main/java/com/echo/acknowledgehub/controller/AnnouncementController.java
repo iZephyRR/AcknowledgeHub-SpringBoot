@@ -1,10 +1,7 @@
 package com.echo.acknowledgehub.controller;
 
 import com.echo.acknowledgehub.bean.CheckingBean;
-import com.echo.acknowledgehub.constant.AnnouncementStatus;
-import com.echo.acknowledgehub.constant.ContentType;
-import com.echo.acknowledgehub.constant.IsSchedule;
-import com.echo.acknowledgehub.constant.SelectAll;
+import com.echo.acknowledgehub.constant.*;
 import com.echo.acknowledgehub.dto.*;
 import com.echo.acknowledgehub.entity.*;
 import com.echo.acknowledgehub.service.*;
@@ -174,6 +171,9 @@ public class AnnouncementController {
                 } else if (receiverType.equals("DEPARTMENT")) {
                     chatIdsList = EMPLOYEE_SERVICE.getAllChatIdByDepartmentId(sendTo);
                     LOGGER.info("Chat IDs for DEPARTMENT with ID " + sendTo + ": " + chatIdsList);
+                } else if (receiverType.equals(("EMPLOYEE"))) {
+                    Long chatId = EMPLOYEE_SERVICE.getChatIdByUserId(sendTo);
+                    chatIdsList = List.of(chatId);
                 }
                 for (String channel : selectedChannels) {
                     if ("Telegram".equalsIgnoreCase(channel)) {
