@@ -1,7 +1,11 @@
 package com.echo.acknowledgehub.configuration;
 
+import com.echo.acknowledgehub.bean.SystemDataBean;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.AllArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.convention.MatchingStrategies;
+import org.springframework.context.Lifecycle;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
@@ -14,8 +18,10 @@ import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import java.util.Properties;
+import java.util.logging.Logger;
 
 @Configuration
+@AllArgsConstructor
 public class AppConfiguration implements WebMvcConfigurer {
 
     @Bean
@@ -29,16 +35,10 @@ public class AppConfiguration implements WebMvcConfigurer {
         return MAPPER;
     }
 
-//    @Bean
-//    @Primary
-//    public TaskExecutor myTaskExecutor() {
-//        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-//        executor.setCorePoolSize(10);
-//        executor.setMaxPoolSize(50);
-//        executor.setQueueCapacity(100);
-//        executor.initialize();
-//        return executor;
-//    }
+    @Bean
+    public ObjectMapper objectMapper(){
+        return new ObjectMapper();
+    }
 
     @Override
     public void configureAsyncSupport(AsyncSupportConfigurer configure) {
@@ -50,6 +50,7 @@ public class AppConfiguration implements WebMvcConfigurer {
         registry.addResourceHandler("/**")
                 .addResourceLocations("classpath:/static/");
     }
+
 //    @Bean
 //    public JavaMailSender getJavaMailSender() {
 //        JavaMailSenderImpl mailSender = new JavaMailSenderImpl();

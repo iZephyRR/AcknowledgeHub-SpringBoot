@@ -6,13 +6,16 @@ import com.echo.acknowledgehub.service.FirebaseNotificationService;
 import com.echo.acknowledgehub.service.TelegramGroupService;
 import com.echo.acknowledgehub.service.TelegramService;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.scheduling.annotation.EnableAsync;
 import org.telegram.telegrambots.meta.TelegramBotsApi;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import org.telegram.telegrambots.updatesreceivers.DefaultBotSession;
 
 @Configuration
+@EnableAsync(proxyTargetClass = true)
 public class TelegramBotConfig {
     @Value("${telegram.bot.username}")
     private String botUsername;

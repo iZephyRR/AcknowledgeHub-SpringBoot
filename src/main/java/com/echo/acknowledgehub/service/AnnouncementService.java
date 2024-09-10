@@ -52,7 +52,7 @@ public class AnnouncementService {
     public String handleFileUpload(MultipartFile file) throws IOException {
         String customFileName = Objects.requireNonNull(file.getOriginalFilename()).split("\\.") [0] ;
         LOGGER.info("original file name" + customFileName);// Custom file name you want to use
-        Map<String, String> result = CLOUD_SERVICE.upload(file, customFileName);
+        Map<String, String> result = CLOUD_SERVICE.upload(file);
         return result.get("url");  // Return the file URL
     }
 

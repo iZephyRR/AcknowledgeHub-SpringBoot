@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("${app.api.base-url}")
@@ -26,33 +27,23 @@ import java.util.logging.Logger;
 public class EmployeeController {
     private static final Logger LOGGER = Logger.getLogger(EmployeeController.class.getName());
     private final EmployeeService EMPLOYEE_SERVICE;
-    private final JWTService JWT_SERVICE;
     private final CheckingBean CHECKING_BEAN;
-    private final EmployeeRepository employeeRepository;
-    private final FirebaseNotificationService FIREBASE_NOTIFICATION_SERVICE;
     private final ModelMapper MODEL_MAPPER;
 
-//     @GetMapping("/mr/users")
-//     private List<Employee> findAll() {
-//         LOGGER.info("Finding users..");
-//         return EMPLOYEE_SERVICE.findAll().join();
-//     }
-
-//     @GetMapping("/user/profile")
-//     private Optional<Employee> findById() {
-//         Long id = CHECKING_BEAN.getId();
-//         return EMPLOYEE_SERVICE.findById(id).join();
-
-    
-//    @GetMapping("/mr/users")
-//    private List<Employee> findAll() {
-//        LOGGER.info("Finding users..");
-//        return EMPLOYEE_SERVICE.findAll().join();
-//    }
 
     @GetMapping(value = "/mr/users", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<List<UserDTO>> getAllUsers() {
         return ResponseEntity.ok(EMPLOYEE_SERVICE.getAllUsers());
+    }
+
+    @GetMapping("/user/{id}")
+    private Optional<Employee> getById(@PathVariable Long id){
+        return EMPLOYEE_SERVICE.findById(id).join();
+    }
+
+    @GetMapping("/mr/find-all")
+    private List<Employee> findAll(){
+        return EMPLOYEE_SERVICE.getAll().join();
     }
 
     @GetMapping(value = "/getUsersByCompanyId", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -62,24 +53,45 @@ public class EmployeeController {
 
     @GetMapping("/user/profile")
     private EmployeeProfileDTO findById(){
-        long id = CHECKING_BEAN.getId();
-        return employeeRepository.findByIdForProfile(id);
+        EmployeeProfileDTO employeeProfileDTO=EMPLOYEE_SERVICE.getProfileInfo(CHECKING_BEAN.getId()).join();
+        LOGGER.info("emp "+employeeProfileDTO);
+        return employeeProfileDTO;
+    }
+
+    @GetMapping("/hrs/user/by-department/{id}")
+    public List<UserDTO> getEmployeesByDepartmentId(@PathVariable("id") Long id) {
+        List<Employee> employees = EMPLOYEE_SERVICE.getEmployeesByDepartmentId(id);
+        return employees.stream()
+                .map(employee -> MODEL_MAPPER.map(employee, UserDTO.class))
+                .collect(Collectors.toList());
     }
 
     @GetMapping("/count")
     public long getEmployeeCount() {
         return EMPLOYEE_SERVICE.countEmployees();
     }
+
     @PostMapping("/ad/add-user")
     private Employee register(@RequestBody UserDTO user) {
         return EMPLOYEE_SERVICE.save(user).join();
     }
 
-    @PostMapping("/ad/add-users")
-    private CompletableFuture<List<Employee>> register(@RequestBody List<UserDTO> users) {
-        LOGGER.info("Adding users...");
-        return EMPLOYEE_SERVICE.saveAll(users);
-//    }
+
+    @PostMapping("/hrs/add-users")
+    private List<Employee> register(@RequestBody UserExcelDTO users) {
+        LOGGER.info("Adding users..."+users);
+        return EMPLOYEE_SERVICE.saveAll(users).join();
+    }
+    @PutMapping("/hrs/update-users")
+    private List<Employee> update(@RequestBody List<UserDTO> users){
+        LOGGER.info("Updating users : "+users);
+        return EMPLOYEE_SERVICE.updateUsers(users).join();
+    }
+
+    @GetMapping("/hrs/get-uniques")
+    private UniqueFieldsDTO getUniqueFields(){
+        return EMPLOYEE_SERVICE.getUniques().join();
+
 
 //    @GetMapping(value = "/getEmployeesWho1DNoted/{id}" , produces = MediaType.APPLICATION_JSON_VALUE)
 //    public ResponseEntity<List<EmployeeNotedDTO>> getEmployeesWho1DNoted(@PathVariable("id") String announcementId) {
@@ -93,6 +105,7 @@ public class EmployeeController {
 //        LOGGER.info("in three day");
 //        List<Long> userIdList = FIREBASE_NOTIFICATION_SERVICE.getNotificationsAndMatchWithEmployees(Long.parseLong(announcementId),3);
 //        return ResponseEntity.ok(EMPLOYEE_SERVICE.getEmployeeWhoNoted(userIdList));
+
     }
 
 }
