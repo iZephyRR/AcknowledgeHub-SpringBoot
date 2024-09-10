@@ -1,6 +1,7 @@
 package com.echo.acknowledgehub.configuration;
 
 import com.echo.acknowledgehub.service.EmployeeService;
+import com.echo.acknowledgehub.service.FirebaseNotificationService;
 import com.echo.acknowledgehub.service.TelegramGroupService;
 import com.echo.acknowledgehub.service.TelegramService;
 import org.springframework.beans.factory.annotation.Value;
@@ -26,7 +27,8 @@ public class TelegramBotConfig {
     }
 
     @Bean
-    public TelegramService telegramService(EmployeeService employeeService, TelegramGroupService telegramGroupService) {
-        return new TelegramService(botUsername, botToken, employeeService, telegramGroupService);
+    public TelegramService telegramService(EmployeeService employeeService, TelegramGroupService telegramGroupService, FirebaseNotificationService firebaseNotificationService) {
+        return new TelegramService(botUsername, botToken, employeeService, telegramGroupService,firebaseNotificationService);
     }
 }
+

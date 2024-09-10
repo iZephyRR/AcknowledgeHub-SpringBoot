@@ -33,7 +33,7 @@ public class XlsxReader {
     @Async
     public CompletableFuture<List<Employee>> getEmployees(InputStream xlsxFile) {
         LOGGER.info("Starting xlsx convertor...");
-       final List<Employee> EMPLOYEES = new ArrayList<>();
+        final List<Employee> EMPLOYEES = new ArrayList<>();
         try (Workbook workbook = new XSSFWorkbook(xlsxFile)) {
             LOGGER.info("Got workbook..");
             final AtomicReference<List<String>> COLUMN_NAMES = new AtomicReference<>();
@@ -57,7 +57,7 @@ public class XlsxReader {
                                 .forEach(index -> {
                                     switch (FINAL_COLUMN_NAMES.get(index).trim().toLowerCase().replaceAll(" ", "").replaceAll("-", "").replaceAll("_", "")) {
                                         case "stuffid":
-                                            EMPLOYEE.setStuffId((String) finalObjects.get(index));
+                                            EMPLOYEE.setStaffId((String) finalObjects.get(index));
                                             break;
                                         case "telegramusername":
                                             EMPLOYEE.setTelegramUsername((String) finalObjects.get(index));
@@ -66,12 +66,12 @@ public class XlsxReader {
                                             EMPLOYEE.setEmail((String) finalObjects.get(index));
                                             break;
                                         case "nrc":
-                                            EMPLOYEE.setNRC((String) finalObjects.get(index));
+                                            EMPLOYEE.setNrc((String) finalObjects.get(index));
                                             break;
                                         case "name":
                                             EMPLOYEE.setName((String) finalObjects.get(index));
                                             break;
-                                        case "position","rank":
+                                        case "position", "rank":
                                             EMPLOYEE.setRole(
                                                     switch (finalObjects.get(index).toString().trim().toLowerCase().replaceAll(" ", "").replaceAll("-", "").replaceAll("_", "")) {
                                                         case "admin" -> EmployeeRole.ADMIN;
@@ -89,6 +89,9 @@ public class XlsxReader {
                                         case "entrydate":
                                             EMPLOYEE.setWorkEntryDate((Date) finalObjects.get(index));
                                             break;
+                                        case "address":
+                                            EMPLOYEE.setAddress((String) finalObjects.get(index));
+                                            break;
                                         case "gender":
                                             EMPLOYEE.setGender(
                                                     switch (finalObjects.get(index).toString().trim().toLowerCase().replaceAll(" ", "").replaceAll("-", "").replaceAll("_", "")) {
@@ -97,9 +100,6 @@ public class XlsxReader {
                                                         default -> Gender.CUSTOM;
                                                     }
                                             );
-                                            break;
-                                        case "address":
-                                            EMPLOYEE.setAddress((String) finalObjects.get(index));
                                             break;
                                     }
                                 });
@@ -115,8 +115,8 @@ public class XlsxReader {
         } catch (IOException e) {
             LOGGER.severe("xlsx to users converter error" + e.getMessage());
             throw new XlsxReaderException();
-        }catch (Exception e){
-            LOGGER.severe("Global exception : "+e);
+        } catch (Exception e) {
+            LOGGER.severe("Global exception : " + e);
             throw new XlsxReaderException();
         }
     }

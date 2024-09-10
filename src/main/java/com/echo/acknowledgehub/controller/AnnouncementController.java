@@ -1,10 +1,7 @@
 package com.echo.acknowledgehub.controller;
 
 import com.echo.acknowledgehub.bean.CheckingBean;
-import com.echo.acknowledgehub.constant.AnnouncementStatus;
-import com.echo.acknowledgehub.constant.ContentType;
-import com.echo.acknowledgehub.constant.IsSchedule;
-import com.echo.acknowledgehub.constant.SelectAll;
+import com.echo.acknowledgehub.constant.*;
 import com.echo.acknowledgehub.dto.*;
 import com.echo.acknowledgehub.entity.*;
 import com.echo.acknowledgehub.service.*;
@@ -32,6 +29,7 @@ import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.logging.Logger;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -173,6 +171,9 @@ public class AnnouncementController {
                 } else if (receiverType.equals("DEPARTMENT")) {
                     chatIdsList = EMPLOYEE_SERVICE.getAllChatIdByDepartmentId(sendTo);
                     LOGGER.info("Chat IDs for DEPARTMENT with ID " + sendTo + ": " + chatIdsList);
+                } else if (receiverType.equals(("EMPLOYEE"))) {
+                    Long chatId = EMPLOYEE_SERVICE.getChatIdByUserId(sendTo);
+                    chatIdsList = List.of(chatId);
                 }
                 for (String channel : selectedChannels) {
                     if ("Telegram".equalsIgnoreCase(channel)) {
@@ -198,17 +199,17 @@ public class AnnouncementController {
 
     private void validateTargets(List<TargetDTO> targetDTOList) {
         for (TargetDTO targetDTO : targetDTOList) {
-            String receiverType = targetDTO.getReceiverType();
+            ReceiverType receiverType = targetDTO.getReceiverType();
             Long sendTo = targetDTO.getSendTo();
-            if ("COMPANY".equals(receiverType)) {
+            if (receiverType==ReceiverType.COMPANY) {
                 if (!COMPANY_SERVICE.existsById(sendTo)) {
                     throw new NoSuchElementException("Company does not exist.");
                 }
-            } else if ("DEPARTMENT".equals(receiverType)) {
+            } else if (receiverType==ReceiverType.DEPARTMENT) {
                 if (!DEPARTMENT_SERVICE.existsById(sendTo)) {
                     throw new NoSuchElementException("Department does not exist.");
                 }
-            } else if ("EMPLOYEE".equals(receiverType)) {
+            } else if (receiverType==ReceiverType.EMPLOYEE) {
                 if (!EMPLOYEE_SERVICE.existsById(sendTo)) {
                     throw new NoSuchElementException("Employee does not exist.");
                 }
@@ -349,5 +350,11 @@ public class AnnouncementController {
         long count = ANNOUNCEMENT_SERVICE.countAnnouncements();
         return ResponseEntity.ok(count);
     }
+
+    @GetMapping(value = "/pieChart" ,  produces = MediaType.APPLICATION_JSON_VALUE)
+    public Map<String, Double> getPercentage() throws ExecutionException, InterruptedException {
+        return EMPLOYEE_SERVICE.getPercentage();
+    }
+
 }
 
