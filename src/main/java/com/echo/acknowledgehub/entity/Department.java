@@ -25,7 +25,7 @@ public class Department {
   @ManyToOne(cascade = CascadeType.MERGE)
   @JoinColumn(name = "company_id", nullable = false)
   @JsonBackReference
-  private Company company;
+  private Company company=new Company();
 
   @OneToMany(mappedBy = "department", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
   @JsonManagedReference

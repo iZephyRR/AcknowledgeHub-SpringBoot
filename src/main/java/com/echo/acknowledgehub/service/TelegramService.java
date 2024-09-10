@@ -4,7 +4,10 @@ import com.echo.acknowledgehub.constant.ContentType;
 import com.echo.acknowledgehub.entity.Employee;
 import com.echo.acknowledgehub.entity.TelegramGroup;
 import lombok.AllArgsConstructor;
+import org.springframework.cache.annotation.EnableCaching;
+import org.springframework.context.annotation.Primary;
 import org.springframework.scheduling.annotation.Async;
+import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
@@ -412,3 +415,4 @@ public class TelegramService extends TelegramLongPollingBot {
     }
 
 }
+

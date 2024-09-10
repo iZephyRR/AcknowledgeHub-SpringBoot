@@ -1,16 +1,17 @@
 package com.echo.acknowledgehub.bean;
 
-import lombok.AllArgsConstructor;
+import com.echo.acknowledgehub.entity.Company;
+import com.echo.acknowledgehub.entity.Employee;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 import org.springframework.stereotype.Component;
 
 @Data
 @Component
-@AllArgsConstructor
-@NoArgsConstructor
 public class SystemDataBean {
-    private volatile boolean checkLoginEveryTime;
-    private String defaultPassword = "root";
+    private volatile boolean checkPasswordEveryTime;
+    private String defaultPassword;
+    private int sessionExpireTime;
 
+    //Add your system data field(Important data) here. Only primitive type allow here.
+    // When remove a data field, you need to remove in system-data.properties file.
 }

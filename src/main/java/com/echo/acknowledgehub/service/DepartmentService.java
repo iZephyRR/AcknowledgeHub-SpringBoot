@@ -1,8 +1,11 @@
 package com.echo.acknowledgehub.service;
 
+import com.echo.acknowledgehub.dto.CompanyDTO;
+import com.echo.acknowledgehub.dto.DepartmentDTO;
 import com.echo.acknowledgehub.dto.UserDTO;
 import com.echo.acknowledgehub.entity.Department;
 import com.echo.acknowledgehub.entity.Employee;
+import com.echo.acknowledgehub.exception_handler.DataNotFoundException;
 import com.echo.acknowledgehub.repository.DepartmentRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.scheduling.annotation.Async;
@@ -25,8 +28,13 @@ public class DepartmentService {
     }
 
     @Async
-    public CompletableFuture<Optional<Department>> findByName(String name){
-        return CompletableFuture.completedFuture(DEPARTMENT_REPOSITORY.findByName(name));
+    public CompletableFuture<DepartmentDTO> findDTOById(Long id){
+        DepartmentDTO departmentDTO=DEPARTMENT_REPOSITORY.findDTOByID(id);
+        if(departmentDTO!=null){
+            return CompletableFuture.completedFuture(departmentDTO);
+        }else {
+            throw new DataNotFoundException("Cannot find department.");
+        }
     }
 
     @Async
@@ -42,7 +50,12 @@ public class DepartmentService {
     public List<Department> getAll() {
         return DEPARTMENT_REPOSITORY.findAll();
     }
-
+    public List<DepartmentDTO> getAllDTO() {
+        return DEPARTMENT_REPOSITORY.findAllDTO();
+    }
+    public List<DepartmentDTO> getAllDTOByCompany(Long companyId) {
+        return DEPARTMENT_REPOSITORY.findAllDTOByCompany(companyId);
+    }
 
     public boolean existsById(Long sendTo) {
         return DEPARTMENT_REPOSITORY.existsById(sendTo);

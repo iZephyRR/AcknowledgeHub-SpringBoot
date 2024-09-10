@@ -1,15 +1,10 @@
 package com.echo.acknowledgehub.service;
 
+import com.echo.acknowledgehub.bean.SystemDataBean;
 import com.echo.acknowledgehub.bean.CheckingBean;
 import com.echo.acknowledgehub.constant.*;
 import com.echo.acknowledgehub.dto.*;
-import com.echo.acknowledgehub.constant.EmployeeRole;
-import com.echo.acknowledgehub.dto.BooleanResponseDTO;
-import com.echo.acknowledgehub.dto.ChangePasswordDTO;
-import com.echo.acknowledgehub.dto.StringResponseDTO;
-import com.echo.acknowledgehub.dto.UserDTO;
-
-import com.echo.acknowledgehub.entity.Announcement;
+import com.echo.acknowledgehub.entity.Department;
 import com.echo.acknowledgehub.entity.Employee;
 import com.echo.acknowledgehub.exception_handler.DataNotFoundException;
 import com.echo.acknowledgehub.exception_handler.UpdatePasswordException;
@@ -20,14 +15,11 @@ import com.google.api.core.ApiFuture;
 import com.google.cloud.firestore.*;
 import com.google.firebase.cloud.FirestoreClient;
 import lombok.AllArgsConstructor;
-import org.apache.catalina.User;
 import org.modelmapper.ModelMapper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import javax.swing.*;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -44,13 +36,20 @@ public class EmployeeService {
     private final AnnouncementRepository ANNOUNCEMENT_REPOSITORY;
     private final ModelMapper MAPPER;
     private final PasswordEncoder PASSWORD_ENCODER;
+    private final SystemDataBean SYSTEM_DATA_BEAN;
+    private final DepartmentService DEPARTMENT_SERVICE;
     private final CheckingBean CHECKING_BEAN;
     private final FirebaseNotificationService FIREBASE_NOTIFICATION_SERVICE;
     private final CompanyRepository COMPANY_REPOSITORY;
 
+
     @Async
     public CompletableFuture<Optional<Employee>> findById(Long id) {
         return CompletableFuture.completedFuture(EMPLOYEE_REPOSITORY.findById(id));
+    }
+    @Async
+    public CompletableFuture<List<Employee>> getAll(){
+        return CompletableFuture.completedFuture(EMPLOYEE_REPOSITORY.findAll());
     }
 
     @Async
@@ -74,11 +73,6 @@ public class EmployeeService {
     }
 
     @Async
-    public CompletableFuture<BooleanResponseDTO> isPasswordDefault(String email) {
-        return CompletableFuture.completedFuture(new BooleanResponseDTO(PASSWORD_ENCODER.matches("root", EMPLOYEE_REPOSITORY.findPasswordByEmail(email))));
-    }
-
-    @Async
     public CompletableFuture<StringResponseDTO> findNameByEmail(String email) {
         String name = EMPLOYEE_REPOSITORY.findNameByEmail(email);
         if (name != null) {
@@ -90,7 +84,7 @@ public class EmployeeService {
 
     @Async
     public CompletableFuture<BooleanResponseDTO> checkPassword(String password) {
-        String responsePassword = EMPLOYEE_REPOSITORY.getPasswordById(CHECKING_BEAN.getId());
+        String responsePassword = EMPLOYEE_REPOSITORY.findPasswordById(CHECKING_BEAN.getId());
         return CompletableFuture.completedFuture(new BooleanResponseDTO(PASSWORD_ENCODER.matches(password, responsePassword)));
     }
 
@@ -98,6 +92,7 @@ public class EmployeeService {
     @Transactional
     public CompletableFuture<Void> updatePassword(ChangePasswordDTO changePasswordDTO) {
         LOGGER.info("Requested change password : " + changePasswordDTO);
+     //   int updatedRows = EMPLOYEE_REPOSITORY.updatePasswordByEmail(changePasswordDTO.getEmail(), PASSWORD_ENCODER.encode(changePasswordDTO.getPassword()));
         int updatedRows;
         if (changePasswordDTO.getEmail() != null) {
             updatedRows = EMPLOYEE_REPOSITORY.updatePasswordByEmail(changePasswordDTO.getEmail(), PASSWORD_ENCODER.encode(changePasswordDTO.getPassword()));
@@ -111,13 +106,25 @@ public class EmployeeService {
             throw new UpdatePasswordException("Failed to update password.");
         }
     }
-//    public void updatePassword(ChangePasswordDTO changePasswordDTO) {
-//        Employee employee = EMPLOYEE_REPOSITORY.findById(changePasswordDTO.getId())
-//                .orElseThrow(() -> new RuntimeException("User not found"));
-//        employee.setPassword(PASSWORD_ENCODER.encode(changePasswordDTO.getPassword()));
-//        EMPLOYEE_REPOSITORY.save(employee);
-//    }
 
+
+    @Async
+    @Transactional
+    public CompletableFuture<Integer> changeDefaultPassword(String rawPassword) {
+        SYSTEM_DATA_BEAN.setDefaultPassword(rawPassword);
+        return CompletableFuture.completedFuture(EMPLOYEE_REPOSITORY.changeDefaultPassword(PASSWORD_ENCODER.encode(rawPassword)));
+    }
+
+    @Async
+    public CompletableFuture<Boolean> isPasswordDefault(String email){
+        return CompletableFuture.completedFuture(PASSWORD_ENCODER.matches(SYSTEM_DATA_BEAN.getDefaultPassword(),EMPLOYEE_REPOSITORY.findPasswordByEmail(email)));
+    }
+
+    @Async
+    @Transactional
+    public CompletableFuture<Integer> makePasswordAsDefault(Long id){
+        return CompletableFuture.completedFuture(EMPLOYEE_REPOSITORY.updatePasswordById(id,PASSWORD_ENCODER.encode(SYSTEM_DATA_BEAN.getDefaultPassword())));
+    }
 
     @Async
     public CompletableFuture<Employee> save(UserDTO user) {
@@ -131,20 +138,26 @@ public class EmployeeService {
         return CompletableFuture.completedFuture(EMPLOYEE_REPOSITORY.save(employee));
     }
 
-    //Not finish yet!
     @Async
-    public CompletableFuture<List<Employee>> saveAll(List<UserDTO> users) {
+    public CompletableFuture<List<Employee>> saveAll(UserExcelDTO users) {
+        LOGGER.info("HERE DATA : "+users);
+        Department department=DEPARTMENT_SERVICE.save(new Department(users.getDepartmentName(), users.getCompanyId())).join();
         List<Employee> employees = new ArrayList<>();
-        users.forEach(user -> this.save(user).thenAccept(employees::add));
+        users.getUsers().forEach(user -> {
+            user.setDepartmentId(department.getId());
+            user.setCompanyId(users.getCompanyId());
+            this.save(user).thenAccept(employees::add);
+        });
         return CompletableFuture.completedFuture(employees);
     }
 
     public Long getEmployeeIdByTelegramUsername(String telegramUsername) {
         return EMPLOYEE_REPOSITORY.getEmployeeIdByTelegramUsername(telegramUsername);
     }
-
-    public EmployeeProfileDTO findByIdForProfile(long id) {
-        return EMPLOYEE_REPOSITORY.findByIdForProfile(id);
+@Async
+    public CompletableFuture<EmployeeProfileDTO> getProfileInfo(long id) {
+        LOGGER.info("id : "+id);
+        return CompletableFuture.completedFuture(EMPLOYEE_REPOSITORY.getProfileInfo(id));
     }
 
     public long countEmployees() {
@@ -152,12 +165,24 @@ public class EmployeeService {
         LOGGER.info("Count : "+count);
         return count;
     }
+
     public List<Long> getMainHRAndHRIds() {
         List<EmployeeRole> roles = Arrays.asList(EmployeeRole.MAIN_HR, EmployeeRole.HR);
         return EMPLOYEE_REPOSITORY.findAllByRole(roles)
                 .stream()
                 .map(Employee::getId)
                 .collect(Collectors.toList());
+    }
+
+
+    @Async
+    public CompletableFuture<UniqueFieldsDTO> getUniques(){
+        List<String> emails = EMPLOYEE_REPOSITORY.findDistinctEmails();
+        List<String> nrcs = EMPLOYEE_REPOSITORY.findDistinctNrc();
+        List<String> staffIds = EMPLOYEE_REPOSITORY.findDistinctStaffIds();
+        List<String> telegramUsernames = EMPLOYEE_REPOSITORY.findDistinctTelegramUsernames();
+
+        return CompletableFuture.completedFuture(new UniqueFieldsDTO(emails, nrcs, staffIds, telegramUsernames));
     }
 
     @Transactional
@@ -289,14 +314,13 @@ public class EmployeeService {
 //    }
 //
 
-
     public List<UserDTO> getUsersByCompanyId(Long companyId){
         List<Object[]> objectList = EMPLOYEE_REPOSITORY.getUserByCompanyId(companyId);
         return mapToDtoList(objectList);
     }
 
-
     public List<UserDTO> mapToDtoList (List<Object[]> objLists) {
+
         return objLists.stream().map(this::mapToDto).collect(Collectors.toList());
     }
 
@@ -307,16 +331,24 @@ public class EmployeeService {
         dto.setAddress((String) row[2]);
         dto.setDob((Date) row[3]);
         dto.setGender((Gender) row[4]);
-        dto.setNRC((String) row[5]);
+        dto.setNrc((String) row[5]);
         dto.setPassword((String) row[6]);
         dto.setRole((EmployeeRole) row[7]);
         dto.setStatus((EmployeeStatus) row[8]);
-        dto.setStuffId((String) row[9]);
+        dto.setStaffId((String) row[9]);
         dto.setTelegramUsername((String) row[10]);
         dto.setWorkEntryDate((Date) row[11]);
         dto.setCompanyName((String) row[12]);
         dto.setDepartmentName((String) row[13]);
         dto.setId((Long) row[14]);
         return dto;
+    }
+
+    public CompletableFuture<List<Employee>> updateUsers(List<UserDTO> users) {
+        List<Employee> employees = new ArrayList<>();
+        users.forEach(user -> {
+           employees.add(save(user).join());
+        });
+        return CompletableFuture.completedFuture(employees);
     }
 }

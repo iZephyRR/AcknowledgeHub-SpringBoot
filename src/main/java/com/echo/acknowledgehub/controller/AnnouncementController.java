@@ -1,16 +1,14 @@
 package com.echo.acknowledgehub.controller;
 
 import com.echo.acknowledgehub.bean.CheckingBean;
-import com.echo.acknowledgehub.constant.AnnouncementStatus;
-import com.echo.acknowledgehub.constant.ContentType;
-import com.echo.acknowledgehub.constant.IsSchedule;
-import com.echo.acknowledgehub.constant.SelectAll;
+import com.echo.acknowledgehub.constant.*;
 import com.echo.acknowledgehub.dto.*;
 import com.echo.acknowledgehub.entity.*;
 import com.echo.acknowledgehub.service.*;
 import com.echo.acknowledgehub.util.CustomMultipartFile;
 import com.echo.acknowledgehub.util.JWTService;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.inject.Qualifier;
 import lombok.AllArgsConstructor;
 import org.apache.commons.compress.utils.IOUtils;
 import org.modelmapper.ModelMapper;
@@ -174,6 +172,9 @@ public class AnnouncementController {
                 } else if (receiverType.equals("DEPARTMENT")) {
                     chatIdsList = EMPLOYEE_SERVICE.getAllChatIdByDepartmentId(sendTo);
                     LOGGER.info("Chat IDs for DEPARTMENT with ID " + sendTo + ": " + chatIdsList);
+                } else if (receiverType.equals(("EMPLOYEE"))) {
+                    Long chatId = EMPLOYEE_SERVICE.getChatIdByUserId(sendTo);
+                    chatIdsList = List.of(chatId);
                 }
                 for (String channel : selectedChannels) {
                     if ("Telegram".equalsIgnoreCase(channel)) {
@@ -199,17 +200,17 @@ public class AnnouncementController {
 
     private void validateTargets(List<TargetDTO> targetDTOList) {
         for (TargetDTO targetDTO : targetDTOList) {
-            String receiverType = targetDTO.getReceiverType();
+            ReceiverType receiverType = targetDTO.getReceiverType();
             Long sendTo = targetDTO.getSendTo();
-            if ("COMPANY".equals(receiverType)) {
+            if (receiverType==ReceiverType.COMPANY) {
                 if (!COMPANY_SERVICE.existsById(sendTo)) {
                     throw new NoSuchElementException("Company does not exist.");
                 }
-            } else if ("DEPARTMENT".equals(receiverType)) {
+            } else if (receiverType==ReceiverType.DEPARTMENT) {
                 if (!DEPARTMENT_SERVICE.existsById(sendTo)) {
                     throw new NoSuchElementException("Department does not exist.");
                 }
-            } else if ("EMPLOYEE".equals(receiverType)) {
+            } else if (receiverType==ReceiverType.EMPLOYEE) {
                 if (!EMPLOYEE_SERVICE.existsById(sendTo)) {
                     throw new NoSuchElementException("Employee does not exist.");
                 }
@@ -345,12 +346,30 @@ public class AnnouncementController {
         return new CustomMultipartFile(fileBytes, fileName, contentType);
     }
 
-    @GetMapping("/count")
+    @GetMapping(value = "/{id}" , produces = MediaType.APPLICATION_JSON_VALUE)
+    private Optional<Announcement> findById(@PathVariable("id") Long id){
+        return ANNOUNCEMENT_SERVICE.findById(id).join();
+    }
+
+    @GetMapping(value = "/count", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Long> countAnnouncements() {
         long count = ANNOUNCEMENT_SERVICE.countAnnouncements();
         return ResponseEntity.ok(count);
     }
 
+    @GetMapping(value = "/getAnnouncementsByCompanyId", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<List<AnnouncementDTOForShowing>> getAnnouncementsByCompanyId() {
+        return ResponseEntity.ok(ANNOUNCEMENT_SERVICE.getAnnouncementByReceiverTypeAndId(ReceiverType.COMPANY,CHECKING_BEAN.getCompanyId()));
+    }
+    @GetMapping(value = "/getAnnouncementsByDepartmentId", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<List<AnnouncementDTOForShowing>> getAnnouncementsByDepartmentId() {
+        return ResponseEntity.ok(ANNOUNCEMENT_SERVICE.getAnnouncementByReceiverTypeAndId(ReceiverType.DEPARTMENT,CHECKING_BEAN.getDepartmentId()));
+    }
+
+    @GetMapping(value = "/get-By-EmployeeId", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<List<AnnouncementDTOForShowing>> getAnnouncementsByEmployeeId() {
+        return ResponseEntity.ok(ANNOUNCEMENT_SERVICE.getAnnouncementByReceiverTypeAndId(ReceiverType.EMPLOYEE,CHECKING_BEAN.getId()));
+    }
     @GetMapping(value = "/pieChart" ,  produces = MediaType.APPLICATION_JSON_VALUE)
     public Map<String, Double> getPercentage() throws ExecutionException, InterruptedException {
         return EMPLOYEE_SERVICE.getPercentage();

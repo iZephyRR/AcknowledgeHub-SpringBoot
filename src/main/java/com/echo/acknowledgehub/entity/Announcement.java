@@ -23,9 +23,9 @@ public class Announcement {
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
     @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false, columnDefinition = "ENUM('EDITING', 'PENDING', 'APPROVED', 'DECLINED')")
+    @Column(name = "status", nullable = false, columnDefinition = "ENUM('EDITING', 'PENDING', 'UPLOADED')")
     private AnnouncementStatus status;
-    @Column(name = "pdf_link", nullable = true,columnDefinition = "VARCHAR(125)")
+    @Column(name = "pdf_link", nullable = true,columnDefinition = "VARCHAR(150)")
     private String pdfLink;
     @Enumerated(EnumType.STRING)
     @Column(name = "contentType", nullable = false)
@@ -36,9 +36,7 @@ public class Announcement {
     @Enumerated(EnumType.STRING)
     @Column(name ="isSchedule", nullable = false)
     private IsSchedule isSchedule;
-    @Enumerated(EnumType.STRING)
-    @Column(name = "is_select_all", nullable = false)
-    private SelectAll selectAll;
+
     @JsonIgnore
     @ManyToOne(cascade = CascadeType.MERGE)
     @JoinColumn(name = "hr_id" ,nullable = false)
