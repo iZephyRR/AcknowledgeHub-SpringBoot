@@ -25,7 +25,7 @@ public class Announcement {
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, columnDefinition = "ENUM('EDITING', 'PENDING', 'UPLOADED')")
     private AnnouncementStatus status;
-    @Column(name = "pdf_link", nullable = true,columnDefinition = "VARCHAR(125)")
+    @Column(name = "pdf_link", nullable = true,columnDefinition = "VARCHAR(150)")
     private String pdfLink;
     @Enumerated(EnumType.STRING)
     @Column(name = "contentType", nullable = false)

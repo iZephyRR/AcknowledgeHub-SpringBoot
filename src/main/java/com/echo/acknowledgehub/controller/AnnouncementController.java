@@ -8,6 +8,7 @@ import com.echo.acknowledgehub.service.*;
 import com.echo.acknowledgehub.util.CustomMultipartFile;
 import com.echo.acknowledgehub.util.JWTService;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.inject.Qualifier;
 import lombok.AllArgsConstructor;
 import org.apache.commons.compress.utils.IOUtils;
 import org.modelmapper.ModelMapper;
