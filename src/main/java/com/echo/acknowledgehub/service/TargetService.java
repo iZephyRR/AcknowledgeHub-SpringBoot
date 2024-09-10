@@ -32,16 +32,7 @@ public class TargetService {
     @Transactional
     @Async
     public CompletableFuture<Void> insertTargetWithNotifications(List<Target> targets, Announcement announcement) {
-        // Create a common NotificationDTO
         NotificationDTO notificationDTO = buildNotificationDTO(announcement);
-
-        // Save the notification once in Firebase
-        //NOTIFICATION_CONTROLLER.saveNotificationInFirebase(notificationDTO);
-
-        // Notify the creator
-        //NOTIFICATION_CONTROLLER.sendNotification(notificationDTO);
-
-        // Notify each target based on their receiver type
         for (Target target : targets) {
             switch (target.getReceiverType()) {
                 case EMPLOYEE:
@@ -60,41 +51,69 @@ public class TargetService {
         return null;
     }
 
-    private void addNotificationForEmployee(Long employeeId, NotificationDTO notificationDTO) {
-            notificationDTO.setUserId(employeeId);
-            notificationDTO.setReceiverType(ReceiverType.EMPLOYEE);
-            notificationDTO.setReceiverId(employeeId);
-            NotificationDTO employeeNotificationDTO = cloneNotificationDTO(notificationDTO, employeeId);
-            NOTIFICATION_CONTROLLER.sendNotification(employeeNotificationDTO);
+    private CompletableFuture<Void> addNotificationForEmployee(Long employeeId, NotificationDTO notificationDTO) {
+        return EMPLOYEE_SERVICE.findById(employeeId)
+                .thenAccept(optionalEmployee -> {
+                    optionalEmployee.ifPresentOrElse(employee -> {
+                        LOGGER.info("Sending notification to employee ID: " + employeeId);
 
+                        // Set notification details
+                        notificationDTO.setUserId(employeeId);
+                        notificationDTO.setReceiverType(ReceiverType.EMPLOYEE);
+                        notificationDTO.setReceiverId(employeeId);
+
+                        // Clone the notification for this employee
+                        NotificationDTO employeeNotificationDTO = cloneNotificationDTO(notificationDTO, employeeId);
+
+                        // Save and send the notification
+                        NOTIFICATION_CONTROLLER.saveNotificationInFirebase(employeeNotificationDTO);
+                        NOTIFICATION_CONTROLLER.sendNotification(employeeNotificationDTO);
+                    }, () -> {
+                        LOGGER.warning("Employee not found for ID: " + employeeId);
+                    });
+                })
+                .exceptionally(ex -> {
+                    LOGGER.severe("Error sending notification to employee ID " + employeeId + ": " + ex.getMessage());
+                    return null;
+                });
     }
 
     private void addNotificationsForDepartment(Long departmentId, NotificationDTO notificationDTO) {
-        List<Long> employeeIds = EMPLOYEE_SERVICE.findByDepartmentId(departmentId).join();
-        for (Long employeeId : employeeIds) {
-            LOGGER.info("employee id from department: " + employeeId);
-            // Set the userId to each employee's ID
-            notificationDTO.setUserId(employeeId);
-            notificationDTO.setReceiverType(ReceiverType.DEPARTMENT);
-            notificationDTO.setReceiverId(departmentId);
-            NotificationDTO departmentNotificationDTO = cloneNotificationDTO(notificationDTO, employeeId);
-            NOTIFICATION_CONTROLLER.saveNotificationInFirebase(departmentNotificationDTO);
-            NOTIFICATION_CONTROLLER.sendNotification(departmentNotificationDTO);
-        }
+        EMPLOYEE_SERVICE.findByDepartmentId(departmentId)
+                .thenAccept( employeeIds -> {
+                    for (Long employeeId : employeeIds) {
+                        LOGGER.info("employee id from department: " + employeeId);
+                        // Set the userId to each employee's ID
+                        notificationDTO.setUserId(employeeId);
+                        notificationDTO.setReceiverType(ReceiverType.DEPARTMENT);
+                        notificationDTO.setReceiverId(departmentId);
+                        NotificationDTO departmentNotificationDTO = cloneNotificationDTO(notificationDTO, employeeId);
+                        NOTIFICATION_CONTROLLER.saveNotificationInFirebase(departmentNotificationDTO);
+                        NOTIFICATION_CONTROLLER.sendNotification(departmentNotificationDTO);
+                    }
+                }).exceptionally(ex ->{
+                    LOGGER.severe("Error sending notifications for company: " + ex.getMessage());
+                    return null;
+                });
     }
 
     private void addNotificationsForCompany(Long companyId, NotificationDTO notificationDTO) {
-        List<Long> employeeIds = EMPLOYEE_SERVICE.findByCompanyId(companyId).join();
-        for (Long employeeId : employeeIds) {
-            LOGGER.info("Sending notification to employee ID from company: " + employeeId);
-            // Set the userId to each employee's ID
-            notificationDTO.setUserId(employeeId);
-            notificationDTO.setReceiverType(ReceiverType.COMPANY);
-            notificationDTO.setReceiverId(companyId);
-            NotificationDTO companyNotificationDTO = cloneNotificationDTO(notificationDTO, employeeId);
-            NOTIFICATION_CONTROLLER.saveNotificationInFirebase(companyNotificationDTO); // Save for each employee
-            NOTIFICATION_CONTROLLER.sendNotification(companyNotificationDTO); // Send notification for each employee
-        }
+        EMPLOYEE_SERVICE.findByCompanyId(companyId)
+                .thenAccept(employeeIds -> {
+                    LOGGER.info("Sending notification to : " + employeeIds);
+                    for (Long employeeId : employeeIds) {
+                        LOGGER.info("Sending notification to employee ID from company: " + employeeId);
+                        notificationDTO.setUserId(employeeId);
+                        notificationDTO.setReceiverType(ReceiverType.COMPANY);
+                        notificationDTO.setReceiverId(companyId);
+                        NotificationDTO companyNotificationDTO = cloneNotificationDTO(notificationDTO, employeeId);
+                        NOTIFICATION_CONTROLLER.saveNotificationInFirebase(companyNotificationDTO);
+                        NOTIFICATION_CONTROLLER.sendNotification(companyNotificationDTO);
+                    }
+                }).exceptionally(ex -> {
+                    LOGGER.severe("Error sending notifications for company: " + ex.getMessage());
+                    return null;
+                });
     }
 
     private NotificationDTO buildNotificationDTO(Announcement announcement) {
