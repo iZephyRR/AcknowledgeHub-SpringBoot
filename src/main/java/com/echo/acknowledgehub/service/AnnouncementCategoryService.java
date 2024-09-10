@@ -23,18 +23,17 @@ public class AnnouncementCategoryService {
 
     @Async
     public CompletableFuture<AnnouncementCategory> save(AnnouncementCategory announcementCategory){
-        try {
+     //   try {
             return CompletableFuture.completedFuture(ANNOUNCEMENT_CATEGORY_REPOSITORY.save(announcementCategory));
-
-        }catch (DataIntegrityViolationException e){
-            if(e.getMessage().contains("Duplicate entry")){
-                LOGGER.info("Duplicated ");
-                throw new DuplicatedEnteryException();
-            }else {
-                LOGGER.info("Other exception");
-                throw e;
-            }
-        }
+//        }catch (DataIntegrityViolationException e){
+//            if(e.getMessage().contains("Duplicate entry")){
+//                LOGGER.info("Duplicated "+e);
+//                throw new DuplicatedEnteryException();
+//            }else {
+//                LOGGER.info("Other exception");
+//                throw e;
+//            }
+//        }
     }
 
     @Async
