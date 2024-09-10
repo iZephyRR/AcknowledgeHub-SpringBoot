@@ -2,11 +2,13 @@ package com.echo.acknowledgehub.service;
 
 import com.echo.acknowledgehub.constant.*;
 import com.echo.acknowledgehub.dto.AnnouncementDTO;
+import com.echo.acknowledgehub.dto.AnnouncementDTOForShowing;
 import com.echo.acknowledgehub.entity.Announcement;
 import com.echo.acknowledgehub.entity.AnnouncementCategory;
 import com.echo.acknowledgehub.repository.AnnouncementRepository;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
+import org.checkerframework.checker.units.qual.Temperature;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
@@ -98,6 +100,10 @@ public class AnnouncementService {
     }
 
     @Transactional
+    public List<AnnouncementDTOForShowing> getAnnouncementByReceiverTypeAndId(ReceiverType receiverType ,Long receiverId) {
+        return ANNOUNCEMENT_REPOSITORY.findAnnouncementDTOsByReceiverType(receiverType, receiverId);
+    }
+  
     public List<Long> getSelectedAllAnnouncements() {
         return ANNOUNCEMENT_REPOSITORY.getSelectedAllAnnouncements(SelectAll.TRUE);
     }
@@ -124,6 +130,7 @@ public class AnnouncementService {
         dto.setFileUrl((String) row[8]);
         return dto;
     }
+
 }
 
 
