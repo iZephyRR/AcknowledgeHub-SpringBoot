@@ -12,7 +12,6 @@ import org.springframework.scheduling.annotation.Scheduled;
 @SpringBootApplication(proxyBeanMethods = false)
 @EnableAsync(proxyTargetClass = true)
 @EnableScheduling
-@EnableCaching(proxyTargetClass = true)
 public class AcknowledgehubApplication {
 
 	public static void main(String[] args) {
