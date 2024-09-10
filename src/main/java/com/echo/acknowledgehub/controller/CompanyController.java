@@ -36,7 +36,7 @@ public class CompanyController {
     private final ModelMapper MODEL_MAPPER;
     private final CheckingBean CHECKING_BEAN;
 
-    @GetMapping("/mr/get-company/{id}")
+    @GetMapping("/user/get-company/{id}")
     private CompletableFuture<Optional<Company>> getCompany(@PathVariable Long id){
         LOGGER.info("Company id : "+id);
         return COMPANY_SERVICE.findById(id);
@@ -48,12 +48,12 @@ public class CompanyController {
         return COMPANY_SERVICE.findDTOById(id).join();
     }
 
-    @GetMapping("/mha/get-companies")
+    @GetMapping("/mr/get-companies")
     public List<Company> getCompanies () {
         return COMPANY_SERVICE.getAll();
     }
 
-    @GetMapping("/mha/get-company-dtos")
+    @GetMapping("/mr/get-company-dtos")
     public List<CompanyDTO> getCompanyDTOS (){
         return COMPANY_SERVICE.getAllDTO();
     }

@@ -28,9 +28,7 @@ public class EmployeeController {
     private static final Logger LOGGER = Logger.getLogger(EmployeeController.class.getName());
     private final EmployeeService EMPLOYEE_SERVICE;
     private final CheckingBean CHECKING_BEAN;
-    private final EmployeeRepository employeeRepository;
     private final ModelMapper MODEL_MAPPER;
-    private final FirebaseNotificationService FIREBASE_NOTIFICATION_SERVICE;
 
 
     @GetMapping(value = "/mr/users", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -38,6 +36,10 @@ public class EmployeeController {
         return ResponseEntity.ok(EMPLOYEE_SERVICE.getAllUsers());
     }
 
+    @GetMapping("/user/{id}")
+    private Optional<Employee> getById(@PathVariable Long id){
+        return EMPLOYEE_SERVICE.findById(id).join();
+    }
 
     @GetMapping("/mr/find-all")
     private List<Employee> findAll(){
@@ -49,13 +51,12 @@ public class EmployeeController {
         return ResponseEntity.ok(EMPLOYEE_SERVICE.getUsersByCompanyId(CHECKING_BEAN.getCompanyId()));
     }
 
-
     @GetMapping("/user/profile")
     private EmployeeProfileDTO findById(){
-        long id = CHECKING_BEAN.getId();
-        return employeeRepository.findByIdForProfile(id);
+        EmployeeProfileDTO employeeProfileDTO=EMPLOYEE_SERVICE.getProfileInfo(CHECKING_BEAN.getId()).join();
+        LOGGER.info("emp "+employeeProfileDTO);
+        return employeeProfileDTO;
     }
-
 
     @GetMapping("/hrs/user/by-department/{id}")
     public List<UserDTO> getEmployeesByDepartmentId(@PathVariable("id") Long id) {
@@ -64,12 +65,6 @@ public class EmployeeController {
                 .map(employee -> MODEL_MAPPER.map(employee, UserDTO.class))
                 .collect(Collectors.toList());
     }
-
-    @PostMapping("/auth/find-name-by-email")
-    private StringResponseDTO findNameByEmail(@RequestBody String email) {
-        return EMPLOYEE_SERVICE.findNameByEmail(email).join();
-    }
-
 
     @GetMapping("/count")
     public long getEmployeeCount() {

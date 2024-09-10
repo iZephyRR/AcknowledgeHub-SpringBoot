@@ -67,7 +67,7 @@ public class SecurityConfig {
                 // Configure routes to allow access for main HR & 'company/HR' subdirectory.
                 .requestMatchers(BASE_URL + "/mhr/**").hasAnyRole(EmployeeRole.MAIN_HR.name(), EmployeeRole.HR.name())
                  .requestMatchers(BASE_URL+"/hrs/**",BASE_URL + "/announcement/create",BASE_URL + "/announcement/uploadDraft",
-                                                BASE_URL + "/announcement/get-drafts", BASE_URL + "/get-companies",
+                                                BASE_URL + "/announcement/get-drafts",
                                                 BASE_URL + "/getCompanyById", BASE_URL + "/get-categories", BASE_URL +"/announcement/getDraftById/**",
                                                 BASE_URL + "/announcement/delete-draft/**", BASE_URL + "/custom-target/**",
                          BASE_URL+ "/getUsersByCompanyId").hasAnyRole(EmployeeRole.MAIN_HR.name(),

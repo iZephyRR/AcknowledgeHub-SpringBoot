@@ -5,7 +5,6 @@ import com.echo.acknowledgehub.bean.CheckingBean;
 import com.echo.acknowledgehub.constant.*;
 import com.echo.acknowledgehub.dto.*;
 import com.echo.acknowledgehub.entity.Department;
-import com.echo.acknowledgehub.entity.Announcement;
 import com.echo.acknowledgehub.entity.Employee;
 import com.echo.acknowledgehub.exception_handler.DataNotFoundException;
 import com.echo.acknowledgehub.exception_handler.UpdatePasswordException;
@@ -16,16 +15,18 @@ import com.google.api.core.ApiFuture;
 import com.google.cloud.firestore.*;
 import com.google.firebase.cloud.FirestoreClient;
 import lombok.AllArgsConstructor;
-import org.apache.catalina.User;
 import org.modelmapper.ModelMapper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import javax.swing.*;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 @Service
 @AllArgsConstructor
@@ -83,7 +84,7 @@ public class EmployeeService {
 
     @Async
     public CompletableFuture<BooleanResponseDTO> checkPassword(String password) {
-        String responsePassword = EMPLOYEE_REPOSITORY.getPasswordById(CHECKING_BEAN.getId());
+        String responsePassword = EMPLOYEE_REPOSITORY.findPasswordById(CHECKING_BEAN.getId());
         return CompletableFuture.completedFuture(new BooleanResponseDTO(PASSWORD_ENCODER.matches(password, responsePassword)));
     }
 
@@ -116,7 +117,7 @@ public class EmployeeService {
 
     @Async
     public CompletableFuture<Boolean> isPasswordDefault(String email){
-        return CompletableFuture.completedFuture(PASSWORD_ENCODER.matches(SYSTEM_DATA_BEAN.getDefaultPassword(),EMPLOYEE_REPOSITORY.getPasswordByEmail(email)));
+        return CompletableFuture.completedFuture(PASSWORD_ENCODER.matches(SYSTEM_DATA_BEAN.getDefaultPassword(),EMPLOYEE_REPOSITORY.findPasswordByEmail(email)));
     }
 
     @Async
@@ -153,9 +154,10 @@ public class EmployeeService {
     public Long getEmployeeIdByTelegramUsername(String telegramUsername) {
         return EMPLOYEE_REPOSITORY.getEmployeeIdByTelegramUsername(telegramUsername);
     }
-
-    public EmployeeProfileDTO findByIdForProfile(long id) {
-        return EMPLOYEE_REPOSITORY.findByIdForProfile(id);
+@Async
+    public CompletableFuture<EmployeeProfileDTO> getProfileInfo(long id) {
+        LOGGER.info("id : "+id);
+        return CompletableFuture.completedFuture(EMPLOYEE_REPOSITORY.getProfileInfo(id));
     }
 
     public long countEmployees() {
@@ -329,7 +331,7 @@ public class EmployeeService {
         dto.setAddress((String) row[2]);
         dto.setDob((Date) row[3]);
         dto.setGender((Gender) row[4]);
-        dto.setNRC((String) row[5]);
+        dto.setNrc((String) row[5]);
         dto.setPassword((String) row[6]);
         dto.setRole((EmployeeRole) row[7]);
         dto.setStatus((EmployeeStatus) row[8]);
