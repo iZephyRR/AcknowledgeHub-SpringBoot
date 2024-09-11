@@ -36,6 +36,11 @@ public class CustomTargetGroupController {
         return CUSTOM_TARGET_GROUP_SERVICE.findById(id).join();
     }
 
+    @GetMapping("/by-hr")
+    private List<CustomTargetGroup> byHR(){
+        return CUSTOM_TARGET_GROUP_SERVICE.byHR().join();
+    }
+
     @DeleteMapping("/{id}")
     private void deleteById(@PathVariable("id") Long id){
          CUSTOM_TARGET_GROUP_SERVICE.deleteById(id);

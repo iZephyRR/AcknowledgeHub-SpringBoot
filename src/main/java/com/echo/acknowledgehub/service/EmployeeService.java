@@ -20,6 +20,7 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -47,8 +48,9 @@ public class EmployeeService {
     public CompletableFuture<Optional<Employee>> findById(Long id) {
         return CompletableFuture.completedFuture(EMPLOYEE_REPOSITORY.findById(id));
     }
+
     @Async
-    public CompletableFuture<List<Employee>> getAll(){
+    public CompletableFuture<List<Employee>> getAll() {
         return CompletableFuture.completedFuture(EMPLOYEE_REPOSITORY.findAll());
     }
 
@@ -92,7 +94,7 @@ public class EmployeeService {
     @Transactional
     public CompletableFuture<Void> updatePassword(ChangePasswordDTO changePasswordDTO) {
         LOGGER.info("Requested change password : " + changePasswordDTO);
-     //   int updatedRows = EMPLOYEE_REPOSITORY.updatePasswordByEmail(changePasswordDTO.getEmail(), PASSWORD_ENCODER.encode(changePasswordDTO.getPassword()));
+        //   int updatedRows = EMPLOYEE_REPOSITORY.updatePasswordByEmail(changePasswordDTO.getEmail(), PASSWORD_ENCODER.encode(changePasswordDTO.getPassword()));
         int updatedRows;
         if (changePasswordDTO.getEmail() != null) {
             updatedRows = EMPLOYEE_REPOSITORY.updatePasswordByEmail(changePasswordDTO.getEmail(), PASSWORD_ENCODER.encode(changePasswordDTO.getPassword()));
@@ -116,14 +118,14 @@ public class EmployeeService {
     }
 
     @Async
-    public CompletableFuture<Boolean> isPasswordDefault(String email){
-        return CompletableFuture.completedFuture(PASSWORD_ENCODER.matches(SYSTEM_DATA_BEAN.getDefaultPassword(),EMPLOYEE_REPOSITORY.findPasswordByEmail(email)));
+    public CompletableFuture<Boolean> isPasswordDefault(String email) {
+        return CompletableFuture.completedFuture(PASSWORD_ENCODER.matches(SYSTEM_DATA_BEAN.getDefaultPassword(), EMPLOYEE_REPOSITORY.findPasswordByEmail(email)));
     }
 
     @Async
     @Transactional
-    public CompletableFuture<Integer> makePasswordAsDefault(Long id){
-        return CompletableFuture.completedFuture(EMPLOYEE_REPOSITORY.updatePasswordById(id,PASSWORD_ENCODER.encode(SYSTEM_DATA_BEAN.getDefaultPassword())));
+    public CompletableFuture<Integer> makePasswordAsDefault(Long id) {
+        return CompletableFuture.completedFuture(EMPLOYEE_REPOSITORY.updatePasswordById(id, PASSWORD_ENCODER.encode(SYSTEM_DATA_BEAN.getDefaultPassword())));
     }
 
     @Async
@@ -140,8 +142,8 @@ public class EmployeeService {
 
     @Async
     public CompletableFuture<List<Employee>> saveAll(UserExcelDTO users) {
-        LOGGER.info("HERE DATA : "+users);
-        Department department=DEPARTMENT_SERVICE.save(new Department(users.getDepartmentName(), users.getCompanyId())).join();
+        LOGGER.info("HERE DATA : " + users);
+        Department department = DEPARTMENT_SERVICE.save(new Department(users.getDepartmentName(), users.getCompanyId())).join();
         List<Employee> employees = new ArrayList<>();
         users.getUsers().forEach(user -> {
             user.setDepartmentId(department.getId());
@@ -154,15 +156,16 @@ public class EmployeeService {
     public Long getEmployeeIdByTelegramUsername(String telegramUsername) {
         return EMPLOYEE_REPOSITORY.getEmployeeIdByTelegramUsername(telegramUsername);
     }
-@Async
+
+    @Async
     public CompletableFuture<EmployeeProfileDTO> getProfileInfo(long id) {
-        LOGGER.info("id : "+id);
+        LOGGER.info("id : " + id);
         return CompletableFuture.completedFuture(EMPLOYEE_REPOSITORY.getProfileInfo(id));
     }
 
     public long countEmployees() {
-        long count=EMPLOYEE_REPOSITORY.count();
-        LOGGER.info("Count : "+count);
+        long count = EMPLOYEE_REPOSITORY.count();
+        LOGGER.info("Count : " + count);
         return count;
     }
 
@@ -176,7 +179,7 @@ public class EmployeeService {
 
 
     @Async
-    public CompletableFuture<UniqueFieldsDTO> getUniques(){
+    public CompletableFuture<UniqueFieldsDTO> getUniques() {
         List<String> emails = EMPLOYEE_REPOSITORY.findDistinctEmails();
         List<String> nrcs = EMPLOYEE_REPOSITORY.findDistinctNrc();
         List<String> staffIds = EMPLOYEE_REPOSITORY.findDistinctStaffIds();
@@ -232,7 +235,7 @@ public class EmployeeService {
     }
 
     @Transactional
-    public List<EmployeeNotedDTO> getEmployeeWhoNoted (List<Long> userIdList){
+    public List<EmployeeNotedDTO> getEmployeeWhoNoted(List<Long> userIdList) {
         Map<Long, LocalDateTime> notedAtStorage = FIREBASE_NOTIFICATION_SERVICE.getNotedAtStorage();
         List<EmployeeNotedDTO> employeeNotedDTOS = new ArrayList<>();
         for (Long userId : userIdList) {
@@ -272,7 +275,7 @@ public class EmployeeService {
                     CompletableFuture<Employee> comFuEmployee = findById(userId)
                             .thenApply(employee -> employee.orElseThrow(() -> new NoSuchElementException("Employee not found")));
                     Long companyId = comFuEmployee.join().getCompany().getId();
-                    employeeCountMap.merge(companyId,1,Integer::sum);
+                    employeeCountMap.merge(companyId, 1, Integer::sum);
 
 
                 }
@@ -283,15 +286,15 @@ public class EmployeeService {
 
     public Map<String, Double> getPercentage() throws ExecutionException, InterruptedException {
         Map<String, Double> notedPercentageMap = new HashMap<>();
-        Map<Long,Integer> employeeCountMap = getSelectedAllAnnouncements();
+        Map<Long, Integer> employeeCountMap = getSelectedAllAnnouncements();
         LOGGER.info("before announcement count");
         int announcementCount = ANNOUNCEMENT_REPOSITORY.getSelectAllCountAnnouncements(SelectAll.TRUE);
-        employeeCountMap.forEach((companyId,notedCount)-> {
+        employeeCountMap.forEach((companyId, notedCount) -> {
             String companyName = COMPANY_REPOSITORY.findCompanyNameById(companyId);
             int employeeCount = employeeCountByCompany(companyId);
             int expectedCount = employeeCount * announcementCount;
-            double notedPercentage = (double) (notedCount * 100) /expectedCount;
-            notedPercentageMap.put(companyName,notedPercentage);
+            double notedPercentage = (double) (notedCount * 100) / expectedCount;
+            notedPercentageMap.put(companyName, notedPercentage);
         });
         return notedPercentageMap;
     }
@@ -314,12 +317,12 @@ public class EmployeeService {
 //    }
 //
 
-    public List<UserDTO> getUsersByCompanyId(Long companyId){
+    public List<UserDTO> getUsersByCompanyId(Long companyId) {
         List<Object[]> objectList = EMPLOYEE_REPOSITORY.getUserByCompanyId(companyId);
         return mapToDtoList(objectList);
     }
 
-    public List<UserDTO> mapToDtoList (List<Object[]> objLists) {
+    public List<UserDTO> mapToDtoList(List<Object[]> objLists) {
 
         return objLists.stream().map(this::mapToDto).collect(Collectors.toList());
     }
@@ -347,8 +350,23 @@ public class EmployeeService {
     public CompletableFuture<List<Employee>> updateUsers(List<UserDTO> users) {
         List<Employee> employees = new ArrayList<>();
         users.forEach(user -> {
-           employees.add(save(user).join());
+            employees.add(save(user).join());
         });
         return CompletableFuture.completedFuture(employees);
+    }
+
+    @Async
+    public CompletableFuture<List<String>> getEmailsByCompanyId(Long sendTo) {
+        return CompletableFuture.completedFuture(EMPLOYEE_REPOSITORY.getEmailsByCompanyId(sendTo));
+    }
+
+    @Async
+    public CompletableFuture<List<String>> getEmailsByDepartmentId(Long sendTo) {
+        return CompletableFuture.completedFuture(EMPLOYEE_REPOSITORY.getEmailsByDepartmentId(sendTo));
+    }
+
+    @Async
+    public CompletableFuture<List<String>> getEmailsByUserId(Long sendTo) {
+        return CompletableFuture.completedFuture(EMPLOYEE_REPOSITORY.getEmailsByUserId(sendTo));
     }
 }
