@@ -3,18 +3,18 @@ package com.echo.acknowledgehub.service;
 import com.echo.acknowledgehub.bean.CheckingBean;
 import com.echo.acknowledgehub.constant.*;
 import com.echo.acknowledgehub.dto.AnnouncementDTO;
+import com.echo.acknowledgehub.dto.AnnouncementDTOForShowing;
 import com.echo.acknowledgehub.entity.Announcement;
 import com.echo.acknowledgehub.entity.AnnouncementCategory;
 import com.echo.acknowledgehub.repository.AnnouncementRepository;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
+import org.checkerframework.checker.units.qual.Temperature;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-
 import java.time.LocalDateTime;
-
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -103,6 +103,10 @@ public class AnnouncementService {
     }
 
     @Transactional
+    public List<AnnouncementDTOForShowing> getAnnouncementByReceiverTypeAndId(ReceiverType receiverType ,Long receiverId) {
+        return ANNOUNCEMENT_REPOSITORY.findAnnouncementDTOsByReceiverType(receiverType, receiverId);
+    }
+  
     public List<Long> getSelectedAllAnnouncements() {
         return ANNOUNCEMENT_REPOSITORY.getSelectedAllAnnouncements(SelectAll.TRUE);
     }
@@ -111,6 +115,7 @@ public class AnnouncementService {
     public int getCountSelectAllAnnouncements() {
         return ANNOUNCEMENT_REPOSITORY.getSelectAllCountAnnouncements(SelectAll.TRUE);
     }
+
 
 //    public List<AnnouncementDTO> mapToDtoList(List<Object[]> objLists) {
 //        return objLists.stream().map(this::mapToDto).collect(Collectors.toList());
@@ -129,6 +134,11 @@ public class AnnouncementService {
 //        dto.setFileUrl((String) row[8]);
 //        return dto;
 //    }
+
+    public List<AnnouncementDTO> mapToDtoList(List<Object[]> objLists) {
+        return objLists.stream().map(this::mapToDto).collect(Collectors.toList());
+    }
+
 }
 
 

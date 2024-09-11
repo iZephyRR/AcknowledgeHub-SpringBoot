@@ -3,6 +3,9 @@ package com.echo.acknowledgehub.repository;
 
 import com.echo.acknowledgehub.constant.AnnouncementStatus;
 import com.echo.acknowledgehub.constant.IsSchedule;
+import com.echo.acknowledgehub.constant.ReceiverType;
+import com.echo.acknowledgehub.dto.AnnouncementDTO;
+import com.echo.acknowledgehub.dto.AnnouncementDTOForShowing;
 import com.echo.acknowledgehub.constant.SelectAll;
 import com.echo.acknowledgehub.dto.AnnouncementDTO;
 import com.echo.acknowledgehub.entity.Announcement;
@@ -10,7 +13,6 @@ import com.echo.acknowledgehub.entity.AnnouncementCategory;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -38,6 +40,18 @@ public interface AnnouncementRepository extends JpaRepository <Announcement,Long
             @Param("now") LocalDateTime now
     );
 
+
+    @Query("SELECT new com.echo.acknowledgehub.dto.AnnouncementDTOForShowing(a.id, a.title, a.contentType, a.pdfLink) " +
+            "FROM Target t " +
+            "JOIN t.announcement a " +
+            "WHERE t.receiverType = :receiverType AND t.sendTo = :receiverId")
+    List<AnnouncementDTOForShowing> findAnnouncementDTOsByReceiverType(@Param("receiverType") ReceiverType receiverType,
+                                                                   @Param("receiverId") Long receiverId);
+
+
+
+
+
     @Query("select id from Announcement where selectAll=:selectAll")
     List<Long> getSelectedAllAnnouncements(@Param("selectAll") SelectAll selectAll);
 
@@ -45,3 +59,4 @@ public interface AnnouncementRepository extends JpaRepository <Announcement,Long
     int getSelectAllCountAnnouncements(@Param("selectAll") SelectAll selectAll);
 
 }
+
