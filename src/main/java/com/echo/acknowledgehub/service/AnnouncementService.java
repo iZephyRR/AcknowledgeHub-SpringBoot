@@ -1,5 +1,6 @@
 package com.echo.acknowledgehub.service;
 
+import com.echo.acknowledgehub.bean.CheckingBean;
 import com.echo.acknowledgehub.constant.*;
 import com.echo.acknowledgehub.dto.AnnouncementDTO;
 import com.echo.acknowledgehub.entity.Announcement;
@@ -31,12 +32,12 @@ public class AnnouncementService {
     private static final Logger LOGGER = Logger.getLogger(AnnouncementService.class.getName());
     private final AnnouncementRepository ANNOUNCEMENT_REPOSITORY;
     private final CloudinaryService CLOUD_SERVICE;
+    private final CheckingBean CHECKING_BEAN;
 
     @Async
     public CompletableFuture<Optional<Announcement>> findById(Long id) {
         return CompletableFuture.completedFuture(ANNOUNCEMENT_REPOSITORY.findById(id));
     }
-
 
     public Announcement save(Announcement announcement) throws IOException {
         return ANNOUNCEMENT_REPOSITORY.save(announcement);
@@ -59,10 +60,14 @@ public class AnnouncementService {
         return ANNOUNCEMENT_REPOSITORY.findAllByDateBetween(startDateTime, endDateTime);
     }
 
-    @Transactional
-    public List<AnnouncementDTO> getAllAnnouncements() {
-        List<Object[]> objectList = ANNOUNCEMENT_REPOSITORY.getAllAnnouncements();
-        return mapToDtoList(objectList);
+
+    public List<Announcement> getAll() {
+
+        return ANNOUNCEMENT_REPOSITORY.findAll();
+    }
+
+    public CompletableFuture<List<AnnouncementDTO>> getByCompany(){
+        return CompletableFuture.completedFuture(ANNOUNCEMENT_REPOSITORY.getByCompany(CHECKING_BEAN.getCompanyId()));
     }
 
     public long countAnnouncements() {
@@ -107,23 +112,23 @@ public class AnnouncementService {
         return ANNOUNCEMENT_REPOSITORY.getSelectAllCountAnnouncements(SelectAll.TRUE);
     }
 
-    public List<AnnouncementDTO> mapToDtoList(List<Object[]> objLists) {
-        return objLists.stream().map(this::mapToDto).collect(Collectors.toList());
-    }
+//    public List<AnnouncementDTO> mapToDtoList(List<Object[]> objLists) {
+//        return objLists.stream().map(this::mapToDto).collect(Collectors.toList());
+//    }
 
-    public AnnouncementDTO mapToDto(Object[] row) {
-        AnnouncementDTO dto = new AnnouncementDTO();
-        dto.setId((Long) row[0]);
-        dto.setCreatedAt(LocalDateTime.parse(((LocalDateTime) row[1]).format(DateTimeFormatter.ISO_DATE_TIME)));
-        dto.setStatus((AnnouncementStatus) row[2]);
-        dto.setTitle((String) row[3]);
-        dto.setContentType((ContentType) row[4]);
-        dto.setCategoryName((String) row[5]);
-        dto.setCreatedBy((String) row[6]);
-        dto.setRole((EmployeeRole) row[7]);
-        dto.setFileUrl((String) row[8]);
-        return dto;
-    }
+//    public AnnouncementDTO mapToDto(Object[] row) {
+//        AnnouncementDTO dto = new AnnouncementDTO();
+//        dto.setId((Long) row[0]);
+//        dto.setCreatedAt(LocalDateTime.parse(((LocalDateTime) row[1]).format(DateTimeFormatter.ISO_DATE_TIME)));
+//        dto.setStatus((AnnouncementStatus) row[2]);
+//        dto.setTitle((String) row[3]);
+//        dto.setContentType((ContentType) row[4]);
+//        dto.setCategoryName((String) row[5]);
+//        dto.setCreatedBy((String) row[6]);
+//        dto.setRole((EmployeeRole) row[7]);
+//        dto.setFileUrl((String) row[8]);
+//        return dto;
+//    }
 }
 
 
