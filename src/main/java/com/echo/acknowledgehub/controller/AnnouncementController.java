@@ -10,6 +10,7 @@ import com.echo.acknowledgehub.util.EmailSender;
 import com.echo.acknowledgehub.util.JWTService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.inject.Qualifier;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.AllArgsConstructor;
 import org.apache.commons.compress.utils.IOUtils;
 import org.modelmapper.ModelMapper;
@@ -346,9 +347,11 @@ public class AnnouncementController {
         return new CustomMultipartFile(fileBytes, fileName, contentType);
     }
 
-    @GetMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
-    private Optional<Announcement> findById(@PathVariable("id") Long id) {
-        return ANNOUNCEMENT_SERVICE.findById(id).join();
+    @GetMapping(value = "/{id}" , produces = MediaType.APPLICATION_JSON_VALUE)
+    private AnnouncementDTO findById(@PathVariable("id") Long id){
+        Announcement announcement = ANNOUNCEMENT_SERVICE.findById(id).join()
+                .orElseThrow(() -> new EntityNotFoundException("Announcement not found with id: " + id));
+        return MODEL_MAPPER.map(announcement, AnnouncementDTO.class);
     }
 
     @GetMapping(value = "/count", produces = MediaType.APPLICATION_JSON_VALUE)
