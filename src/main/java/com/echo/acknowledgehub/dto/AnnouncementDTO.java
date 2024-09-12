@@ -34,7 +34,7 @@ public class AnnouncementDTO {
     private IsSchedule isSchedule;
     private ContentType contentType;
     private EmployeeRole role;
-    private String channel;
+    private String isEmailSelected;
     private boolean selectAll;
 
     public AnnouncementDTO(String title, LocalDateTime createdAt, AnnouncementStatus status, String categoryName, String createdBy){

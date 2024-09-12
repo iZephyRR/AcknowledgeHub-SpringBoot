@@ -75,7 +75,6 @@ public class NotificationController {
             docData.put("targetId", notificationDTO.getTargetId().toString());
             docData.put("targetName", notificationDTO.getTargetName());
         }
-
         return docData;
     }
 }
