@@ -2,6 +2,7 @@ package com.echo.acknowledgehub.configuration;
 
 import com.echo.acknowledgehub.bean.SystemDataBean;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.AllArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.convention.MatchingStrategies;
@@ -28,10 +29,11 @@ public class AppConfiguration implements WebMvcConfigurer {
     }
 
     @Bean
-    public ObjectMapper objectMapper(){
-        return new ObjectMapper();
+    public ObjectMapper objectMapper() {
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.registerModule(new JavaTimeModule());
+        return mapper;
     }
-
     @Override
     public void configureAsyncSupport(AsyncSupportConfigurer configure) {
         configure.setDefaultTimeout(60000);

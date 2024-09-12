@@ -6,6 +6,7 @@ import com.echo.acknowledgehub.dto.*;
 import com.echo.acknowledgehub.entity.*;
 import com.echo.acknowledgehub.service.*;
 import com.echo.acknowledgehub.util.CustomMultipartFile;
+import com.echo.acknowledgehub.util.EmailSender;
 import com.echo.acknowledgehub.util.JWTService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.inject.Qualifier;
@@ -17,12 +18,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -32,7 +31,6 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.logging.Logger;
-
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -51,9 +49,10 @@ public class AnnouncementController {
     private final CompanyService COMPANY_SERVICE;
     private final DepartmentService DEPARTMENT_SERVICE;
     private final AnnouncementCategoryService ANNOUNCEMENT_CATEGORY_SERVICE;
-    //private final TelegramService TELEGRAM_SERVICE;
+    private final TelegramService TELEGRAM_SERVICE;
     private final TargetService TARGET_SERVICE;
     private final DraftService DRAFT_SERVICE;
+    private final EmailSender EMAIL_SENDER;
 
     @Scheduled(fixedRate = 60000)
     public void checkPendingAnnouncements() throws IOException {
@@ -67,21 +66,26 @@ public class AnnouncementController {
             List<String> selectedChannels = saveTargetsForSchedule.getSelectedChannels();
             TARGET_SERVICE.insertTargetWithNotifications(targetList, announcement);
             List<Long> chatIdsList = List.of();
+            List<String> emails=List.of();
             for (Target target : targetList) {
                 String receiverType = target.getReceiverType().name();
                 Long sendTo = target.getSendTo();
                 if (receiverType.equals("COMPANY")) {
+                   emails = EMPLOYEE_SERVICE.getEmailsByCompanyId(sendTo).join();
                     chatIdsList = EMPLOYEE_SERVICE.getAllChatIdByCompanyId(sendTo);
                 } else if (receiverType.equals("DEPARTMENT")) {
+                  emails = EMPLOYEE_SERVICE.getEmailsByDepartmentId(sendTo).join();
                     chatIdsList = EMPLOYEE_SERVICE.getAllChatIdByDepartmentId(sendTo);
                 }
                 for (String channel : selectedChannels) {
                     if ("Telegram".equalsIgnoreCase(channel)) {
                         LOGGER.info("link : " + announcement.getPdfLink());
-                        //TELEGRAM_SERVICE.sendToTelegram(chatIdsList, announcement.getContentType().getFirstValue(), announcement.getId(), announcement.getPdfLink(), announcement.getTitle(), announcement.getEmployee().getName());
+                        TELEGRAM_SERVICE.sendToTelegram(chatIdsList, announcement.getContentType().getFirstValue(), announcement.getId(), announcement.getPdfLink(), announcement.getTitle(), announcement.getEmployee().getName());
                     }
                     if ("Email".equalsIgnoreCase(channel)) {
-                        // email service
+                         for (String address : emails) {
+                            EMAIL_SENDER.sendEmail(new EmailDTO(address,announcement.getTitle(),"Test link...",null));
+                        }
                     }
                 }
             }
@@ -163,25 +167,33 @@ public class AnnouncementController {
             List<Target> targets = TARGET_SERVICE.saveTargets(targetList);
             handleTargetsAndNotifications(targets, announcement); // target save, send notification
             List<Long> chatIdsList = List.of();
+            List<String> emails=List.of();
             for (Target target : targets) {
                 String receiverType = target.getReceiverType().name();
                 Long sendTo = target.getSendTo();
                 if (receiverType.equals("COMPANY")) {
                     chatIdsList = EMPLOYEE_SERVICE.getAllChatIdByCompanyId(sendTo);
+                    emails = EMPLOYEE_SERVICE.getEmailsByCompanyId(sendTo).join();
                     LOGGER.info("Chat IDs for COMPANY with ID " + sendTo + ": " + chatIdsList);
                 } else if (receiverType.equals("DEPARTMENT")) {
                     chatIdsList = EMPLOYEE_SERVICE.getAllChatIdByDepartmentId(sendTo);
+                    emails = EMPLOYEE_SERVICE.getEmailsByDepartmentId(sendTo).join();
                     LOGGER.info("Chat IDs for DEPARTMENT with ID " + sendTo + ": " + chatIdsList);
                 } else if (receiverType.equals(("EMPLOYEE"))) {
                     Long chatId = EMPLOYEE_SERVICE.getChatIdByUserId(sendTo);
-                    chatIdsList = List.of(chatId);
+                    emails = EMPLOYEE_SERVICE.getEmailsByUserId(sendTo).join();
+                    if(chatId!=null){
+                        chatIdsList = List.of(chatId);
+                    }
                 }
                 for (String channel : selectedChannels) {
                     if ("Telegram".equalsIgnoreCase(channel)) {
-                        //TELEGRAM_SERVICE.sendToTelegram(chatIdsList, announcement.getContentType().getFirstValue(), announcement.getId(), announcement.getPdfLink(), announcement.getTitle(), announcement.getEmployee().getName());
+                        TELEGRAM_SERVICE.sendToTelegram(chatIdsList, announcement.getContentType().getFirstValue(), announcement.getId(), announcement.getPdfLink(), announcement.getTitle(), announcement.getEmployee().getName());
                     }
                     if ("Email".equalsIgnoreCase(channel)) {
-                        // email service
+                        for (String address : emails) {
+                            EMAIL_SENDER.sendEmail(new EmailDTO(address,announcement.getTitle(),"Test link...",null));
+                        }
                     }
                 }
             }
@@ -272,9 +284,14 @@ public class AnnouncementController {
         return ResponseEntity.ok(DRAFT_SERVICE.getDrafts(loggedInId));
     }
 
-    @GetMapping(value = "/get-all", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<List<AnnouncementDTO>> getAllAnnouncements() {
-        return ResponseEntity.ok(ANNOUNCEMENT_SERVICE.getAllAnnouncements());
+    @GetMapping("/get-all")
+    public List<Announcement> getAll() {
+        return ANNOUNCEMENT_SERVICE.getAll();
+    }
+
+    @GetMapping("/get-by-company")
+    public List<AnnouncementDTO> getByCompany(){
+        return ANNOUNCEMENT_SERVICE.getByCompany().join();
     }
 
     @GetMapping(value = "/aug-to-oct-2024", produces = MediaType.APPLICATION_JSON_VALUE)
