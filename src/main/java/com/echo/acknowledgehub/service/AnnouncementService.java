@@ -4,6 +4,7 @@ import com.echo.acknowledgehub.bean.CheckingBean;
 import com.echo.acknowledgehub.constant.*;
 import com.echo.acknowledgehub.dto.AnnouncementDTO;
 import com.echo.acknowledgehub.dto.AnnouncementDTOForShowing;
+import com.echo.acknowledgehub.dto.DataPreviewDTO;
 import com.echo.acknowledgehub.entity.Announcement;
 import com.echo.acknowledgehub.entity.AnnouncementCategory;
 import com.echo.acknowledgehub.repository.AnnouncementRepository;
@@ -13,6 +14,7 @@ import org.checkerframework.checker.units.qual.Temperature;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.multipart.MultipartFile;
 import java.time.LocalDateTime;
 import java.io.IOException;
@@ -117,27 +119,40 @@ public class AnnouncementService {
     }
 
 
-//    public List<AnnouncementDTO> mapToDtoList(List<Object[]> objLists) {
-//        return objLists.stream().map(this::mapToDto).collect(Collectors.toList());
-//    }
-
-//    public AnnouncementDTO mapToDto(Object[] row) {
-//        AnnouncementDTO dto = new AnnouncementDTO();
-//        dto.setId((Long) row[0]);
-//        dto.setCreatedAt(LocalDateTime.parse(((LocalDateTime) row[1]).format(DateTimeFormatter.ISO_DATE_TIME)));
-//        dto.setStatus((AnnouncementStatus) row[2]);
-//        dto.setTitle((String) row[3]);
-//        dto.setContentType((ContentType) row[4]);
-//        dto.setCategoryName((String) row[5]);
-//        dto.setCreatedBy((String) row[6]);
-//        dto.setRole((EmployeeRole) row[7]);
-//        dto.setFileUrl((String) row[8]);
-//        return dto;
-//    }
-
     public List<AnnouncementDTO> mapToDtoList(List<Object[]> objLists) {
         return objLists.stream().map(this::mapToDto).collect(Collectors.toList());
     }
+
+    public AnnouncementDTO mapToDto(Object[] row) {
+        AnnouncementDTO dto = new AnnouncementDTO();
+        dto.setId((Long) row[0]);
+        dto.setCreatedAt(LocalDateTime.parse(((LocalDateTime) row[1]).format(DateTimeFormatter.ISO_DATE_TIME)));
+        dto.setStatus((AnnouncementStatus) row[2]);
+        dto.setTitle((String) row[3]);
+        dto.setContentType((ContentType) row[4]);
+        dto.setCategoryName((String) row[5]);
+        dto.setCreatedBy((String) row[6]);
+        dto.setRole((EmployeeRole) row[7]);
+        dto.setFileUrl((String) row[8]);
+        return dto;
+    }
+
+    @Async
+    public CompletableFuture<List<DataPreviewDTO>> getMainPreviews(){
+        return CompletableFuture.completedFuture(ANNOUNCEMENT_REPOSITORY.getMainPreviews(CHECKING_BEAN.getCompanyId()
+                ,CHECKING_BEAN.getDepartmentId()
+                ,CHECKING_BEAN.getId()
+        ));
+    }
+
+    @Async
+    public CompletableFuture<List<DataPreviewDTO>> getSubPreviews(){
+        return CompletableFuture.completedFuture(ANNOUNCEMENT_REPOSITORY.getSubPreviews(CHECKING_BEAN.getCompanyId()
+                ,CHECKING_BEAN.getDepartmentId()
+                ,CHECKING_BEAN.getId()
+        ));
+    }
+
 
 }
 

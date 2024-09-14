@@ -13,8 +13,8 @@ public class Comment {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", columnDefinition = "BIGINT")
     private Long id;
-    @Column(name = "title", nullable = false, columnDefinition = "VARCHAR(100)")
-    private String title;
+    @Column(name = "content", nullable = false, columnDefinition = "VARCHAR(500)")
+    private String content;
 
     @ManyToOne(cascade = CascadeType.MERGE)
     @JoinColumn(name = "announcement_id" ,nullable = false)

@@ -97,7 +97,7 @@ public class TelegramService extends TelegramLongPollingBot {
        editMessage.setReplyMarkup(null);
        try {
            execute(editMessage);
-           sendMessageAfterNotice(chatId);
+           //sendMessageAfterNotice(chatId);
        } catch (TelegramApiException e) {
            LOGGER.info("Error editing message: " + e.getMessage());
        }

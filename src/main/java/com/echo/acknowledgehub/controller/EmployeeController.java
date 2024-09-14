@@ -53,9 +53,7 @@ public class EmployeeController {
 
     @GetMapping("/user/profile")
     private EmployeeProfileDTO findById(){
-        EmployeeProfileDTO employeeProfileDTO=EMPLOYEE_SERVICE.getProfileInfo(CHECKING_BEAN.getId()).join();
-        LOGGER.info("emp "+employeeProfileDTO);
-        return employeeProfileDTO;
+        return EMPLOYEE_SERVICE.getProfileInfo(CHECKING_BEAN.getId()).join();
     }
 
     @GetMapping("/hrs/user/by-department/{id}")

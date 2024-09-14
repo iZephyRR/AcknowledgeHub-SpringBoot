@@ -158,9 +158,14 @@ public class EmployeeService {
     }
 
     @Async
-    public CompletableFuture<EmployeeProfileDTO> getProfileInfo(long id) {
+    public CompletableFuture<EmployeeProfileDTO> getProfileInfo(Long id) {
         LOGGER.info("id : " + id);
-        return CompletableFuture.completedFuture(EMPLOYEE_REPOSITORY.getProfileInfo(id));
+        EmployeeProfileDTO employeeProfileDTO = EMPLOYEE_REPOSITORY.getProfileInfo(id);
+        if (employeeProfileDTO == null) {
+            return CompletableFuture.completedFuture(EMPLOYEE_REPOSITORY.getAdminProfileInfo(id));
+        } else {
+            return CompletableFuture.completedFuture(employeeProfileDTO);
+        }
     }
 
     public long countEmployees() {

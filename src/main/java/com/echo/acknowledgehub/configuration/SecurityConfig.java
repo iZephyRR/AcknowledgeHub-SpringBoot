@@ -49,7 +49,7 @@ public class SecurityConfig {
                 .requestMatchers(BASE_URL + "/auth/**", BASE_URL + "/check", BASE_URL + "/test/**", BASE_URL + "/send-email").permitAll()
               
                 // Configure routes to allow access for all authenticated users.
-                .requestMatchers(BASE_URL + "/user/**",BASE_URL + "/notifications/**", BASE_URL+"/announcement/getAnnouncementsByCompanyId", BASE_URL+"/announcement/getAnnouncementsByDepartmentId", BASE_URL+"/announcement/get-By-EmployeeId", BASE_URL+"/announcement/{id}").authenticated()
+                .requestMatchers(BASE_URL + "/user/**",BASE_URL + "/notifications/**", BASE_URL+"/announcement/getAnnouncementsByCompanyId", BASE_URL+"/announcement/getAnnouncementsByDepartmentId", BASE_URL+"/announcement/get-By-EmployeeId", BASE_URL+"/announcement/{id}", BASE_URL+"/announcement/get-main-previews", BASE_URL+"/announcement/get-sub-previews").authenticated()
                 // Configure routes to allow access only for system admin.
                 .requestMatchers(BASE_URL + "/ad/**").hasRole(EmployeeRole.ADMIN.name())
                 // Configure routes to allow access only for the main HR section.
@@ -69,7 +69,7 @@ public class SecurityConfig {
                  .requestMatchers(BASE_URL+"/hrs/**",BASE_URL + "/announcement/create",BASE_URL + "/announcement/uploadDraft",
                                                 BASE_URL + "/announcement/get-drafts",
                                                 BASE_URL + "/getCompanyById", BASE_URL + "/get-categories", BASE_URL +"/announcement/getDraftById/**",BASE_URL+"/announcement/get-by-company",
-                                                BASE_URL + "/announcement/delete-draft/**", BASE_URL + "/custom-target/**",
+                                                BASE_URL + "/announcement/delete-draft/**", BASE_URL + "/custom-target/**",BASE_URL+"/notifications/noted-count/**",
                          BASE_URL+ "/getUsersByCompanyId").hasAnyRole(EmployeeRole.MAIN_HR.name(),
                                                     EmployeeRole.HR.name(),  EmployeeRole.MAIN_HR_ASSISTANCE.name(),EmployeeRole.HR_ASSISTANCE.name())
         ).userDetailsService(USER_DETAILS_SERVICE).sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)).addFilterBefore(JWT_AUTHENTICATION_FILTER, UsernamePasswordAuthenticationFilter.class).build();

@@ -9,12 +9,15 @@ import com.echo.acknowledgehub.entity.*;
 import com.echo.acknowledgehub.repository.TargetRepository;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
+import org.hibernate.Cache;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.logging.Logger;
 
@@ -28,27 +31,34 @@ public class TargetService {
     private final CompanyService COMPANY_SERVICE;
     private final NotificationController NOTIFICATION_CONTROLLER;
     private final CheckingBean CHECKING_BEAN;
+    private final CustomTargetGroupEntityService CUSTOM_TARGET_GROUP_ENTITY_SERVICE;
 
     @Transactional
     @Async
     public CompletableFuture<Void> insertTargetWithNotifications(List<Target> targets, Announcement announcement) {
         NotificationDTO notificationDTO = buildNotificationDTO(announcement);
         for (Target target : targets) {
-            switch (target.getReceiverType()) {
-                case EMPLOYEE:
-                    addNotificationForEmployee(target.getSendTo(), notificationDTO);
-                    break;
-                case DEPARTMENT:
-                    addNotificationsForDepartment(target.getSendTo(), notificationDTO);
-                    break;
-                case COMPANY:
-                    addNotificationsForCompany(target.getSendTo(), notificationDTO);
-                    break;
-                default:
-                    LOGGER.warning("Unknown receiver type: " + target.getReceiverType());
+            ReceiverType receiverType = target.getReceiverType();
+            Long sendTo = target.getSendTo();
+            Set<NotificationDTO> notificationDTOSet = new HashSet<>();
+            if (receiverType == ReceiverType.COMPANY) {
+
+            } else if (receiverType == ReceiverType.DEPARTMENT) {
+
+            } else if (receiverType == ReceiverType.EMPLOYEE) {
+
+            } else if(receiverType == ReceiverType.CUSTOM) {
+                List<CustomTargetGroupEntity> groupEntities = CUSTOM_TARGET_GROUP_ENTITY_SERVICE.getAllGroupEntity(sendTo);
+
             }
         }
         return null;
+    }
+
+    private void cloneAndSendNotifications (NotificationDTO notificationDTO) {
+        NotificationDTO cloneNotificationDTO = cloneNotificationDTO(notificationDTO);
+        NOTIFICATION_CONTROLLER.saveNotificationInFirebase(cloneNotificationDTO);
+        NOTIFICATION_CONTROLLER.sendNotification(cloneNotificationDTO);
     }
 
     private CompletableFuture<Void> addNotificationForEmployee(Long employeeId, NotificationDTO notificationDTO) {
@@ -56,18 +66,13 @@ public class TargetService {
                 .thenAccept(optionalEmployee -> {
                     optionalEmployee.ifPresentOrElse(employee -> {
                         LOGGER.info("Sending notification to employee ID: " + employeeId);
-
-                        // Set notification details
                         notificationDTO.setUserId(employeeId);
                         notificationDTO.setReceiverType(ReceiverType.EMPLOYEE);
                         notificationDTO.setReceiverId(employeeId);
 
-                        // Clone the notification for this employee
-                        NotificationDTO employeeNotificationDTO = cloneNotificationDTO(notificationDTO, employeeId);
-
-                        // Save and send the notification
-                        NOTIFICATION_CONTROLLER.saveNotificationInFirebase(employeeNotificationDTO);
-                        NOTIFICATION_CONTROLLER.sendNotification(employeeNotificationDTO);
+//                        NotificationDTO employeeNotificationDTO = cloneNotificationDTO(notificationDTO, employeeId);
+//                        NOTIFICATION_CONTROLLER.saveNotificationInFirebase(employeeNotificationDTO);
+//                        NOTIFICATION_CONTROLLER.sendNotification(employeeNotificationDTO);
                     }, () -> {
                         LOGGER.warning("Employee not found for ID: " + employeeId);
                     });
@@ -80,18 +85,18 @@ public class TargetService {
 
     private void addNotificationsForDepartment(Long departmentId, NotificationDTO notificationDTO) {
         EMPLOYEE_SERVICE.findByDepartmentId(departmentId)
-                .thenAccept( employeeIds -> {
+                .thenAccept(employeeIds -> {
                     for (Long employeeId : employeeIds) {
                         LOGGER.info("employee id from department: " + employeeId);
                         // Set the userId to each employee's ID
                         notificationDTO.setUserId(employeeId);
                         notificationDTO.setReceiverType(ReceiverType.DEPARTMENT);
                         notificationDTO.setReceiverId(departmentId);
-                        NotificationDTO departmentNotificationDTO = cloneNotificationDTO(notificationDTO, employeeId);
-                        NOTIFICATION_CONTROLLER.saveNotificationInFirebase(departmentNotificationDTO);
-                        NOTIFICATION_CONTROLLER.sendNotification(departmentNotificationDTO);
+//                        NotificationDTO departmentNotificationDTO = cloneNotificationDTO(notificationDTO, employeeId);
+//                        NOTIFICATION_CONTROLLER.saveNotificationInFirebase(departmentNotificationDTO);
+//                        NOTIFICATION_CONTROLLER.sendNotification(departmentNotificationDTO);
                     }
-                }).exceptionally(ex ->{
+                }).exceptionally(ex -> {
                     LOGGER.severe("Error sending notifications for company: " + ex.getMessage());
                     return null;
                 });
@@ -106,9 +111,10 @@ public class TargetService {
                         notificationDTO.setUserId(employeeId);
                         notificationDTO.setReceiverType(ReceiverType.COMPANY);
                         notificationDTO.setReceiverId(companyId);
-                        NotificationDTO companyNotificationDTO = cloneNotificationDTO(notificationDTO, employeeId);
-                        NOTIFICATION_CONTROLLER.saveNotificationInFirebase(companyNotificationDTO);
-                        NOTIFICATION_CONTROLLER.sendNotification(companyNotificationDTO);
+
+//                        NotificationDTO companyNotificationDTO = cloneNotificationDTO(notificationDTO, employeeId);
+//                        NOTIFICATION_CONTROLLER.saveNotificationInFirebase(companyNotificationDTO);
+//                        NOTIFICATION_CONTROLLER.sendNotification(companyNotificationDTO);
                     }
                 }).exceptionally(ex -> {
                     LOGGER.severe("Error sending notifications for company: " + ex.getMessage());
@@ -131,20 +137,20 @@ public class TargetService {
         return notificationDTO;
     }
 
-    private NotificationDTO cloneNotificationDTO(NotificationDTO original, Long newTargetId) {
+    private NotificationDTO cloneNotificationDTO(NotificationDTO original) {
         NotificationDTO clone = new NotificationDTO();
         clone.setTitle(original.getTitle());
         clone.setName(original.getName());
-        clone.setTargetId(newTargetId);
+        clone.setTargetId(original.getUserId());
         clone.setUserId(original.getUserId());
         clone.setAnnouncementId(original.getAnnouncementId());
         clone.setCategoryName(original.getCategoryName());
-       // clone.setStatus(original.getStatus());
+        // clone.setStatus(original.getStatus());
         clone.setType(original.getType());
         clone.setNoticeAt(original.getNoticeAt());
         clone.setTimestamp(original.getTimestamp());
         clone.setCompanyId(original.getCompanyId());
-        String targetName = resolveTargetNameById(newTargetId);
+        String targetName = resolveTargetNameById(original.getUserId());
         clone.setTargetName(targetName); // Add this line
         clone.setDepartmentId(original.getDepartmentId());
         clone.setReceiverType(original.getReceiverType());
@@ -152,6 +158,7 @@ public class TargetService {
 
         return clone;
     }
+
     private String resolveTargetNameById(Long targetId) {
         Optional<Employee> employee = EMPLOYEE_SERVICE.findById(targetId).join();
         if (employee.isPresent()) {
@@ -167,6 +174,7 @@ public class TargetService {
         }
         return "Unknown";  // Default if none found
     }
+
     public List<Target> saveTargets(List<Target> entityList) {
         return TARGET_REPOSITORY.saveAll(entityList);
     }

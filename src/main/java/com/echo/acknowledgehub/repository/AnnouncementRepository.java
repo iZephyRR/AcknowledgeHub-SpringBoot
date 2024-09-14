@@ -1,6 +1,7 @@
 package com.echo.acknowledgehub.repository;
 
 
+import com.echo.acknowledgehub.bean.CheckingBean;
 import com.echo.acknowledgehub.constant.AnnouncementStatus;
 import com.echo.acknowledgehub.constant.IsSchedule;
 import com.echo.acknowledgehub.constant.ReceiverType;
@@ -8,6 +9,7 @@ import com.echo.acknowledgehub.dto.AnnouncementDTO;
 import com.echo.acknowledgehub.dto.AnnouncementDTOForShowing;
 import com.echo.acknowledgehub.constant.SelectAll;
 import com.echo.acknowledgehub.dto.AnnouncementDTO;
+import com.echo.acknowledgehub.dto.DataPreviewDTO;
 import com.echo.acknowledgehub.entity.Announcement;
 import com.echo.acknowledgehub.entity.AnnouncementCategory;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -48,15 +50,46 @@ public interface AnnouncementRepository extends JpaRepository <Announcement,Long
     List<AnnouncementDTOForShowing> findAnnouncementDTOsByReceiverType(@Param("receiverType") ReceiverType receiverType,
                                                                    @Param("receiverId") Long receiverId);
 
-
-
-
-
     @Query("select id from Announcement where selectAll=:selectAll")
     List<Long> getSelectedAllAnnouncements(@Param("selectAll") SelectAll selectAll);
 
     @Query("select count(a) from Announcement a where a.selectAll=:selectAll")
     int getSelectAllCountAnnouncements(@Param("selectAll") SelectAll selectAll);
 
-}
+    @Query("SELECT new com.echo.acknowledgehub.dto.DataPreviewDTO(t.announcement.id, t.announcement.title) " +
+            "FROM Target t " +
+            "JOIN CustomTargetGroupEntity c ON c.customTargetGroup.id = t.sendTo " +
+            "WHERE (t.announcement.employee.role = 'MAIN_HR' OR t.announcement.employee.role = 'MAIN_HR_ASSISTANCE') " +
+            "AND ((t.receiverType = 'COMPANY' AND t.sendTo = :companyId) " +
+            "OR (t.receiverType = 'DEPARTMENT' AND t.sendTo = :departmentId) " +
+            "OR (t.receiverType = 'EMPLOYEE' AND t.sendTo = :employeeId) " +
+            "OR (t.receiverType = 'CUSTOM' AND " +
+            "((c.receiverType = 'COMPANY' AND c.sendTo = :companyId) " +
+            "OR (c.receiverType = 'DEPARTMENT' AND c.sendTo = :departmentId) " +
+            "OR (c.receiverType = 'EMPLOYEE' AND c.sendTo = :employeeId)))) " +
+            "GROUP BY t.announcement.id " +
+            "ORDER BY t.announcement.createdAt DESC")
+    List<DataPreviewDTO> getMainPreviews(@Param("companyId") Long companyId,
+                                         @Param("departmentId") Long departmentId,
+                                         @Param("employeeId") Long employeeId);
 
+    @Query("SELECT new com.echo.acknowledgehub.dto.DataPreviewDTO(t.announcement.id, t.announcement.title) " +
+            "FROM Target t " +
+            "JOIN CustomTargetGroupEntity c ON c.customTargetGroup.id = t.sendTo " +
+            "WHERE (t.announcement.employee.role = 'HR' OR t.announcement.employee.role = 'HR_ASSISTANCE') " +
+            "AND ((t.receiverType = 'COMPANY' AND t.sendTo = :companyId) " +
+            "OR (t.receiverType = 'DEPARTMENT' AND t.sendTo = :departmentId) " +
+            "OR (t.receiverType = 'EMPLOYEE' AND t.sendTo = :employeeId) " +
+            "OR (t.receiverType = 'CUSTOM' AND " +
+            "((c.receiverType = 'COMPANY' AND c.sendTo = :companyId) " +
+            "OR (c.receiverType = 'DEPARTMENT' AND c.sendTo = :departmentId) " +
+            "OR (c.receiverType = 'EMPLOYEE' AND c.sendTo = :employeeId)))) " +
+            "GROUP BY t.announcement.id " +
+            "ORDER BY t.announcement.createdAt DESC")
+    List<DataPreviewDTO> getSubPreviews(@Param("companyId") Long companyId,
+                                         @Param("departmentId") Long departmentId,
+                                         @Param("employeeId") Long employeeId);
+
+}
+// OR (t.receiverType='CUSTOM' AND ((c.receiverType='COMPANY' AND c.sendTo = :companyId) OR (c.receiverType='DEPARTMENT' AND c.sendTo = :departmentId) OR (c.receiverType='EMPLOYEE' AND c.sendTo = :employeeId)))
+//JOIN CustomTargetGroupEntity c ON c.customTargetGroup.id = t.sendTo
