@@ -47,7 +47,7 @@ public class Employee implements UserDetails {
     private Gender gender;
     @Column(name = "dob", columnDefinition = "DATE")
     private Date dob;
-    @Column(name = "photo_link", columnDefinition = "MEDIUMBOLB")
+    @Column(name = "photo_link", columnDefinition = "MEDIUMBLOB")
     private byte[] photoLink;
     @Column(name = "address", columnDefinition = "VARCHAR(125)")
     private String address;

@@ -59,7 +59,7 @@ public class AnnouncementController {
     private final CustomTargetGroupEntityService CUSTOM_TARGET_GROUP_ENTITY_SERVICE;
 
     @Scheduled(fixedRate = 60000)
-    public void checkPendingAnnouncements() throws IOException {
+    public void checkPendingAnnouncements() throws IOException, ExecutionException, InterruptedException {
         List<Announcement> pendingAnnouncementsScheduled = ANNOUNCEMENT_SERVICE.findPendingAnnouncementsScheduledForNow(LocalDateTime.now());
         LOGGER.info("in schedule");
         for (Announcement announcement : pendingAnnouncementsScheduled) {
@@ -68,20 +68,28 @@ public class AnnouncementController {
             SaveTargetsForSchedule saveTargetsForSchedule = targetStorage.get(announcement.getId());
             List<Target> targetList = saveTargetsForSchedule.getTargets();
             String emailSelected = saveTargetsForSchedule.getIsEmailSelected();
-            TARGET_SERVICE.insertTargetWithNotifications(targetList, announcement);
-            List<Long> chatIdsList = List.of();
-            List<String> emails = List.of();
+            handleTargetsAndNotifications(targetList,announcement);
+            Set<Long> chatIdsSet = new HashSet<>();
+            Set<String> emails = new HashSet<>();
             for (Target target : targetList) {
-                String receiverType = target.getReceiverType().name();
+                ReceiverType receiverType = target.getReceiverType();
                 Long sendTo = target.getSendTo();
-                if (receiverType.equals("COMPANY")) {
-                    emails = EMPLOYEE_SERVICE.getEmailsByCompanyId(sendTo).join();
-                    chatIdsList = EMPLOYEE_SERVICE.getAllChatIdByCompanyId(sendTo);
-                } else if (receiverType.equals("DEPARTMENT")) {
-                    emails = EMPLOYEE_SERVICE.getEmailsByDepartmentId(sendTo).join();
-                    chatIdsList = EMPLOYEE_SERVICE.getAllChatIdByDepartmentId(sendTo);
+                if (receiverType == ReceiverType.COMPANY) {
+                    chatIdsSet.addAll(EMPLOYEE_SERVICE.getAllChatIdByCompanyId(sendTo));
+                    emails.addAll(EMPLOYEE_SERVICE.getEmailsByCompanyId(sendTo).join());
+                } else if (receiverType == ReceiverType.DEPARTMENT) {
+                    chatIdsSet.addAll(EMPLOYEE_SERVICE.getAllChatIdByDepartmentId(sendTo));
+                    emails.addAll(EMPLOYEE_SERVICE.getEmailsByDepartmentId(sendTo).join());
+                } else if (receiverType == ReceiverType.EMPLOYEE) {
+                    chatIdsSet.add(EMPLOYEE_SERVICE.getChatIdByUserId(sendTo));
+                    emails.add(String.valueOf(EMPLOYEE_SERVICE.getEmailsByUserId(sendTo).join()));
+                } else if(receiverType == ReceiverType.CUSTOM) {
+                    List<CustomTargetGroupEntity> groupEntities = CUSTOM_TARGET_GROUP_ENTITY_SERVICE.getAllGroupEntity(sendTo);
+                    chatIdsSet.addAll(handleChatIds(groupEntities));
+                    emails.addAll(handleEmails(groupEntities));
                 }
             }
+            List<Long> chatIdsList = new ArrayList<>(chatIdsSet);
             TELEGRAM_SERVICE.sendToTelegram(chatIdsList, announcement.getContentType().getFirstValue(), announcement.getId(), announcement.getPdfLink(), announcement.getTitle(), announcement.getEmployee().getName());
             if ("emailSelected".equalsIgnoreCase(emailSelected)) {
                 for (String address : emails) {
@@ -95,7 +103,7 @@ public class AnnouncementController {
     @PostMapping(value = "/create", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public void createAnnouncement(
             @ModelAttribute AnnouncementDTO announcementDTO
-    ) throws IOException {
+    ) throws IOException, ExecutionException, InterruptedException {
         ObjectMapper objectMapper = new ObjectMapper();
         List<TargetDTO> targetDTOList = objectMapper.readValue(announcementDTO.getTarget(), new TypeReference<List<TargetDTO>>() {
         });
@@ -234,7 +242,7 @@ public class AnnouncementController {
         return chatIdsSet;
     }
 
-    private void handleTargetsAndNotifications(List<Target> targetList, Announcement announcement) {
+    private void handleTargetsAndNotifications(List<Target> targetList, Announcement announcement) throws ExecutionException, InterruptedException {
         TARGET_SERVICE.insertTargetWithNotifications(targetList, announcement);
     }
 

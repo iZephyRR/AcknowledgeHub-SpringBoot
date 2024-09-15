@@ -7,6 +7,7 @@ import com.echo.acknowledgehub.dto.*;
 import com.echo.acknowledgehub.entity.Department;
 import com.echo.acknowledgehub.entity.Employee;
 import com.echo.acknowledgehub.exception_handler.DataNotFoundException;
+import com.echo.acknowledgehub.exception_handler.DuplicatedEnteryException;
 import com.echo.acknowledgehub.exception_handler.UpdatePasswordException;
 import com.echo.acknowledgehub.repository.AnnouncementRepository;
 import com.echo.acknowledgehub.repository.CompanyRepository;
@@ -129,7 +130,7 @@ public class EmployeeService {
     }
 
     @Async
-    public CompletableFuture<Employee> save(UserDTO user) {
+    private CompletableFuture<Employee> save(UserDTO user) {
         MAPPER.typeMap(UserDTO.class, Employee.class).addMappings(mapper -> {
             mapper.map(UserDTO::getDepartmentId, (Employee e, Long id) -> e.getDepartment().setId(id));
             mapper.map(UserDTO::getCompanyId, (Employee e, Long id) -> e.getCompany().setId(id));
@@ -138,6 +139,22 @@ public class EmployeeService {
         employee.setPassword(PASSWORD_ENCODER.encode("root"));
         LOGGER.info("Mapped employee : " + employee);
         return CompletableFuture.completedFuture(EMPLOYEE_REPOSITORY.save(employee));
+    }
+
+    @Async
+    public CompletableFuture<Employee> saveMainHR(MainHRDTO mainHRDTO) {
+        if(!existsMainHR().join()){
+            Employee employee = new Employee();
+            employee.setName(mainHRDTO.getName());
+            employee.setEmail(mainHRDTO.getEmail());
+            employee.setStaffId(mainHRDTO.getStaffId());
+            employee.setRole(EmployeeRole.MAIN_HR);
+            employee.setPassword(PASSWORD_ENCODER.encode(SYSTEM_DATA_BEAN.getDefaultPassword()));
+            return CompletableFuture.completedFuture(EMPLOYEE_REPOSITORY.save(employee));
+        }else{
+            throw new DuplicatedEnteryException("Main HR account already added.");
+        }
+
     }
 
     @Async
@@ -373,5 +390,10 @@ public class EmployeeService {
     @Async
     public CompletableFuture<List<String>> getEmailsByUserId(Long sendTo) {
         return CompletableFuture.completedFuture(EMPLOYEE_REPOSITORY.getEmailsByUserId(sendTo));
+    }
+
+    @Async
+    public CompletableFuture<Boolean> existsMainHR(){
+        return CompletableFuture.completedFuture(EMPLOYEE_REPOSITORY.existsMainHR());
     }
 }

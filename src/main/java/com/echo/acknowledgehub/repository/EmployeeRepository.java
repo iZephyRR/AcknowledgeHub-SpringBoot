@@ -136,6 +136,9 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
     @Query("SELECT new com.echo.acknowledgehub.dto.EmployeeProfileDTO(em.name, em.role, em.email) FROM Employee em WHERE em.id = :id")
     EmployeeProfileDTO getAdminProfileInfo(@Param("id") Long id);
 
+    @Query("SELECT COUNT(e) > 0 FROM Employee e WHERE e.role = 'MAIN_HR'")
+    Boolean existsMainHR();
+
 
 }
 

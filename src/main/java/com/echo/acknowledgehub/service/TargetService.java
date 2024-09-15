@@ -14,11 +14,9 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.logging.Logger;
 
 @Service
@@ -35,113 +33,69 @@ public class TargetService {
 
     @Transactional
     @Async
-    public CompletableFuture<Void> insertTargetWithNotifications(List<Target> targets, Announcement announcement) {
+    public CompletableFuture<Void> insertTargetWithNotifications(List<Target> targets, Announcement announcement) throws ExecutionException, InterruptedException {
         NotificationDTO notificationDTO = buildNotificationDTO(announcement);
+        Set<Long> uniqueEmployeeSet = new HashSet<>();
+        Map<Long, ReceiverType> employeeReceiverTypeMap = new HashMap<>();
+
         for (Target target : targets) {
-            ReceiverType receiverType = target.getReceiverType();
-            Long sendTo = target.getSendTo();
-            Set<NotificationDTO> notificationDTOSet = new HashSet<>();
-            if (receiverType == ReceiverType.COMPANY) {
-
-            } else if (receiverType == ReceiverType.DEPARTMENT) {
-
-            } else if (receiverType == ReceiverType.EMPLOYEE) {
-
-            } else if(receiverType == ReceiverType.CUSTOM) {
-                List<CustomTargetGroupEntity> groupEntities = CUSTOM_TARGET_GROUP_ENTITY_SERVICE.getAllGroupEntity(sendTo);
-
+            if (target.getReceiverType() == ReceiverType.COMPANY) {
+                Set<Long> companyEmployees = new HashSet<>(EMPLOYEE_SERVICE.findByCompanyId(target.getSendTo()).get());
+                updateEmployeeSetAndMap(uniqueEmployeeSet, employeeReceiverTypeMap, companyEmployees, ReceiverType.COMPANY);
+            } else if (target.getReceiverType() == ReceiverType.DEPARTMENT) {
+                Set<Long> departmentEmployees = new HashSet<>(EMPLOYEE_SERVICE.findByDepartmentId(target.getSendTo()).get());
+                updateEmployeeSetAndMap(uniqueEmployeeSet, employeeReceiverTypeMap, departmentEmployees, ReceiverType.DEPARTMENT);
+            } else if (target.getReceiverType() == ReceiverType.EMPLOYEE) {
+                uniqueEmployeeSet.add(target.getSendTo());
+                employeeReceiverTypeMap.put(target.getSendTo(), ReceiverType.EMPLOYEE);
+            } else if (target.getReceiverType() == ReceiverType.CUSTOM) {
+                List<CustomTargetGroupEntity> groupEntities = CUSTOM_TARGET_GROUP_ENTITY_SERVICE.getAllGroupEntity(target.getSendTo());
+                handleCustomGroupEntities(groupEntities, uniqueEmployeeSet, employeeReceiverTypeMap);
             }
         }
+        sendNotificationsForEmployees(uniqueEmployeeSet, employeeReceiverTypeMap, notificationDTO);
         return null;
     }
 
-    private void cloneAndSendNotifications (NotificationDTO notificationDTO) {
-        NotificationDTO cloneNotificationDTO = cloneNotificationDTO(notificationDTO);
-        NOTIFICATION_CONTROLLER.saveNotificationInFirebase(cloneNotificationDTO);
-        NOTIFICATION_CONTROLLER.sendNotification(cloneNotificationDTO);
+    private void updateEmployeeSetAndMap(Set<Long> uniqueEmployeeSet, Map<Long, ReceiverType> employeeReceiverTypeMap, Set<Long> employeeIds, ReceiverType receiverType) {
+        for (Long employeeId : employeeIds) {
+            uniqueEmployeeSet.add(employeeId);
+            employeeReceiverTypeMap.put(employeeId, receiverType);
+        }
     }
 
-    private CompletableFuture<Void> addNotificationForEmployee(Long employeeId, NotificationDTO notificationDTO) {
-        return EMPLOYEE_SERVICE.findById(employeeId)
-                .thenAccept(optionalEmployee -> {
-                    optionalEmployee.ifPresentOrElse(employee -> {
-                        LOGGER.info("Sending notification to employee ID: " + employeeId);
-                        notificationDTO.setUserId(employeeId);
-                        notificationDTO.setReceiverType(ReceiverType.EMPLOYEE);
-                        notificationDTO.setReceiverId(employeeId);
-
-//                        NotificationDTO employeeNotificationDTO = cloneNotificationDTO(notificationDTO, employeeId);
-//                        NOTIFICATION_CONTROLLER.saveNotificationInFirebase(employeeNotificationDTO);
-//                        NOTIFICATION_CONTROLLER.sendNotification(employeeNotificationDTO);
-                    }, () -> {
-                        LOGGER.warning("Employee not found for ID: " + employeeId);
-                    });
-                })
-                .exceptionally(ex -> {
-                    LOGGER.severe("Error sending notification to employee ID " + employeeId + ": " + ex.getMessage());
-                    return null;
-                });
+    private void handleCustomGroupEntities(List<CustomTargetGroupEntity> groupEntities, Set<Long> uniqueEmployeeSet, Map<Long, ReceiverType> employeeReceiverTypeMap) throws ExecutionException, InterruptedException {
+        for (CustomTargetGroupEntity target : groupEntities) {
+            if (target.getReceiverType() == ReceiverType.COMPANY) {
+                Set<Long> companyEmployees = new HashSet<>(EMPLOYEE_SERVICE.findByCompanyId(target.getSendTo()).get());
+                updateEmployeeSetAndMap(uniqueEmployeeSet, employeeReceiverTypeMap, companyEmployees, ReceiverType.COMPANY);
+            } else if (target.getReceiverType() == ReceiverType.DEPARTMENT) {
+                Set<Long> departmentEmployees = new HashSet<>(EMPLOYEE_SERVICE.findByDepartmentId(target.getSendTo()).get());
+                updateEmployeeSetAndMap(uniqueEmployeeSet, employeeReceiverTypeMap, departmentEmployees, ReceiverType.DEPARTMENT);
+            } else if (target.getReceiverType() == ReceiverType.EMPLOYEE) {
+                uniqueEmployeeSet.add(target.getSendTo());
+                employeeReceiverTypeMap.put(target.getSendTo(), ReceiverType.EMPLOYEE);
+            }
+        }
     }
 
-    private void addNotificationsForDepartment(Long departmentId, NotificationDTO notificationDTO) {
-        EMPLOYEE_SERVICE.findByDepartmentId(departmentId)
-                .thenAccept(employeeIds -> {
-                    for (Long employeeId : employeeIds) {
-                        LOGGER.info("employee id from department: " + employeeId);
-                        // Set the userId to each employee's ID
-                        notificationDTO.setUserId(employeeId);
-                        notificationDTO.setReceiverType(ReceiverType.DEPARTMENT);
-                        notificationDTO.setReceiverId(departmentId);
-//                        NotificationDTO departmentNotificationDTO = cloneNotificationDTO(notificationDTO, employeeId);
-//                        NOTIFICATION_CONTROLLER.saveNotificationInFirebase(departmentNotificationDTO);
-//                        NOTIFICATION_CONTROLLER.sendNotification(departmentNotificationDTO);
-                    }
-                }).exceptionally(ex -> {
-                    LOGGER.severe("Error sending notifications for company: " + ex.getMessage());
-                    return null;
-                });
+    private void sendNotificationsForEmployees(Set<Long> employeeSet, Map<Long, ReceiverType> employeeReceiverTypeMap, NotificationDTO notificationDTO) {
+        for (Long employeeId : employeeSet) {
+            ReceiverType receiverType = employeeReceiverTypeMap.get(employeeId);
+            notificationDTO.setUserId(employeeId);
+            notificationDTO.setReceiverType(receiverType);
+            notificationDTO.setReceiverId(employeeId);
+            NotificationDTO employeeNotificationDTO = cloneNotificationDTO(notificationDTO, employeeId);
+            NOTIFICATION_CONTROLLER.saveNotificationInFirebase(employeeNotificationDTO);
+            NOTIFICATION_CONTROLLER.sendNotification(employeeNotificationDTO);
+        }
     }
 
-    private void addNotificationsForCompany(Long companyId, NotificationDTO notificationDTO) {
-        EMPLOYEE_SERVICE.findByCompanyId(companyId)
-                .thenAccept(employeeIds -> {
-                    LOGGER.info("Sending notification to : " + employeeIds);
-                    for (Long employeeId : employeeIds) {
-                        LOGGER.info("Sending notification to employee ID from company: " + employeeId);
-                        notificationDTO.setUserId(employeeId);
-                        notificationDTO.setReceiverType(ReceiverType.COMPANY);
-                        notificationDTO.setReceiverId(companyId);
-
-//                        NotificationDTO companyNotificationDTO = cloneNotificationDTO(notificationDTO, employeeId);
-//                        NOTIFICATION_CONTROLLER.saveNotificationInFirebase(companyNotificationDTO);
-//                        NOTIFICATION_CONTROLLER.sendNotification(companyNotificationDTO);
-                    }
-                }).exceptionally(ex -> {
-                    LOGGER.severe("Error sending notifications for company: " + ex.getMessage());
-                    return null;
-                });
-    }
-
-    private NotificationDTO buildNotificationDTO(Announcement announcement) {
-        NotificationDTO notificationDTO = new NotificationDTO();
-        notificationDTO.setTitle(announcement.getTitle());
-        // notificationDTO.setUserId(CHECKING_BEAN.getId());
-        notificationDTO.setName(CHECKING_BEAN.getName());
-        notificationDTO.setCategoryName(announcement.getCategory().getName());
-        notificationDTO.setAnnouncementId(announcement.getId());
-        //notificationDTO.setStatus(NotificationStatus.SEND);
-        notificationDTO.setType(NotificationType.NEW);
-        notificationDTO.setNoticeAt(LocalDateTime.now());
-        notificationDTO.setTimestamp(LocalDateTime.now());
-        notificationDTO.setCompanyId(CHECKING_BEAN.getCompanyId());
-        return notificationDTO;
-    }
-
-    private NotificationDTO cloneNotificationDTO(NotificationDTO original) {
+    private NotificationDTO cloneNotificationDTO(NotificationDTO original, Long newTargetId) {
         NotificationDTO clone = new NotificationDTO();
         clone.setTitle(original.getTitle());
         clone.setName(original.getName());
-        clone.setTargetId(original.getUserId());
+        clone.setTargetId(newTargetId);
         clone.setUserId(original.getUserId());
         clone.setAnnouncementId(original.getAnnouncementId());
         clone.setCategoryName(original.getCategoryName());
@@ -157,6 +111,22 @@ public class TargetService {
         clone.setReceiverId(original.getReceiverId());
 
         return clone;
+    }
+
+
+    private NotificationDTO buildNotificationDTO(Announcement announcement) {
+        NotificationDTO notificationDTO = new NotificationDTO();
+        notificationDTO.setTitle(announcement.getTitle());
+        // notificationDTO.setUserId(CHECKING_BEAN.getId());
+        notificationDTO.setName(CHECKING_BEAN.getName());
+        notificationDTO.setCategoryName(announcement.getCategory().getName());
+        notificationDTO.setAnnouncementId(announcement.getId());
+        //notificationDTO.setStatus(NotificationStatus.SEND);
+        notificationDTO.setType(NotificationType.NEW);
+        notificationDTO.setNoticeAt(LocalDateTime.now());
+        notificationDTO.setTimestamp(LocalDateTime.now());
+        notificationDTO.setCompanyId(CHECKING_BEAN.getCompanyId());
+        return notificationDTO;
     }
 
     private String resolveTargetNameById(Long targetId) {
