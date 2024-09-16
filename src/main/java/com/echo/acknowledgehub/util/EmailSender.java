@@ -45,39 +45,6 @@ public class EmailSender {
         ALLOWED_DOMAINS.add("@aceinspiration.com");
     }
 
-    //    @Async
-//    public CompletableFuture<Void> sendEmail(EmailDTO email) {
-//
-//        Properties props = new Properties();
-//        props.put("mail.smtp.auth", "true");
-//        props.put("mail.smtp.starttls.enable", "true");
-//        props.put("mail.smtp.host", "smtp.gmail.com");
-//        props.put("mail.smtp.port", "587");
-//
-//        Session session = Session.getInstance(props,
-//                new javax.mail.Authenticator() {
-//                    protected PasswordAuthentication getPasswordAuthentication() {
-//                        return new PasswordAuthentication();
-//                    }
-//                });
-//        try {
-//            if (isDomainAvailable(email.getAddress())) {
-//                Message message = new MimeMessage(session);
-//                message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(email.getAddress()));
-//                message.setSubject(email.getSubject());
-//                message.setText(email.getMessage());
-//                Transport.send(message);
-//                return CompletableFuture.completedFuture(null);
-//            } else {
-//                LOGGER.warning("Invalid email address.");
-//                throw new EmailSenderException("Invalid email address.");
-//            }
-//        } catch (MessagingException e) {
-//            LOGGER.severe("MessagingException : " + e);
-//            throw new EmailSenderException("Could not send email.");
-//        }
-//
-//    }
     @Async
     public CompletableFuture<Void> sendEmail(EmailDTO email) throws IOException {
 
@@ -146,29 +113,8 @@ public class EmailSender {
         }
     }
 
-
-
-    //@Async
-//    public CompletableFuture<Void> sepndEmail(
-//        EmailDTO email) throws MessagingException, IOException {
-//
-//        MimeMessage mimeMessage = JAVA_MAIL_SENDER.createMimeMessage();
-//        MimeMessageHelper mimeMessageHelper = new MimeMessageHelper(mimeMessage, true);
-//
-//        mimeMessageHelper.setFrom("xxeno245@gmail.com");
-//        mimeMessageHelper.setTo(email.getAddress());
-//        mimeMessageHelper.setSubject(email.getSubject());
-//        mimeMessageHelper.setText(email.getMessage());
-//
-//        // Add attachment
-//        FileSystemResource file = new FileSystemResource(File.createTempFile("upload-",email.getFile().getOriginalFilename()));
-//        mimeMessageHelper.addAttachment(file.getFilename(), file);
-//
-//        JAVA_MAIL_SENDER.send(mimeMessage);
-//        return CompletableFuture.completedFuture(null);
-//    }
     @Async
-    public boolean isDomainAvailable(String domain) {
+    private boolean isDomainAvailable(String domain) {
         return ALLOWED_DOMAINS.stream().anyMatch(domain::endsWith);
     }
 }

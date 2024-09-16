@@ -4,6 +4,7 @@ import com.echo.acknowledgehub.bean.SystemDataBean;
 import com.echo.acknowledgehub.bean.CheckingBean;
 import com.echo.acknowledgehub.constant.*;
 import com.echo.acknowledgehub.dto.*;
+import com.echo.acknowledgehub.entity.Company;
 import com.echo.acknowledgehub.entity.Department;
 import com.echo.acknowledgehub.entity.Employee;
 import com.echo.acknowledgehub.exception_handler.DataNotFoundException;
@@ -21,7 +22,9 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -43,6 +46,7 @@ public class EmployeeService {
     private final CheckingBean CHECKING_BEAN;
     private final FirebaseNotificationService FIREBASE_NOTIFICATION_SERVICE;
     private final CompanyRepository COMPANY_REPOSITORY;
+    private final CompanyService COMPANY_SERVICE;
 
 
     @Async
@@ -115,6 +119,7 @@ public class EmployeeService {
     @Transactional
     public CompletableFuture<Integer> changeDefaultPassword(String rawPassword) {
         SYSTEM_DATA_BEAN.setDefaultPassword(rawPassword);
+        List<StringResponseDTO> stringResponseDTOS = EMPLOYEE_REPOSITORY.getDefaultAccountEmails();
         return CompletableFuture.completedFuture(EMPLOYEE_REPOSITORY.changeDefaultPassword(PASSWORD_ENCODER.encode(rawPassword)));
     }
 
@@ -136,22 +141,22 @@ public class EmployeeService {
             mapper.map(UserDTO::getCompanyId, (Employee e, Long id) -> e.getCompany().setId(id));
         });
         Employee employee = MAPPER.map(user, Employee.class);
-        employee.setPassword(PASSWORD_ENCODER.encode("root"));
-        LOGGER.info("Mapped employee : " + employee);
+        employee.setPassword(PASSWORD_ENCODER.encode(SYSTEM_DATA_BEAN.getDefaultPassword()));
         return CompletableFuture.completedFuture(EMPLOYEE_REPOSITORY.save(employee));
     }
 
     @Async
-    public CompletableFuture<Employee> saveMainHR(MainHRDTO mainHRDTO) {
-        if(!existsMainHR().join()){
+    public CompletableFuture<Employee> saveMainHR(HRDTO mainHRDTO) {
+        if (!existsMainHR().join()) {
             Employee employee = new Employee();
-            employee.setName(mainHRDTO.getName());
-            employee.setEmail(mainHRDTO.getEmail());
+            employee.setName(mainHRDTO.getHrName());
+            employee.setEmail(mainHRDTO.getHrEmail());
             employee.setStaffId(mainHRDTO.getStaffId());
+            employee.setCompany(COMPANY_SERVICE.save(new Company(mainHRDTO.getCompanyName())).join());
             employee.setRole(EmployeeRole.MAIN_HR);
             employee.setPassword(PASSWORD_ENCODER.encode(SYSTEM_DATA_BEAN.getDefaultPassword()));
             return CompletableFuture.completedFuture(EMPLOYEE_REPOSITORY.save(employee));
-        }else{
+        } else {
             throw new DuplicatedEnteryException("Main HR account already added.");
         }
 
@@ -159,7 +164,6 @@ public class EmployeeService {
 
     @Async
     public CompletableFuture<List<Employee>> saveAll(UserExcelDTO users) {
-        LOGGER.info("HERE DATA : " + users);
         Department department = DEPARTMENT_SERVICE.save(new Department(users.getDepartmentName(), users.getCompanyId())).join();
         List<Employee> employees = new ArrayList<>();
         users.getUsers().forEach(user -> {
@@ -176,7 +180,6 @@ public class EmployeeService {
 
     @Async
     public CompletableFuture<EmployeeProfileDTO> getProfileInfo(Long id) {
-        LOGGER.info("id : " + id);
         EmployeeProfileDTO employeeProfileDTO = EMPLOYEE_REPOSITORY.getProfileInfo(id);
         if (employeeProfileDTO == null) {
             return CompletableFuture.completedFuture(EMPLOYEE_REPOSITORY.getAdminProfileInfo(id));
@@ -186,9 +189,7 @@ public class EmployeeService {
     }
 
     public long countEmployees() {
-        long count = EMPLOYEE_REPOSITORY.count();
-        LOGGER.info("Count : " + count);
-        return count;
+        return EMPLOYEE_REPOSITORY.count();
     }
 
     public List<Long> getMainHRAndHRIds() {
@@ -206,7 +207,6 @@ public class EmployeeService {
         List<String> nrcs = EMPLOYEE_REPOSITORY.findDistinctNrc();
         List<String> staffIds = EMPLOYEE_REPOSITORY.findDistinctStaffIds();
         List<String> telegramUsernames = EMPLOYEE_REPOSITORY.findDistinctTelegramUsernames();
-
         return CompletableFuture.completedFuture(new UniqueFieldsDTO(emails, nrcs, staffIds, telegramUsernames));
     }
 
@@ -306,8 +306,8 @@ public class EmployeeService {
         return employeeCountMap;
     }
 
-    public Map<String, Double> getPercentage() throws ExecutionException, InterruptedException {
-        Map<String, Double> notedPercentageMap = new HashMap<>();
+    public Map<String, Integer> getPercentage() throws ExecutionException, InterruptedException {
+        Map<String, Integer> notedPercentageMap = new HashMap<>();
         Map<Long, Integer> employeeCountMap = getSelectedAllAnnouncements();
         LOGGER.info("before announcement count");
         int announcementCount = ANNOUNCEMENT_REPOSITORY.getSelectAllCountAnnouncements(SelectAll.TRUE);
@@ -315,10 +315,36 @@ public class EmployeeService {
             String companyName = COMPANY_REPOSITORY.findCompanyNameById(companyId);
             int employeeCount = employeeCountByCompany(companyId);
             int expectedCount = employeeCount * announcementCount;
-            double notedPercentage = (double) (notedCount * 100) / expectedCount;
+            int notedPercentage = (notedCount * 100) / expectedCount;
             notedPercentageMap.put(companyName, notedPercentage);
         });
         return notedPercentageMap;
+    }
+
+    public void uploadProfileImage(MultipartFile imageFile) throws IOException {
+        Employee employee = EMPLOYEE_REPOSITORY.findById(CHECKING_BEAN.getId()).orElseThrow(() -> new RuntimeException("User not found"));
+        LOGGER.info("in employee service uploadProfileImage");
+        employee.setPhotoLink(imageFile.getBytes());
+        EMPLOYEE_REPOSITORY.save(employee);
+    }
+
+    // Method to update an employee with duplicate check
+    public CompletableFuture<Employee> updateEmployee(Employee employee) {
+        return CompletableFuture.supplyAsync(() -> {
+            // Optional: Check if employee already exists by ID
+            if (EMPLOYEE_REPOSITORY.existsById(employee.getId())) {
+                // Update the employee if it exists
+                return EMPLOYEE_REPOSITORY.save(employee);
+            } else {
+                // Handle the case where the employee doesn't exist (optional)
+                throw new IllegalArgumentException("Employee does not exist");
+            }
+        });
+    }
+
+    // Method to check if an employee exists by ID
+    public CompletableFuture<Boolean> employeeExists(Long employeeId) {
+        return CompletableFuture.supplyAsync(() -> EMPLOYEE_REPOSITORY.existsById(employeeId));
     }
 
 //    @Async
@@ -393,7 +419,7 @@ public class EmployeeService {
     }
 
     @Async
-    public CompletableFuture<Boolean> existsMainHR(){
+    public CompletableFuture<Boolean> existsMainHR() {
         return CompletableFuture.completedFuture(EMPLOYEE_REPOSITORY.existsMainHR());
     }
 }

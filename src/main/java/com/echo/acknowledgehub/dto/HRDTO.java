@@ -7,8 +7,9 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class MainHRDTO {
-    private String name;
-    private String email;
+public class HRDTO {
+    private String hrName;
+    private String hrEmail;
     private String staffId;
+    private String companyName;
 }

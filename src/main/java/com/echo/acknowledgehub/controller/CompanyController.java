@@ -2,6 +2,7 @@ package com.echo.acknowledgehub.controller;
 
 import com.echo.acknowledgehub.dto.CompanyDTO;
 import com.echo.acknowledgehub.bean.CheckingBean;
+import com.echo.acknowledgehub.dto.HRDTO;
 import com.echo.acknowledgehub.dto.StringResponseDTO;
 import com.echo.acknowledgehub.dto.UserDTO;
 import com.echo.acknowledgehub.entity.AnnouncementCategory;
@@ -33,8 +34,6 @@ public class CompanyController {
     private final CompanyService COMPANY_SERVICE;
     private final DepartmentService DEPARTMENT_SERVICE;
     private final AnnouncementCategoryService ANNOUNCEMENT_CATEGORY_SERVICE;
-    private final EmployeeService EMPLOYEE_SERVICE;
-    private final ModelMapper MODEL_MAPPER;
     private final CheckingBean CHECKING_BEAN;
 
     @GetMapping("/user/get-company/{id}")
@@ -79,6 +78,11 @@ public class CompanyController {
     @GetMapping("/user/get-company-name")
     private StringResponseDTO getName() {
         return new StringResponseDTO(COMPANY_SERVICE.getCompanyName(CHECKING_BEAN.getId()));
+    }
+
+    @PostMapping("/mr/company")
+    private HRDTO save(@RequestBody HRDTO hrdto){
+        return COMPANY_SERVICE.saveHR(hrdto).join();
     }
 }
 

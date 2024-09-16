@@ -10,4 +10,6 @@ import java.util.List;
 public class SaveTargetsForSchedule {
     private List<Target> targets;
     private String isEmailSelected;
+    private String filename;
+    private String filePath;
 }

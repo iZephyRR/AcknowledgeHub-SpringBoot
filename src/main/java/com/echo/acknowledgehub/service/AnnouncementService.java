@@ -2,9 +2,7 @@ package com.echo.acknowledgehub.service;
 
 import com.echo.acknowledgehub.bean.CheckingBean;
 import com.echo.acknowledgehub.constant.*;
-import com.echo.acknowledgehub.dto.AnnouncementDTO;
-import com.echo.acknowledgehub.dto.AnnouncementDTOForShowing;
-import com.echo.acknowledgehub.dto.DataPreviewDTO;
+import com.echo.acknowledgehub.dto.*;
 import com.echo.acknowledgehub.entity.Announcement;
 import com.echo.acknowledgehub.entity.AnnouncementCategory;
 import com.echo.acknowledgehub.repository.AnnouncementRepository;
@@ -66,6 +64,15 @@ public class AnnouncementService {
     public List<Announcement> getAll() {
 
         return ANNOUNCEMENT_REPOSITORY.findAll();
+    }
+
+    public List<AnnouncementsShowInDashboard> getAllAnnouncementsForDashboard() {
+        return ANNOUNCEMENT_REPOSITORY.getAllAnnouncementsForDashboard();
+    }
+
+    @Transactional
+    public AnnouncementsForShowing getAnnouncementById (Long id) {
+        return ANNOUNCEMENT_REPOSITORY.getAnnouncementById(id);
     }
 
     public CompletableFuture<List<AnnouncementDTO>> getByCompany(){

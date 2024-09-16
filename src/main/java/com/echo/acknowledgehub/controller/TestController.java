@@ -3,6 +3,7 @@ package com.echo.acknowledgehub.controller;
 import com.echo.acknowledgehub.bean.CheckingBean;
 import com.echo.acknowledgehub.bean.SystemDataBean;
 import com.echo.acknowledgehub.bean.TempDataBean;
+import com.echo.acknowledgehub.dto.StringResponseDTO;
 import com.echo.acknowledgehub.entity.Company;
 import com.echo.acknowledgehub.service.AnnouncementService;
 import com.echo.acknowledgehub.service.CompanyService;
@@ -29,15 +30,9 @@ public class TestController {
     private final TempDataBean TEMP_DATA_BEAN;
 
     @GetMapping("/auth/test")
-    public ResponseEntity<Void> downloadFile() throws IOException {
+    public ResponseEntity<StringResponseDTO> downloadFile() throws IOException {
 
-        try {
-            Thread.sleep(80 * 1000);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        }
-
-        return ResponseEntity.status(HttpStatus.OK).build();
+        return ResponseEntity.ok(new StringResponseDTO("Test"));
     }
 
     @GetMapping("/user/test")

@@ -44,8 +44,7 @@ public class AuthController {
         AUTHENTICATION_MANAGER.authenticate(new UsernamePasswordAuthenticationToken(login.getEmail(), login.getPassword()));
         final UserDetails USER_DETAILS = USER_DETAILS_SERVICE.loadUserByUsername(login.getEmail());
         if (login.getPassword().equals(SYSTEM_DATA_BEAN.getDefaultPassword())) { //For first login.
-            // return new StringResponseDTO("NAME_".concat(CHECKING_BEAN.getName()).concat("_ID_").concat(CHECKING_BEAN.getId().toString()));
-            return new StringResponseDTO("NAME_".concat(CHECKING_BEAN.getName()));
+            return new StringResponseDTO("NAME_"+CHECKING_BEAN.getName());
         } else {
             final String JWT_TOKEN = JWT_SERVICE.generateToken(USER_DETAILS.getUsername());
             LOGGER.info("Token : " + JWT_TOKEN);

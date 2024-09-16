@@ -1,6 +1,8 @@
 package com.echo.acknowledgehub.service;
 
 import com.echo.acknowledgehub.constant.ContentType;
+import com.echo.acknowledgehub.constant.SelectAll;
+import com.echo.acknowledgehub.entity.Announcement;
 import com.echo.acknowledgehub.entity.Employee;
 import com.echo.acknowledgehub.entity.TelegramGroup;
 import lombok.AllArgsConstructor;
@@ -25,6 +27,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -40,7 +43,8 @@ public class TelegramService extends TelegramLongPollingBot {
    private final String BOT_TOKEN;
    private final EmployeeService EMPLOYEE_SERVICE;
    private final TelegramGroupService TELEGRAM_GROUP_SERVICE;
-   private final FirebaseNotificationService FIREBASENOTIFICATION_SERVICE;
+   private final FirebaseNotificationService FIRE_BASE_NOTIFICATION_SERVICE;
+   private final AnnouncementService ANNOUNCEMENT_SERVICE;
 
 
    @Override
@@ -73,8 +77,8 @@ public class TelegramService extends TelegramLongPollingBot {
                LOGGER.info("User " + username + " userId " + employeeId + " clicked for announcement " + announcementId + " at " + formattedNow);
 
                // Update the noticeAt time in Firebase
-               FIREBASENOTIFICATION_SERVICE.updateNoticeAtInFirebase(employeeId, announcementId, formattedNow);
-
+               FIRE_BASE_NOTIFICATION_SERVICE.updateNoticeAtInFirebase(employeeId, announcementId, formattedNow);
+               countNoted(employeeId,announcementId);
                updateCaption(callbackQuery, chatId);
            }
        } else if (updateInfo.hasMessage()) {
@@ -87,6 +91,24 @@ public class TelegramService extends TelegramLongPollingBot {
            handlePollAnswer(updateInfo.getPollAnswer());
        }
    }
+
+    private void countNoted(Long employeeId, Long announcementId) {
+        CompletableFuture<Employee> conFuEmployee = EMPLOYEE_SERVICE.findById(employeeId)
+                .thenApply(optionalEmployee -> optionalEmployee.orElseThrow(() -> new NoSuchElementException("Employee not found")));
+        CompletableFuture<Announcement> conFuAnnouncement = ANNOUNCEMENT_SERVICE.findById(announcementId)
+                .thenApply(announcement -> announcement.orElseThrow(() -> new NoSuchElementException("Announcement not found")));
+        CompletableFuture<Void> combinedFuture = conFuEmployee.thenCombine(conFuAnnouncement, (employee, announcement) -> {
+            if (announcement.getSelectAll().equals(SelectAll.TRUE)) {
+                employee.setNotedCount(employee.getNotedCount() + 1); // Increment notedCount by 1
+                EMPLOYEE_SERVICE.updateEmployee(employee); // Update employee record
+            }
+            return null;
+        });
+        combinedFuture.exceptionally(ex -> {
+            ex.printStackTrace();
+            return null;
+        }).join();
+    }
 
    public void updateCaption(CallbackQuery callbackQuery, Long chatId){
        EditMessageCaption editMessage = new EditMessageCaption();

@@ -2,14 +2,17 @@ package com.echo.acknowledgehub.service;
 
 import com.echo.acknowledgehub.bean.CheckingBean;
 import com.echo.acknowledgehub.dto.CommentDTO;
+import com.echo.acknowledgehub.dto.CommentResponseDTO;
 import com.echo.acknowledgehub.entity.Announcement;
 import com.echo.acknowledgehub.entity.Comment;
 import com.echo.acknowledgehub.entity.Employee;
 import com.echo.acknowledgehub.repository.CommentRepository;
+import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.concurrent.CompletableFuture;
 
@@ -33,6 +36,11 @@ public class CommentService {
         comment.setAnnouncement(announcementCompletableFuture.join());
         comment.setEmployee(employeeCompletableFuture.join());
         return COMMENT_REPOSITORY.save(comment);
+    }
+
+    @Transactional
+    public List<CommentResponseDTO> getByAnnouncement (Long id) {
+        return COMMENT_REPOSITORY.getByAnnouncement(id);
     }
 
 }

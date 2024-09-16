@@ -53,6 +53,8 @@ public class Employee implements UserDetails {
     private String address;
     @Column(name = "work_entry_date", columnDefinition = "DATE")
     private Date workEntryDate;
+    @Column(name = "noted_count",  nullable = false )
+    private int notedCount = 0;
 
     @JsonIgnore
     @ManyToOne(cascade = CascadeType.MERGE)
