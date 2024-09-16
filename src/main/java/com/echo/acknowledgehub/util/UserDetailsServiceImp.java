@@ -47,6 +47,8 @@ public class UserDetailsServiceImp implements UserDetailsService {
             CHECKING_BEAN.setId(optionalEmployee.get().getId());
             if(optionalEmployee.get().getCompany()!=null) {
                 CHECKING_BEAN.setCompanyId(optionalEmployee.get().getCompany().getId());
+            }
+            if(optionalEmployee.get().getDepartment()!=null){
                 CHECKING_BEAN.setDepartmentId(optionalEmployee.get().getDepartment().getId());
             }
             return new User(optionalEmployee.get().getId().toString(), optionalEmployee.get().getPassword(), authorities);

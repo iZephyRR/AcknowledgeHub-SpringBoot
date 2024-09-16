@@ -3,21 +3,18 @@ package com.echo.acknowledgehub.controller;
 import com.echo.acknowledgehub.bean.CheckingBean;
 import com.echo.acknowledgehub.dto.*;
 import com.echo.acknowledgehub.entity.Employee;
-import com.echo.acknowledgehub.repository.EmployeeRepository;
 import com.echo.acknowledgehub.service.EmployeeService;
-import com.echo.acknowledgehub.service.FirebaseNotificationService;
-import com.echo.acknowledgehub.util.JWTService;
 import lombok.AllArgsConstructor;
 import org.modelmapper.ModelMapper;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -29,7 +26,6 @@ public class EmployeeController {
     private final EmployeeService EMPLOYEE_SERVICE;
     private final CheckingBean CHECKING_BEAN;
     private final ModelMapper MODEL_MAPPER;
-
 
     @GetMapping(value = "/mr/users", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<List<UserDTO>> getAllUsers() {
@@ -64,13 +60,25 @@ public class EmployeeController {
                 .collect(Collectors.toList());
     }
 
+    @PostMapping("/user/uploadProfileImage")
+    public ResponseEntity<StringResponseDTO> uploadProfileImage(@RequestParam("image") MultipartFile imageFile) {
+        try {
+            EMPLOYEE_SERVICE.uploadProfileImage(imageFile);
+            return ResponseEntity.ok(new StringResponseDTO("Profile image uploaded successfully"));
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new StringResponseDTO("Failed to upload image"));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new StringResponseDTO("Employee not found."));
+        }
+    }
+
     @GetMapping("/count")
     public long getEmployeeCount() {
         return EMPLOYEE_SERVICE.countEmployees();
     }
 
     @PostMapping("/ad/main-hr")
-    private Employee register(@RequestBody MainHRDTO mainHRDTO) {
+    private Employee register(@RequestBody HRDTO mainHRDTO) {
         return EMPLOYEE_SERVICE.saveMainHR(mainHRDTO).join();
     }
 

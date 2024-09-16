@@ -69,6 +69,10 @@ public class AnnouncementController {
             List<Target> targetList = saveTargetsForSchedule.getTargets();
             String emailSelected = saveTargetsForSchedule.getIsEmailSelected();
             handleTargetsAndNotifications(targetList,announcement);
+            MultipartFile excelFile = null;
+            if (announcement.getContentType() == ContentType.EXCEL) {
+                excelFile = convertToMultipartFile(saveTargetsForSchedule.getFilePath(),saveTargetsForSchedule.getFilename());
+            }
             Set<Long> chatIdsSet = new HashSet<>();
             Set<String> emails = new HashSet<>();
             for (Target target : targetList) {
@@ -96,6 +100,8 @@ public class AnnouncementController {
                     EMAIL_SENDER.sendEmail(new EmailDTO(address, announcement.getTitle(), "Test link...", null));
                 }
             }
+            Path path = Paths.get(saveTargetsForSchedule.getFilePath());
+            Files.deleteIfExists(path);
             targetStorage.remove(announcement.getId());
         }
     }
@@ -146,6 +152,7 @@ public class AnnouncementController {
         String url = ANNOUNCEMENT_SERVICE.handleFileUpload(announcementDTO.getFile()); // cloud
         entity.setPdfLink(url);
         assert contentType != null;
+        MultipartFile excelFile = announcementDTO.getFile();
         if (contentType.startsWith("audio/")) {
             entity.setContentType(ContentType.AUDIO);
         } else if (contentType.startsWith("video/")) {
@@ -195,7 +202,7 @@ public class AnnouncementController {
             LOGGER.info("final result chat set : " + chatIdsSet);
             List<Long> chatIdsList = new ArrayList<>(chatIdsSet);
             LOGGER.info("final result chat list : " + chatIdsList);
-            TELEGRAM_SERVICE.sendToTelegram(chatIdsList, announcement.getContentType().getFirstValue(), announcement.getId(), announcement.getPdfLink(), announcement.getTitle(), announcement.getEmployee().getName());
+            //TELEGRAM_SERVICE.sendToTelegram(chatIdsList, announcement.getContentType().getFirstValue(), announcement.getId(), announcement.getPdfLink(), announcement.getTitle(), announcement.getEmployee().getName());
             if ("emailSelected".equalsIgnoreCase(announcementDTO.getIsEmailSelected())) {
                 for (String address : emails) {
                     EMAIL_SENDER.sendEmail(new EmailDTO(address, announcement.getTitle(), "Test link...", null));
@@ -206,6 +213,10 @@ public class AnnouncementController {
             SaveTargetsForSchedule saveTargetsForSchedule = new SaveTargetsForSchedule();
             saveTargetsForSchedule.setTargets(targetList);
             saveTargetsForSchedule.setIsEmailSelected(announcementDTO.getIsEmailSelected());
+            assert excelFile != null;
+            String fileUrl = saveFileAndGetUrl(excelFile);
+            saveTargetsForSchedule.setFilePath(fileUrl);
+            saveTargetsForSchedule.setFilename(announcementDTO.getFilename());
             targetStorage.put(announcement.getId(), saveTargetsForSchedule);
         }
     }
@@ -315,14 +326,14 @@ public class AnnouncementController {
         return ResponseEntity.ok(DRAFT_SERVICE.getDrafts(loggedInId));
     }
 
-    @GetMapping("/get-all")
-    public List<Announcement> getAll() {
-        return ANNOUNCEMENT_SERVICE.getAll();
+    @GetMapping(value = "/get-all", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<List<AnnouncementsShowInDashboard>> getAll() {
+        return ResponseEntity.ok(ANNOUNCEMENT_SERVICE.getAllAnnouncementsForDashboard());
     }
 
-    @GetMapping("/get-by-company")
-    public List<AnnouncementDTO> getByCompany() {
-        return ANNOUNCEMENT_SERVICE.getByCompany().join();
+    @GetMapping(value = "/get-by-company", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<List<AnnouncementDTO>> getByCompany() {
+        return ResponseEntity.ok( ANNOUNCEMENT_SERVICE.getByCompany().join());
     }
 
     @GetMapping(value = "/aug-to-oct-2024", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -395,10 +406,8 @@ public class AnnouncementController {
     }
 
     @GetMapping(value = "/{id}" , produces = MediaType.APPLICATION_JSON_VALUE)
-    private AnnouncementDTO findById(@PathVariable("id") Long id){
-        Announcement announcement = ANNOUNCEMENT_SERVICE.findById(id).join()
-                .orElseThrow(() -> new EntityNotFoundException("Announcement not found with id: " + id));
-        return MODEL_MAPPER.map(announcement, AnnouncementDTO.class);
+    private ResponseEntity<AnnouncementsForShowing> findById(@PathVariable("id") Long id){
+        return ResponseEntity.ok(ANNOUNCEMENT_SERVICE.getAnnouncementById(id));
     }
 
     @GetMapping(value = "/count", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -423,7 +432,7 @@ public class AnnouncementController {
     }
 
     @GetMapping(value = "/pieChart", produces = MediaType.APPLICATION_JSON_VALUE)
-    public Map<String, Double> getPercentage() throws ExecutionException, InterruptedException {
+    public Map<String, Integer> getPercentage() throws ExecutionException, InterruptedException {
         return EMPLOYEE_SERVICE.getPercentage();
     }
 

@@ -49,7 +49,7 @@ public class SecurityConfig {
                 .requestMatchers(BASE_URL + "/auth/**", BASE_URL + "/check", BASE_URL + "/test/**", BASE_URL + "/send-email").permitAll()
               
                 // Configure routes to allow access for all authenticated users.
-                .requestMatchers(BASE_URL + "/user/**",BASE_URL + "/notifications/**", BASE_URL+"/announcement/getAnnouncementsByCompanyId", BASE_URL+"/announcement/getAnnouncementsByDepartmentId", BASE_URL+"/announcement/get-By-EmployeeId", BASE_URL+"/announcement/{id}", BASE_URL+"/announcement/get-main-previews", BASE_URL+"/announcement/get-sub-previews").authenticated()
+                .requestMatchers(BASE_URL + "/user/**",BASE_URL + "/notifications/**", BASE_URL+"/announcement/getAnnouncementsByCompanyId", BASE_URL+"/announcement/getAnnouncementsByDepartmentId", BASE_URL+"/announcement/get-By-EmployeeId", BASE_URL+"/announcement/{id}", BASE_URL+"/announcement/get-main-previews", BASE_URL+"/announcement/get-sub-previews", BASE_URL + "/comments/add", BASE_URL+ "/comments/getById/**").authenticated()
                 // Configure routes to allow access only for system admin.
                 .requestMatchers(BASE_URL + "/ad/**").hasRole(EmployeeRole.ADMIN.name())
                 // Configure routes to allow access only for the main HR section.

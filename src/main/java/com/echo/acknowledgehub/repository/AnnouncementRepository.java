@@ -5,11 +5,9 @@ import com.echo.acknowledgehub.bean.CheckingBean;
 import com.echo.acknowledgehub.constant.AnnouncementStatus;
 import com.echo.acknowledgehub.constant.IsSchedule;
 import com.echo.acknowledgehub.constant.ReceiverType;
-import com.echo.acknowledgehub.dto.AnnouncementDTO;
-import com.echo.acknowledgehub.dto.AnnouncementDTOForShowing;
+import com.echo.acknowledgehub.dto.*;
 import com.echo.acknowledgehub.constant.SelectAll;
 import com.echo.acknowledgehub.dto.AnnouncementDTO;
-import com.echo.acknowledgehub.dto.DataPreviewDTO;
 import com.echo.acknowledgehub.entity.Announcement;
 import com.echo.acknowledgehub.entity.AnnouncementCategory;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -58,7 +56,7 @@ public interface AnnouncementRepository extends JpaRepository <Announcement,Long
 
     @Query("SELECT new com.echo.acknowledgehub.dto.DataPreviewDTO(t.announcement.id, t.announcement.title) " +
             "FROM Target t " +
-            "JOIN CustomTargetGroupEntity c ON c.customTargetGroup.id = t.sendTo " +
+            "LEFT JOIN CustomTargetGroupEntity c ON c.customTargetGroup.id = t.sendTo " +
             "WHERE (t.announcement.employee.role = 'MAIN_HR' OR t.announcement.employee.role = 'MAIN_HR_ASSISTANCE') " +
             "AND ((t.receiverType = 'COMPANY' AND t.sendTo = :companyId) " +
             "OR (t.receiverType = 'DEPARTMENT' AND t.sendTo = :departmentId) " +
@@ -75,7 +73,7 @@ public interface AnnouncementRepository extends JpaRepository <Announcement,Long
 
     @Query("SELECT new com.echo.acknowledgehub.dto.DataPreviewDTO(t.announcement.id, t.announcement.title) " +
             "FROM Target t " +
-            "JOIN CustomTargetGroupEntity c ON c.customTargetGroup.id = t.sendTo " +
+            "LEFT JOIN CustomTargetGroupEntity c ON c.customTargetGroup.id = t.sendTo " +
             "WHERE (t.announcement.employee.role = 'HR' OR t.announcement.employee.role = 'HR_ASSISTANCE') " +
             "AND ((t.receiverType = 'COMPANY' AND t.sendTo = :companyId) " +
             "OR (t.receiverType = 'DEPARTMENT' AND t.sendTo = :departmentId) " +
@@ -90,6 +88,16 @@ public interface AnnouncementRepository extends JpaRepository <Announcement,Long
                                          @Param("departmentId") Long departmentId,
                                          @Param("employeeId") Long employeeId);
 
+    @Query("SELECT new com.echo.acknowledgehub.dto.AnnouncementsForShowing( " +
+            "a.id, a.title, a.contentType, a.pdfLink," +
+            "c.name, e.name, a.createdAt) " +
+            "FROM Announcement a " +
+            "JOIN a.category c " +
+            "JOIN a.employee e WHERE a.id=:id")
+    AnnouncementsForShowing getAnnouncementById(@Param("id") Long id);
+
+    @Query("SELECT new com.echo.acknowledgehub.dto.AnnouncementsShowInDashboard(a.id,a.title,c.name,e.name,e.role,a.createdAt)" +
+            "FROM Announcement a JOIN a.category c JOIN a.employee e")
+    List<AnnouncementsShowInDashboard> getAllAnnouncementsForDashboard();
+
 }
-// OR (t.receiverType='CUSTOM' AND ((c.receiverType='COMPANY' AND c.sendTo = :companyId) OR (c.receiverType='DEPARTMENT' AND c.sendTo = :departmentId) OR (c.receiverType='EMPLOYEE' AND c.sendTo = :employeeId)))
-//JOIN CustomTargetGroupEntity c ON c.customTargetGroup.id = t.sendTo

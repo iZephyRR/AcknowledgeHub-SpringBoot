@@ -3,6 +3,7 @@ package com.echo.acknowledgehub.repository;
 import com.echo.acknowledgehub.dto.EmployeeNotedDTO;
 import com.echo.acknowledgehub.dto.EmployeeProfileDTO;
 import com.echo.acknowledgehub.constant.EmployeeRole;
+import com.echo.acknowledgehub.dto.StringResponseDTO;
 import com.echo.acknowledgehub.entity.Employee;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -38,6 +39,9 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
     @Modifying
     @Query("UPDATE Employee em set em.password= :defaultPassword WHERE em.status= 'DEFAULT'")
     int changeDefaultPassword(@Param("defaultPassword") String encodedDefaultPassword);
+
+    @Query("SELECT new com.echo.acknowledgehub.dto.StringResponseDTO(e.email) FROM Employee e WHERE e.status='DEFAULT'")
+    List<StringResponseDTO> getDefaultAccountEmails();
 
     @Modifying
     @Query("UPDATE Employee em SET em.password= :newPassword WHERE em.email= :email")
@@ -118,7 +122,7 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
     @Query("Select count(e) From Employee e where e.company.id=:id")
     int getEmployeeCountByCompanyId(@Param("id") Long id);
 
-@Query("SELECT e.email FROM Employee e WHERE e.company.id= :id")
+    @Query("SELECT e.email FROM Employee e WHERE e.company.id= :id")
     List<String> getEmailsByCompanyId(@Param("id") Long id);
 
     @Query("SELECT e.email FROM Employee e WHERE e.department.id= :id")
