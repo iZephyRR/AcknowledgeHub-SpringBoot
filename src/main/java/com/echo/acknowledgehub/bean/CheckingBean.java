@@ -14,6 +14,7 @@ public class CheckingBean {
     private String name;
     private Long id;
     private Long companyId;
+    private Long departmentId;
 
     public void refresh() {
         this.status = null;

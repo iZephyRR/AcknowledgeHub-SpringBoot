@@ -14,7 +14,7 @@ import java.util.Optional;
 
 public interface EmployeeRepository extends JpaRepository<Employee, Long> {
 
-    @Query("SELECT new com.echo.acknowledgehub.dto.EmployeeProfileDTO(em.name, em.role, em.email, em.company.name, em.department.name) FROM Employee em WHERE em.id = :id")
+    @Query("SELECT new com.echo.acknowledgehub.dto.EmployeeProfileDTO(em.name, em.role, em.email, em.company.name, em.department.name, em.photoLink) FROM Employee em WHERE em.id = :id")
     EmployeeProfileDTO getProfileInfo(@Param("id") Long id);
 
     Optional<Employee> findByEmail(String email);
@@ -117,6 +117,27 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
 
     @Query("Select count(e) From Employee e where e.company.id=:id")
     int getEmployeeCountByCompanyId(@Param("id") Long id);
+
+@Query("SELECT e.email FROM Employee e WHERE e.company.id= :id")
+    List<String> getEmailsByCompanyId(@Param("id") Long id);
+
+    @Query("SELECT e.email FROM Employee e WHERE e.department.id= :id")
+    List<String> getEmailsByDepartmentId(@Param("id") Long id);
+
+    @Query("SELECT e.email FROM Employee e WHERE e.id= :id")
+    List<String> getEmailsByUserId(@Param("id") Long id);
+
+    @Query("SELECT e FROM Employee e JOIN Announcement a ON e.id = a.employee.id " +
+            "WHERE a.id = :announcementId AND e.role IN :roles")
+    List<Employee> findEmployeesByRolesAndAnnouncement(
+            @Param("roles") List<EmployeeRole> roles,
+            @Param("announcementId") Long announcementId);
+
+    @Query("SELECT new com.echo.acknowledgehub.dto.EmployeeProfileDTO(em.name, em.role, em.email) FROM Employee em WHERE em.id = :id")
+    EmployeeProfileDTO getAdminProfileInfo(@Param("id") Long id);
+
+    @Query("SELECT COUNT(e) > 0 FROM Employee e WHERE e.role = 'MAIN_HR'")
+    Boolean existsMainHR();
 
 
 }

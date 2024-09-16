@@ -35,110 +35,110 @@ import java.util.logging.Logger;
 @AllArgsConstructor
 public class TelegramService extends TelegramLongPollingBot {
 
-    private static final Logger LOGGER = Logger.getLogger(TelegramService.class.getName());
-    private final String BOT_USERNAME;
-    private final String BOT_TOKEN;
-    private final EmployeeService EMPLOYEE_SERVICE;
-    private final TelegramGroupService TELEGRAM_GROUP_SERVICE;
-    private final FirebaseNotificationService FIREBASENOTIFICATION_SERVICE;
+   private static final Logger LOGGER = Logger.getLogger(TelegramService.class.getName());
+   private final String BOT_USERNAME;
+   private final String BOT_TOKEN;
+   private final EmployeeService EMPLOYEE_SERVICE;
+   private final TelegramGroupService TELEGRAM_GROUP_SERVICE;
+   private final FirebaseNotificationService FIREBASENOTIFICATION_SERVICE;
 
 
-    @Override
-    public String getBotUsername() {
-        return BOT_USERNAME;
+   @Override
+   public String getBotUsername() {
+       return BOT_USERNAME;
+   }
+
+   @Override
+   public String getBotToken() {
+       return BOT_TOKEN;
+   }
+
+   @Async
+   @Override
+   public void onUpdateReceived(Update updateInfo) {
+       if (updateInfo.hasCallbackQuery()) {
+           CallbackQuery callbackQuery = updateInfo.getCallbackQuery();
+           String callbackData = callbackQuery.getData();
+           LocalDateTime now = LocalDateTime.now();
+           DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+           String formattedNow = now.format(formatter); // to save in Firebase
+
+           if (callbackData.startsWith("seen_confirmed:")) {
+               String[] dataParts = callbackData.split(":");
+               long announcementId = Long.parseLong(dataParts[1]); // to save in Firebase
+               User user = callbackQuery.getFrom();
+               String username = user.getUserName();
+               Long chatId = user.getId();
+               Long employeeId = EMPLOYEE_SERVICE.getEmployeeIdByTelegramUsername(username); // to save in Firebase
+               LOGGER.info("User " + username + " userId " + employeeId + " clicked for announcement " + announcementId + " at " + formattedNow);
+
+               // Update the noticeAt time in Firebase
+               FIREBASENOTIFICATION_SERVICE.updateNoticeAtInFirebase(employeeId, announcementId, formattedNow);
+
+               updateCaption(callbackQuery, chatId);
+           }
+       } else if (updateInfo.hasMessage()) {
+           try {
+               registerTelegram(updateInfo);
+           } catch (TelegramApiException e) {
+               throw new RuntimeException(e);
+           }
+       } else if (updateInfo.hasPollAnswer()) {
+           handlePollAnswer(updateInfo.getPollAnswer());
+       }
+   }
+
+   public void updateCaption(CallbackQuery callbackQuery, Long chatId){
+       EditMessageCaption editMessage = new EditMessageCaption();
+       editMessage.setChatId(callbackQuery.getMessage().getChatId().toString());
+       editMessage.setMessageId(callbackQuery.getMessage().getMessageId());
+       String newCaption = callbackQuery.getMessage().getCaption() + "\n\nThanks";
+       editMessage.setCaption(newCaption);
+       editMessage.setReplyMarkup(null);
+       try {
+           execute(editMessage);
+           //sendMessageAfterNotice(chatId);
+       } catch (TelegramApiException e) {
+           LOGGER.info("Error editing message: " + e.getMessage());
+       }
+   }
+
+   private void sendMessageAfterNotice(long chatId) throws TelegramApiException {
+       SendMessage message = new SendMessage();
+       message.setChatId(chatId);
+       message.setText("Thank you for your noted");
+       execute(message);
+   }
+
+   @Async
+   private CompletableFuture<Void> registerTelegram(Update updateInfo) throws TelegramApiException {
+       if (updateInfo.hasMessage()) {
+           Message message = updateInfo.getMessage();
+           // System.out.println(message.getReplyToMessage().getText());
+           Long chatId = message.getChatId();
+           if (message.getChat().isGroupChat() || message.getChat().isSuperGroupChat()) {
+               String groupTitle = message.getChat().getTitle();
+               TelegramGroup telegramGroup = TELEGRAM_GROUP_SERVICE.findByGroupName(groupTitle);
+               if (telegramGroup.getGroupName().equals(groupTitle) && telegramGroup.getGroupChatId() == null) {
+                   int updateResult = TELEGRAM_GROUP_SERVICE.updateGroupChatId(chatId, groupTitle);
+                   sendMessage(chatId, "Hello Everyone.");
+               }
+           } else if (message.getChat().isUserChat()) {
+               String username = message.getChat().getUserName();
+               Employee telegramUser = EMPLOYEE_SERVICE.findByTelegramUsername(username);
+               if (telegramUser.getUsername().equals(username) && telegramUser.getTelegramUserId() == null) {
+                   int updateResult = EMPLOYEE_SERVICE.updateTelegramUserId(chatId, username);
+                   LOGGER.info("Update result : " + updateResult);
+                   sendMessage(chatId, "Hello");
+               }
+           }
+       }
+       return CompletableFuture.completedFuture(null);
+   }
+
+    public Long getChatIdByUserId(Long userId) {
+        return EMPLOYEE_SERVICE.getChatIdByUserId(userId);
     }
-
-    @Override
-    public String getBotToken() {
-        return BOT_TOKEN;
-    }
-
-    @Async
-    @Override
-    public void onUpdateReceived(Update updateInfo) {
-        if (updateInfo.hasCallbackQuery()) {
-            CallbackQuery callbackQuery = updateInfo.getCallbackQuery();
-            String callbackData = callbackQuery.getData();
-            LocalDateTime now = LocalDateTime.now();
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-            String formattedNow = now.format(formatter); // to save in Firebase
-
-            if (callbackData.startsWith("seen_confirmed:")) {
-                String[] dataParts = callbackData.split(":");
-                long announcementId = Long.parseLong(dataParts[1]); // to save in Firebase
-                User user = callbackQuery.getFrom();
-                String username = user.getUserName();
-                Long chatId = user.getId();
-                Long employeeId = EMPLOYEE_SERVICE.getEmployeeIdByTelegramUsername(username); // to save in Firebase
-                LOGGER.info("User " + username + " userId " + employeeId + " clicked for announcement " + announcementId + " at " + formattedNow);
-
-                // Update the noticeAt time in Firebase
-                FIREBASENOTIFICATION_SERVICE.updateNoticeAtInFirebase(employeeId, announcementId, formattedNow);
-
-                updateCaption(callbackQuery, chatId);
-            }
-        } else if (updateInfo.hasMessage()) {
-            try {
-                registerTelegram(updateInfo);
-            } catch (TelegramApiException e) {
-                throw new RuntimeException(e);
-            }
-        } else if (updateInfo.hasPollAnswer()) {
-            handlePollAnswer(updateInfo.getPollAnswer());
-        }
-    }
-
-    public void updateCaption(CallbackQuery callbackQuery, Long chatId){
-        EditMessageCaption editMessage = new EditMessageCaption();
-        editMessage.setChatId(callbackQuery.getMessage().getChatId().toString());
-        editMessage.setMessageId(callbackQuery.getMessage().getMessageId());
-        String newCaption = callbackQuery.getMessage().getCaption() + "\n\nThanks";
-        editMessage.setCaption(newCaption);
-        editMessage.setReplyMarkup(null);
-        try {
-            execute(editMessage);
-            sendMessageAfterNotice(chatId);
-        } catch (TelegramApiException e) {
-            LOGGER.info("Error editing message: " + e.getMessage());
-        }
-    }
-
-    private void sendMessageAfterNotice(long chatId) throws TelegramApiException {
-        SendMessage message = new SendMessage();
-        message.setChatId(chatId);
-        message.setText("Thank you for your noted");
-        execute(message);
-    }
-
-    @Async
-    private CompletableFuture<Void> registerTelegram(Update updateInfo) throws TelegramApiException {
-        if (updateInfo.hasMessage()) {
-            Message message = updateInfo.getMessage();
-            // System.out.println(message.getReplyToMessage().getText());
-            Long chatId = message.getChatId();
-            if (message.getChat().isGroupChat() || message.getChat().isSuperGroupChat()) {
-                String groupTitle = message.getChat().getTitle();
-                TelegramGroup telegramGroup = TELEGRAM_GROUP_SERVICE.findByGroupName(groupTitle);
-                if (telegramGroup.getGroupName().equals(groupTitle) && telegramGroup.getGroupChatId() == null) {
-                    int updateResult = TELEGRAM_GROUP_SERVICE.updateGroupChatId(chatId, groupTitle);
-                    sendMessage(chatId, "Hello Everyone.");
-                }
-            } else if (message.getChat().isUserChat()) {
-                String username = message.getChat().getUserName();
-                Employee telegramUser = EMPLOYEE_SERVICE.findByTelegramUsername(username);
-                if (telegramUser.getUsername().equals(username) && telegramUser.getTelegramUserId() == null) {
-                    int updateResult = EMPLOYEE_SERVICE.updateTelegramUserId(chatId, username);
-                    LOGGER.info("Update result : " + updateResult);
-                    sendMessage(chatId, "Hello");
-                }
-            }
-        }
-        return CompletableFuture.completedFuture(null);
-    }
-
-//    public Long getChatIdByUserId(Long userId) {
-//        return EMPLOYEE_SERVICE.getChatIdByUserId(userId);
-//    }
 
     private Long getChatIdByUsername(String username) {
         return EMPLOYEE_SERVICE.getChatIdByTelegramUsername(username);

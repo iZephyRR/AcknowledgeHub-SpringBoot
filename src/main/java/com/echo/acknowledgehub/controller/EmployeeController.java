@@ -53,9 +53,7 @@ public class EmployeeController {
 
     @GetMapping("/user/profile")
     private EmployeeProfileDTO findById(){
-        EmployeeProfileDTO employeeProfileDTO=EMPLOYEE_SERVICE.getProfileInfo(CHECKING_BEAN.getId()).join();
-        LOGGER.info("emp "+employeeProfileDTO);
-        return employeeProfileDTO;
+        return EMPLOYEE_SERVICE.getProfileInfo(CHECKING_BEAN.getId()).join();
     }
 
     @GetMapping("/hrs/user/by-department/{id}")
@@ -71,11 +69,10 @@ public class EmployeeController {
         return EMPLOYEE_SERVICE.countEmployees();
     }
 
-    @PostMapping("/ad/add-user")
-    private Employee register(@RequestBody UserDTO user) {
-        return EMPLOYEE_SERVICE.save(user).join();
+    @PostMapping("/ad/main-hr")
+    private Employee register(@RequestBody MainHRDTO mainHRDTO) {
+        return EMPLOYEE_SERVICE.saveMainHR(mainHRDTO).join();
     }
-
 
     @PostMapping("/hrs/add-users")
     private List<Employee> register(@RequestBody UserExcelDTO users) {
@@ -106,6 +103,11 @@ public class EmployeeController {
 //        List<Long> userIdList = FIREBASE_NOTIFICATION_SERVICE.getNotificationsAndMatchWithEmployees(Long.parseLong(announcementId),3);
 //        return ResponseEntity.ok(EMPLOYEE_SERVICE.getEmployeeWhoNoted(userIdList));
 
+    }
+
+    @GetMapping("/ad/exists-main-hr")
+    private Boolean existsMainHR(){
+        return EMPLOYEE_SERVICE.existsMainHR().join();
     }
 
 }

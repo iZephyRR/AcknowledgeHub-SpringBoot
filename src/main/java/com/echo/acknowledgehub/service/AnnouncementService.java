@@ -1,19 +1,22 @@
 package com.echo.acknowledgehub.service;
 
+import com.echo.acknowledgehub.bean.CheckingBean;
 import com.echo.acknowledgehub.constant.*;
 import com.echo.acknowledgehub.dto.AnnouncementDTO;
+import com.echo.acknowledgehub.dto.AnnouncementDTOForShowing;
+import com.echo.acknowledgehub.dto.DataPreviewDTO;
 import com.echo.acknowledgehub.entity.Announcement;
 import com.echo.acknowledgehub.entity.AnnouncementCategory;
 import com.echo.acknowledgehub.repository.AnnouncementRepository;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
+import org.checkerframework.checker.units.qual.Temperature;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.multipart.MultipartFile;
-
 import java.time.LocalDateTime;
-
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -31,12 +34,12 @@ public class AnnouncementService {
     private static final Logger LOGGER = Logger.getLogger(AnnouncementService.class.getName());
     private final AnnouncementRepository ANNOUNCEMENT_REPOSITORY;
     private final CloudinaryService CLOUD_SERVICE;
+    private final CheckingBean CHECKING_BEAN;
 
     @Async
     public CompletableFuture<Optional<Announcement>> findById(Long id) {
         return CompletableFuture.completedFuture(ANNOUNCEMENT_REPOSITORY.findById(id));
     }
-
 
     public Announcement save(Announcement announcement) throws IOException {
         return ANNOUNCEMENT_REPOSITORY.save(announcement);
@@ -59,10 +62,14 @@ public class AnnouncementService {
         return ANNOUNCEMENT_REPOSITORY.findAllByDateBetween(startDateTime, endDateTime);
     }
 
-    @Transactional
-    public List<AnnouncementDTO> getAllAnnouncements() {
-        List<Object[]> objectList = ANNOUNCEMENT_REPOSITORY.getAllAnnouncements();
-        return mapToDtoList(objectList);
+
+    public List<Announcement> getAll() {
+
+        return ANNOUNCEMENT_REPOSITORY.findAll();
+    }
+
+    public CompletableFuture<List<AnnouncementDTO>> getByCompany(){
+        return CompletableFuture.completedFuture(ANNOUNCEMENT_REPOSITORY.getByCompany(CHECKING_BEAN.getCompanyId()));
     }
 
     public long countAnnouncements() {
@@ -98,6 +105,10 @@ public class AnnouncementService {
     }
 
     @Transactional
+    public List<AnnouncementDTOForShowing> getAnnouncementByReceiverTypeAndId(ReceiverType receiverType ,Long receiverId) {
+        return ANNOUNCEMENT_REPOSITORY.findAnnouncementDTOsByReceiverType(receiverType, receiverId);
+    }
+  
     public List<Long> getSelectedAllAnnouncements() {
         return ANNOUNCEMENT_REPOSITORY.getSelectedAllAnnouncements(SelectAll.TRUE);
     }
@@ -106,6 +117,7 @@ public class AnnouncementService {
     public int getCountSelectAllAnnouncements() {
         return ANNOUNCEMENT_REPOSITORY.getSelectAllCountAnnouncements(SelectAll.TRUE);
     }
+
 
     public List<AnnouncementDTO> mapToDtoList(List<Object[]> objLists) {
         return objLists.stream().map(this::mapToDto).collect(Collectors.toList());
@@ -124,6 +136,24 @@ public class AnnouncementService {
         dto.setFileUrl((String) row[8]);
         return dto;
     }
+
+    @Async
+    public CompletableFuture<List<DataPreviewDTO>> getMainPreviews(){
+        return CompletableFuture.completedFuture(ANNOUNCEMENT_REPOSITORY.getMainPreviews(CHECKING_BEAN.getCompanyId()
+                ,CHECKING_BEAN.getDepartmentId()
+                ,CHECKING_BEAN.getId()
+        ));
+    }
+
+    @Async
+    public CompletableFuture<List<DataPreviewDTO>> getSubPreviews(){
+        return CompletableFuture.completedFuture(ANNOUNCEMENT_REPOSITORY.getSubPreviews(CHECKING_BEAN.getCompanyId()
+                ,CHECKING_BEAN.getDepartmentId()
+                ,CHECKING_BEAN.getId()
+        ));
+    }
+
+
 }
 
 

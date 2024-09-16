@@ -1,5 +1,7 @@
 package com.echo.acknowledgehub.service;
 
+import com.echo.acknowledgehub.bean.CheckingBean;
+import com.echo.acknowledgehub.constant.EmployeeRole;
 import com.echo.acknowledgehub.entity.Employee;
 import com.echo.acknowledgehub.repository.EmployeeRepository;
 import com.google.api.core.ApiFuture;
@@ -24,6 +26,8 @@ public class FirebaseNotificationService {
     private static final Logger LOGGER = Logger.getLogger(FirebaseNotificationService.class.getName());
     public final Map<Long, LocalDateTime> notedAtStorage = new HashMap<>();
     private final FirebaseDatabase FIREBASE_DATABASE;
+    private final EmployeeRepository EMPLOYEE_REPOSITORY;
+    private final CheckingBean CHECKING_BEAN;
 
 
     public Map<Long, LocalDateTime> getNotedAtStorage() {
@@ -110,7 +114,6 @@ public class FirebaseNotificationService {
         Firestore dbFirestore = FirestoreClient.getFirestore();
 
         try {
-            // Query to find the document to update, with sorting
             ApiFuture<QuerySnapshot> future = dbFirestore.collection("notifications")
                     .whereEqualTo("userId", employeeId)
                     .whereEqualTo("announcementId", String.valueOf(announcementId))
@@ -123,18 +126,28 @@ public class FirebaseNotificationService {
                     .limit(1)
                     .get();
 
-            // Get the document reference
             List<QueryDocumentSnapshot> documents = future.get().getDocuments();
             if (!documents.isEmpty()) {
                 DocumentReference documentReference = documents.get(0).getReference();
 
-                // Update the noticeAt field in the document
                 Map<String, Object> updates = new HashMap<>();
                 updates.put("noticeAt", formattedNow);
 
                 ApiFuture<WriteResult> writeResult = documentReference.update(updates);
                 LOGGER.info("Firebase noticeAt updated successfully for document ID: " + documentReference.getId() +
                         " at time: " + writeResult.get().getUpdateTime());
+
+
+                DocumentSnapshot docSnapshot = documents.get(0);
+                String targetName = docSnapshot.getString("targetName");
+                String title = docSnapshot.getString("title");
+                String senderName = docSnapshot.getString("SenderName");
+                String senderId = docSnapshot.getString("SenderId");
+                String message = targetName + " has noted the announcement: " + title;
+                saveToNotedCollection(announcementId, targetName, title, senderName, senderId, formattedNow, dbFirestore);
+
+
+                sendNotificationsToHR(announcementId, targetName, title, senderName, senderId, dbFirestore);
             } else {
                 LOGGER.warning("No matching document found to update noticeAt.");
             }
@@ -143,6 +156,75 @@ public class FirebaseNotificationService {
         }
     }
 
+    private void saveToNotedCollection(Long announcementId, String targetName, String title, String senderName, String senderId, String formattedNow, Firestore dbFirestore) {
+        Map<String, Object> notedData = new HashMap<>();
+        notedData.put("announcementId", announcementId);
+        notedData.put("targetName", targetName);
+        notedData.put("title", title);
+        notedData.put("noticeAt", formattedNow);
+        notedData.put("SenderName", senderName);
+        notedData.put("SenderId", senderId);
+
+        LOGGER.info("Noted data saved for announcement ID: " + announcementId);
+    }
+
+    private void sendNotificationsToHR(Long announcementId, String targetName, String title, String senderName, String senderId, Firestore dbFirestore) throws InterruptedException, ExecutionException {
+        DateTimeFormatter formatDate = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        String formattedDateTime = LocalDateTime.now().format(formatDate);
+        List<Employee> hrEmployees = EMPLOYEE_REPOSITORY.findEmployeesByRolesAndAnnouncement(
+                Arrays.asList(EmployeeRole.MAIN_HR, EmployeeRole.HR, EmployeeRole.HR_ASSISTANCE),
+                announcementId);
+
+
+        for (Employee hrEmployee : hrEmployees) {
+            CHECKING_BEAN.setId(hrEmployee.getId());
+            CHECKING_BEAN.setCompanyId(hrEmployee.getCompany().getId());
+            CHECKING_BEAN.setRole(hrEmployee.getRole());
+            CHECKING_BEAN.setStatus(hrEmployee.getStatus());
+
+            if (isValidForNotification(CHECKING_BEAN)) {
+
+
+                Map<String, Object> hrNotification = new HashMap<>();
+                hrNotification.put("announcementId", announcementId);
+                hrNotification.put("targetId", hrEmployee.getId());
+                hrNotification.put("message", targetName + " has noted the announcement: " + title);
+                hrNotification.put("noticeAt", formattedDateTime);
+                hrNotification.put("SenderName", senderName);
+                hrNotification.put("SenderId", senderId);
+
+
+                dbFirestore.collection("notifications").add(hrNotification).get();
+
+                Map<String, Object> notedData = new HashMap<>();
+                notedData.put("announcementId", announcementId);
+                notedData.put("targetId", hrEmployee.getId());
+                notedData.put("targetName", targetName);
+                notedData.put("message", targetName + " has noted the announcement: " + title);
+                notedData.put("title", title);
+                notedData.put("noticeAt", formattedDateTime);
+                notedData.put("SenderName", senderName);
+                notedData.put("SenderId", senderId);
+                notedData.put("timestamp", formattedDateTime);
+
+                dbFirestore.collection("noted").add(notedData).get();
+
+                LOGGER.info("Noted data saved for HR employee: " + hrEmployee.getName());
+            }
+
+            CHECKING_BEAN.refresh();
+        }
+    }
+
+    private boolean isValidForNotification(CheckingBean checkingBean) {
+
+        if (checkingBean.getRole() == EmployeeRole.MAIN_HR ||
+        checkingBean.getRole() == EmployeeRole.HR ||
+        checkingBean.getRole() == EmployeeRole.HR_ASSISTANCE){
+            return true;
+        }
+        return false;
+    }
 
 //    public void insertIntoTableFromFirebase(Long employeeId, long announcementId) {
 //        Firestore dbFirestore = FirestoreClient.getFirestore();

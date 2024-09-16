@@ -9,5 +9,5 @@ import java.util.List;
 @Data
 public class SaveTargetsForSchedule {
     private List<Target> targets;
-    private List<String> selectedChannels;
+    private String isEmailSelected;
 }

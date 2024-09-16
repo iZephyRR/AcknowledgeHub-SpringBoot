@@ -1,24 +1,24 @@
 package com.echo.acknowledgehub.controller;
 
 import com.echo.acknowledgehub.bean.CheckingBean;
+import com.echo.acknowledgehub.constant.EmployeeRole;
 import com.echo.acknowledgehub.dto.NotificationDTO;
-import com.echo.acknowledgehub.dto.UserDTO;
 import com.echo.acknowledgehub.entity.Employee;
+import com.echo.acknowledgehub.repository.EmployeeRepository;
 import com.echo.acknowledgehub.service.FirebaseNotificationService;
 import com.google.api.core.ApiFuture;
 import com.google.cloud.firestore.*;
 import com.google.firebase.cloud.FirestoreClient;
 import lombok.AllArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.logging.Logger;
 
@@ -30,10 +30,30 @@ public class NotificationController {
     private static final Logger LOGGER = Logger.getLogger(NotificationController.class.getName());
     private final SimpMessagingTemplate simpMessagingTemplate;
     private final CheckingBean CHECKING_BEAN;
+    private final Firestore dbFirestore;
 
     @PostMapping("/send")
     public void sendNotification(@RequestBody NotificationDTO notificationDTO) {
         simpMessagingTemplate.convertAndSend("/topic/notifications", notificationDTO);
+    }
+
+    @GetMapping("/noted-count/{announcementId}")
+    public String countNoted(@PathVariable Long announcementId) {
+        try {
+            long count = countNotedByAnnouncementId(announcementId, dbFirestore);
+            return "There are " + count + " noted records for announcement ID: " + announcementId;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "An error occurred while counting noted records.";
+        }
+    }
+
+    public long countNotedByAnnouncementId(Long announcementId, Firestore dbFirestore) throws InterruptedException, ExecutionException {
+        Query query = dbFirestore.collection("noted").whereEqualTo("announcementId", announcementId);
+        ApiFuture<QuerySnapshot> querySnapshot = query.get();
+        long notedCount = querySnapshot.get().size();
+        LOGGER.info("Counted " + notedCount + " noted records for announcement ID: " + announcementId);
+        return notedCount;
     }
 
     public void saveNotificationInFirebase(NotificationDTO notificationDTO) {
@@ -61,7 +81,7 @@ public class NotificationController {
         docData.put("category", notificationDTO.getCategoryName());
         docData.put("Sender", CHECKING_BEAN.getRole().toString());
         docData.put("SenderName", CHECKING_BEAN.getName());
-        LOGGER.info("noti user get id : "+ notificationDTO.getUserId());
+        LOGGER.info("noti user get id : " + notificationDTO.getUserId());
         docData.put("userId", notificationDTO.getUserId());
         docData.put("announcementId", String.valueOf(notificationDTO.getAnnouncementId()));
         //docData.put("status", notificationDTO.getStatus().toString());
@@ -75,11 +95,34 @@ public class NotificationController {
             docData.put("targetId", notificationDTO.getTargetId().toString());
             docData.put("targetName", notificationDTO.getTargetName());
         }
-
         return docData;
     }
-}
 
+    @GetMapping("/getNotedNotifications/{announcementId}")
+    public ResponseEntity<List<Map<String, Object>>> getNotedNotifications(@PathVariable Long announcementId) {
+        Firestore dbFirestore = FirestoreClient.getFirestore();
+        List<Map<String, Object>> notedNotifications = new ArrayList<>();
+
+        try {
+            ApiFuture<QuerySnapshot> future = dbFirestore.collection("noted")
+                    .whereEqualTo("announcementId", announcementId)
+                    .get();
+
+            List<QueryDocumentSnapshot> documents = future.get().getDocuments();
+            for (DocumentSnapshot document : documents) {
+                Map<String, Object> notedNotification = document.getData();
+                notedNotifications.add(notedNotification);
+            }
+
+            LOGGER.info("Fetched " + notedNotifications.size() + " noted notifications for announcement ID: " + announcementId);
+        } catch (InterruptedException | ExecutionException e) {
+            LOGGER.severe("Error retrieving noted notifications: " + e.getLocalizedMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ArrayList<>());
+        }
+
+        return ResponseEntity.ok(notedNotifications);
+    }
+}
 
 //
 //    private void saveNotificationToFirestore(NotificationDTO notificationDTO, Long loggedInId) {

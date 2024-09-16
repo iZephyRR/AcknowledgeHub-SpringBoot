@@ -64,7 +64,7 @@ public class CompanyService {
     }
 
     @Transactional
-    public String getCompanyName(Long compayId) {
-        return COMPANY_REPOSITORY.findCompanyNameById(compayId);
+    public String getCompanyName(Long companyId) {
+        return COMPANY_REPOSITORY.findCompanyNameById(companyId);
     }
 }

@@ -11,6 +11,7 @@ public class SystemDataBean {
     private volatile boolean checkPasswordEveryTime;
     private String defaultPassword;
     private int sessionExpireTime;
+    private boolean restSystem;
 
     //Add your system data field(Important data) here. Only primitive type allow here.
     // When remove a data field, you need to remove in system-data.properties file.
