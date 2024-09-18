@@ -1,14 +1,19 @@
 package com.echo.acknowledgehub.service;
 
+import com.echo.acknowledgehub.bean.SystemDataBean;
+import com.echo.acknowledgehub.constant.EmployeeRole;
 import com.echo.acknowledgehub.dto.CompanyDTO;
+import com.echo.acknowledgehub.dto.HRDTO;
 import com.echo.acknowledgehub.entity.Company;
+import com.echo.acknowledgehub.entity.Employee;
 import com.echo.acknowledgehub.exception_handler.DataNotFoundException;
 import com.echo.acknowledgehub.repository.CompanyRepository;
+import com.echo.acknowledgehub.repository.EmployeeRepository;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import org.springframework.scheduling.annotation.Async;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -19,6 +24,9 @@ import java.util.logging.Logger;
 public class CompanyService {
     private static final Logger LOGGER = Logger.getLogger(CompanyService.class.getName());
     private final CompanyRepository COMPANY_REPOSITORY;
+    private final PasswordEncoder PASSWORD_ENCODER;
+    private final SystemDataBean SYSTEM_DATA_BEAN;
+    private final EmployeeRepository EMPLOYEE_REPOSITORY;
 
     @Async
     public CompletableFuture<Optional<Company>> findById(Long id){
@@ -34,12 +42,24 @@ public class CompanyService {
         }else{
             throw new DataNotFoundException("Cannot find company.");
         }
-
     }
 
     @Async
     public CompletableFuture<Company> save(Company company){
         return CompletableFuture.completedFuture(COMPANY_REPOSITORY.save(company));
+    }
+
+    @Async
+    public CompletableFuture<HRDTO> saveHR(HRDTO hrdto){
+        Employee employee = new Employee();
+        employee.setName(hrdto.getHrName());
+        employee.setEmail(hrdto.getHrEmail());
+        employee.setStaffId(hrdto.getStaffId());
+        employee.setCompany(this.save(new Company(hrdto.getCompanyName())).join());
+        employee.setPassword(PASSWORD_ENCODER.encode(SYSTEM_DATA_BEAN.getDefaultPassword()));
+        employee.setRole(EmployeeRole.HR);
+        EMPLOYEE_REPOSITORY.save(employee);
+        return CompletableFuture.completedFuture(hrdto);
     }
 
     @Async
@@ -63,8 +83,12 @@ public class CompanyService {
         return COMPANY_REPOSITORY.existsById(sendTo);
     }
 
+    public long countCompany() {
+        return COMPANY_REPOSITORY.count();
+    }
+
     @Transactional
-    public String getCompanyName(Long compayId) {
-        return COMPANY_REPOSITORY.findCompanyNameById(compayId);
+    public String getCompanyName(Long companyId) {
+        return COMPANY_REPOSITORY.findCompanyNameById(companyId);
     }
 }

@@ -15,5 +15,12 @@ public class EmployeeProfileDTO {
     private String email;
     private String companyName;
     private String departmentName;
+    private byte[] photoLink;
 
+    EmployeeProfileDTO (String name, EmployeeRole role, String email, byte[] photoLink){
+        this.name=name;
+        this.role=role;
+        this.email=email;
+        this.photoLink=photoLink;
+    }
 }
