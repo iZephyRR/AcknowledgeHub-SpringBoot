@@ -82,7 +82,7 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
     @Query("select em.telegramUserId from Employee em where em.department.id = :departmentId")
     List<Long> getAllChatIdByDepartmentId(@Param("departmentId") Long departmentId);
 
-    @Query("SELECT e.id FROM Employee e WHERE e.telegramUsername = :telegramUsername")
+    @Query("SELECT e.id FROM Employee e WHERE LOWER(e.telegramUsername) = LOWER(:telegramUsername)")
     Long getEmployeeIdByTelegramUsername(@Param("telegramUsername") String telegramUsername);
 
 
@@ -137,12 +137,16 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
             @Param("roles") List<EmployeeRole> roles,
             @Param("announcementId") Long announcementId);
 
-    @Query("SELECT new com.echo.acknowledgehub.dto.EmployeeProfileDTO(em.name, em.role, em.email) FROM Employee em WHERE em.id = :id")
+    @Query("SELECT new com.echo.acknowledgehub.dto.EmployeeProfileDTO(em.name, em.role, em.email, em.photoLink) FROM Employee em WHERE em.id = :id")
     EmployeeProfileDTO getAdminProfileInfo(@Param("id") Long id);
 
     @Query("SELECT COUNT(e) > 0 FROM Employee e WHERE e.role = 'MAIN_HR'")
     Boolean existsMainHR();
 
+    @Query("SELECT COUNT(e) FROM Employee e WHERE e.company.id= :id")
+    long countForHR(@Param("id")Long companyId);
 
+    @Query("Select count(e) From Employee e where e.department.id=:id")
+    int getEmployeeCountByDepartmentId(@Param("id") Long id);
 }
 

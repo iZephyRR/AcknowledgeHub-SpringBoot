@@ -57,7 +57,7 @@ public class CompanyService {
         employee.setStaffId(hrdto.getStaffId());
         employee.setCompany(this.save(new Company(hrdto.getCompanyName())).join());
         employee.setPassword(PASSWORD_ENCODER.encode(SYSTEM_DATA_BEAN.getDefaultPassword()));
-        employee.setRole(EmployeeRole.MAIN_HR);
+        employee.setRole(EmployeeRole.HR);
         EMPLOYEE_REPOSITORY.save(employee);
         return CompletableFuture.completedFuture(hrdto);
     }
@@ -81,6 +81,10 @@ public class CompanyService {
 
     public boolean existsById(Long sendTo) {
         return COMPANY_REPOSITORY.existsById(sendTo);
+    }
+
+    public long countCompany() {
+        return COMPANY_REPOSITORY.count();
     }
 
     @Transactional

@@ -10,8 +10,11 @@ import java.time.LocalDateTime;
 @Data
 @AllArgsConstructor
 public class CommentResponseDTO {
+
     private Long id;
     private String author;
     private String content;
     private LocalDateTime createdAt;
+    private byte[] photoLink;
+
 }

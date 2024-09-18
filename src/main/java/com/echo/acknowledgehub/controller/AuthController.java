@@ -83,7 +83,7 @@ public class AuthController {
     }
 
 
-    @GetMapping("ad/default-password")
+    @GetMapping("/user/default-password")
     private StringResponseDTO getDefaultPassword() {
         return new StringResponseDTO(SYSTEM_DATA_BEAN.getDefaultPassword());
     }
@@ -104,7 +104,7 @@ public class AuthController {
         return new StringResponseDTO(SYSTEM_DATA_BEAN.getDefaultPassword());
     }
 
-    @PutMapping("ad/make-password-as-default")
+    @PutMapping("/ad/make-password-as-default")
     private BooleanResponseDTO makePasswordAsDefault(@RequestBody Long id) {
         return new BooleanResponseDTO(EMPLOYEE_SERVICE.makePasswordAsDefault(id).join() > 0);
     }

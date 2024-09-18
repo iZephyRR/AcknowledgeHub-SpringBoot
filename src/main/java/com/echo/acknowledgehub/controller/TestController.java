@@ -35,10 +35,12 @@ public class TestController {
         return ResponseEntity.ok(new StringResponseDTO("Test"));
     }
 
-    @GetMapping("/user/test")
-    private String test() {
-        return "testComplete";
-    }
+
+//    @GetMapping("/user/test/{announcementId}")
+//    private boolean test(@PathVariable("announcementId") Long announcementId) {
+//
+//        return ANNOUNCEMENT_SERVICE.canAccess(announcementId);
+//    }
 
     @GetMapping("/hrmh/test")
     private String hrmhTest() {

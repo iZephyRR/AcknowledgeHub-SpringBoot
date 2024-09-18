@@ -12,6 +12,7 @@ import com.echo.acknowledgehub.exception_handler.DuplicatedEnteryException;
 import com.echo.acknowledgehub.exception_handler.UpdatePasswordException;
 import com.echo.acknowledgehub.repository.AnnouncementRepository;
 import com.echo.acknowledgehub.repository.CompanyRepository;
+import com.echo.acknowledgehub.repository.DepartmentRepository;
 import com.echo.acknowledgehub.repository.EmployeeRepository;
 import com.google.api.core.ApiFuture;
 import com.google.cloud.firestore.*;
@@ -47,7 +48,7 @@ public class EmployeeService {
     private final FirebaseNotificationService FIREBASE_NOTIFICATION_SERVICE;
     private final CompanyRepository COMPANY_REPOSITORY;
     private final CompanyService COMPANY_SERVICE;
-
+    private final DepartmentRepository DEPARTMENT_REPOSITORY;
 
     @Async
     public CompletableFuture<Optional<Employee>> findById(Long id) {
@@ -321,6 +322,60 @@ public class EmployeeService {
         return notedPercentageMap;
     }
 
+    // sub company's announcements
+    public Map<Long, Integer> getSubCompanyAnnouncements() throws ExecutionException, InterruptedException {
+        Firestore dbFirestore = FirestoreClient.getFirestore();
+        Map<Long, Integer> employeeCountMap = new HashMap<>();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        LOGGER.info("before announcement ids");
+        List<Long> announcementIds = ANNOUNCEMENT_REPOSITORY.findAnnouncementIdsByEmployeeId(CHECKING_BEAN.getId());
+        for (Long announcementId : announcementIds) {
+            ApiFuture<QuerySnapshot> future = dbFirestore.collection("notifications")
+                    .whereEqualTo("announcementId", String.valueOf(announcementId))
+                    .orderBy("noticeAt", Query.Direction.DESCENDING)
+                    .orderBy("timestamp", Query.Direction.DESCENDING)
+                    .get();
+            List<QueryDocumentSnapshot> documents = future.get().getDocuments();
+            for (DocumentSnapshot document : documents) {
+                Long userId = document.getLong("userId");
+                LOGGER.info("User ID from Firebase service: " + userId);
+                LocalDateTime noticeAt = LocalDateTime.parse(
+                        Objects.requireNonNull(document.getString("noticeAt")), formatter);
+                LocalDateTime timestamp = LocalDateTime.parse(
+                        Objects.requireNonNull(document.getString("timestamp")), formatter);
+                if (noticeAt.isAfter(timestamp)) {
+                    CompletableFuture<Employee> comFuEmployee = findById(userId)
+                            .thenApply(employee -> employee.orElseThrow(() -> new NoSuchElementException("Employee not found")));
+                    Long departmentId = comFuEmployee.join().getDepartment().getId();
+                    employeeCountMap.merge(departmentId, 1, Integer::sum);
+                }
+            }
+        }
+        return employeeCountMap;
+    }
+
+    public Map<String, Integer> getPercentageForEachDepartment() throws ExecutionException, InterruptedException {
+        Map<String, Integer> notedPercentageMap = new HashMap<>();
+        Map<Long, Integer> employeeCountMap = getSubCompanyAnnouncements();
+        LOGGER.info("before announcement count");
+        int announcementCount = ANNOUNCEMENT_REPOSITORY.getAnnouncementCountByCompanyAndEmployee(CHECKING_BEAN.getId());
+        employeeCountMap.forEach((departmentId, notedCount) -> {
+            String departmentName = DEPARTMENT_REPOSITORY.findDepartmentNameById(departmentId);
+            int employeeCount = employeeCountByDepartment(departmentId);
+            int expectedCount = employeeCount * announcementCount;
+            LOGGER.info("noted count : " + notedCount);
+            LOGGER.info("employee count : " + employeeCount);
+            LOGGER.info("expect count : " + expectedCount);
+            int notedPercentage = (notedCount * 100) / expectedCount;
+            notedPercentageMap.put(departmentName, notedPercentage);
+        });
+        return notedPercentageMap;
+    }
+
+    public int employeeCountByDepartment (Long departmentId) {
+        return EMPLOYEE_REPOSITORY.getEmployeeCountByDepartmentId(departmentId);
+    }
+
     public void uploadProfileImage(MultipartFile imageFile) throws IOException {
         Employee employee = EMPLOYEE_REPOSITORY.findById(CHECKING_BEAN.getId()).orElseThrow(() -> new RuntimeException("User not found"));
         LOGGER.info("in employee service uploadProfileImage");
@@ -421,5 +476,13 @@ public class EmployeeService {
     @Async
     public CompletableFuture<Boolean> existsMainHR() {
         return CompletableFuture.completedFuture(EMPLOYEE_REPOSITORY.existsMainHR());
+    }
+
+    public long count() {
+        if (CHECKING_BEAN.getRole() == EmployeeRole.HR || CHECKING_BEAN.getRole() == EmployeeRole.HR_ASSISTANCE) {
+            return EMPLOYEE_REPOSITORY.countForHR(CHECKING_BEAN.getCompanyId());
+        } else {
+            return EMPLOYEE_REPOSITORY.count();
+        }
     }
 }

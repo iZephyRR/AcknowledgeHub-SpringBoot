@@ -20,4 +20,7 @@ public interface DepartmentRepository extends JpaRepository<Department, Long> {
 
     @Query("SELECT new com.echo.acknowledgehub.dto.DepartmentDTO(d.id, d.name, d.company.name) FROM Department d WHERE d.company.id= :companyId")
     List<DepartmentDTO> findAllDTOByCompany(@Param("companyId")Long companyId);
+
+    @Query("SELECT d.name FROM Department d WHERE d.id = :id")
+    String findDepartmentNameById(@Param("id") Long id);
 }

@@ -118,4 +118,10 @@ public class EmployeeController {
         return EMPLOYEE_SERVICE.existsMainHR().join();
     }
 
+    @GetMapping(value = "/hrs/employee-count", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Long> countCompany() {
+        long count = EMPLOYEE_SERVICE.count();
+        return ResponseEntity.ok(count);
+    }
+
 }

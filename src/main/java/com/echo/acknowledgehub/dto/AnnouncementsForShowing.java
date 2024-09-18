@@ -1,5 +1,6 @@
 package com.echo.acknowledgehub.dto;
 
+import com.echo.acknowledgehub.constant.AnnouncementResponseCondition;
 import com.echo.acknowledgehub.constant.ContentType;
 import lombok.Data;
 
@@ -14,6 +15,7 @@ public class AnnouncementsForShowing {
     private String categoryName;
     private String createdBy;
     private LocalDateTime createdAt;
+    private AnnouncementResponseCondition announcementResponseCondition;
 
     public AnnouncementsForShowing(Long id, String title, ContentType contentType, String pdfLink,
                                    String categoryName, String createdBy, LocalDateTime createdAt) {

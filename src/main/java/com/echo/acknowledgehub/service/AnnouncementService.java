@@ -5,6 +5,7 @@ import com.echo.acknowledgehub.constant.*;
 import com.echo.acknowledgehub.dto.*;
 import com.echo.acknowledgehub.entity.Announcement;
 import com.echo.acknowledgehub.entity.AnnouncementCategory;
+import com.echo.acknowledgehub.exception_handler.DataNotFoundException;
 import com.echo.acknowledgehub.repository.AnnouncementRepository;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
@@ -14,6 +15,7 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.multipart.MultipartFile;
+
 import java.time.LocalDateTime;
 import java.io.IOException;
 import java.net.URLEncoder;
@@ -49,7 +51,7 @@ public class AnnouncementService {
     }
 
     public String handleFileUpload(MultipartFile file) throws IOException {
-        String customFileName = Objects.requireNonNull(file.getOriginalFilename()).split("\\.") [0] ;
+        String customFileName = Objects.requireNonNull(file.getOriginalFilename()).split("\\.")[0];
         LOGGER.info("original file name" + customFileName);// Custom file name you want to use
         Map<String, String> result = CLOUD_SERVICE.upload(file);
         return result.get("url");  // Return the file URL
@@ -70,12 +72,31 @@ public class AnnouncementService {
         return ANNOUNCEMENT_REPOSITORY.getAllAnnouncementsForDashboard();
     }
 
-    @Transactional
-    public AnnouncementsForShowing getAnnouncementById (Long id) {
-        return ANNOUNCEMENT_REPOSITORY.getAnnouncementById(id);
+    public AnnouncementsForShowing getAnnouncementById(Long id) {
+        AnnouncementsForShowing announcementsForShowing = ANNOUNCEMENT_REPOSITORY.getAnnouncementById(id);
+        announcementsForShowing.setAnnouncementResponseCondition(getResponseCondition(id));
+        return announcementsForShowing;
     }
 
-    public CompletableFuture<List<AnnouncementDTO>> getByCompany(){
+    private AnnouncementResponseCondition getResponseCondition(Long announcementId) {
+        if (ANNOUNCEMENT_REPOSITORY.existsById(announcementId)) {
+            if (ANNOUNCEMENT_REPOSITORY.getCreator(announcementId) == CHECKING_BEAN.getId()) {
+                return AnnouncementResponseCondition.CREATOR;
+            } else if (CHECKING_BEAN.getRole() == EmployeeRole.MAIN_HR) {
+                return AnnouncementResponseCondition.VIEWER;
+            } else {
+                if (ANNOUNCEMENT_REPOSITORY.canAccess(CHECKING_BEAN.getCompanyId(), CHECKING_BEAN.getDepartmentId(), CHECKING_BEAN.getId())) {
+                    return AnnouncementResponseCondition.RECEIVER;
+                } else {
+                    throw new DataNotFoundException("Post cannot find");
+                }
+            }
+        } else {
+            throw new DataNotFoundException("Post cannot find.");
+        }
+    }
+
+    public CompletableFuture<List<AnnouncementDTO>> getByCompany() {
         return CompletableFuture.completedFuture(ANNOUNCEMENT_REPOSITORY.getByCompany(CHECKING_BEAN.getCompanyId()));
     }
 
@@ -112,10 +133,11 @@ public class AnnouncementService {
     }
 
     @Transactional
-    public List<AnnouncementDTOForShowing> getAnnouncementByReceiverTypeAndId(ReceiverType receiverType ,Long receiverId) {
+    public List<AnnouncementDTOForShowing> getAnnouncementByReceiverTypeAndId(ReceiverType receiverType, Long
+            receiverId) {
         return ANNOUNCEMENT_REPOSITORY.findAnnouncementDTOsByReceiverType(receiverType, receiverId);
     }
-  
+
     public List<Long> getSelectedAllAnnouncements() {
         return ANNOUNCEMENT_REPOSITORY.getSelectedAllAnnouncements(SelectAll.TRUE);
     }
@@ -145,18 +167,18 @@ public class AnnouncementService {
     }
 
     @Async
-    public CompletableFuture<List<DataPreviewDTO>> getMainPreviews(){
+    public CompletableFuture<List<DataPreviewDTO>> getMainPreviews() {
         return CompletableFuture.completedFuture(ANNOUNCEMENT_REPOSITORY.getMainPreviews(CHECKING_BEAN.getCompanyId()
-                ,CHECKING_BEAN.getDepartmentId()
-                ,CHECKING_BEAN.getId()
+                , CHECKING_BEAN.getDepartmentId()
+                , CHECKING_BEAN.getId()
         ));
     }
 
     @Async
-    public CompletableFuture<List<DataPreviewDTO>> getSubPreviews(){
+    public CompletableFuture<List<DataPreviewDTO>> getSubPreviews() {
         return CompletableFuture.completedFuture(ANNOUNCEMENT_REPOSITORY.getSubPreviews(CHECKING_BEAN.getCompanyId()
-                ,CHECKING_BEAN.getDepartmentId()
-                ,CHECKING_BEAN.getId()
+                , CHECKING_BEAN.getDepartmentId()
+                , CHECKING_BEAN.getId()
         ));
     }
 
