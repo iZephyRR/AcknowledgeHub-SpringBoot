@@ -6,6 +6,7 @@ import com.echo.acknowledgehub.constant.Gender;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -15,6 +16,7 @@ import java.util.logging.Logger;
 
 @Data
 @Entity
+@NoArgsConstructor
 @Table(name = "employee")
 public class Employee implements UserDetails {
     private static final Logger LOGGER = Logger.getLogger(Employee.class.getName());
@@ -68,7 +70,7 @@ public class Employee implements UserDetails {
 
     @PrePersist
     private void prePersist(){
-        this.status=EmployeeStatus.ACTIVATED;
+        this.status=EmployeeStatus.DEFAULT;
     }
 
     @Override

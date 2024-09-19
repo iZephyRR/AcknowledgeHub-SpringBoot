@@ -72,7 +72,8 @@ public class SecurityConfig {
                         BASE_URL + "/announcement/delete-draft/**", BASE_URL + "/custom-target/**", BASE_URL + "/notifications/noted-count/**",
                         BASE_URL + "/getUsersByCompanyId").hasAnyRole(EmployeeRole.MAIN_HR.name(),
                         EmployeeRole.HR.name(), EmployeeRole.MAIN_HR_ASSISTANCE.name(), EmployeeRole.HR_ASSISTANCE.name())
-                .requestMatchers(BASE_URL +"/announcement/getNotedPercentageByDepartment").hasAnyRole(EmployeeRole.HR.name(),EmployeeRole.HR_ASSISTANCE.name())
+                .requestMatchers(BASE_URL +"/announcement/getNotedPercentageByDepartment",BASE_URL +"/announcement/getNotedPercentageByDepartment",
+                        BASE_URL + "/announcement/getScheduleList", BASE_URL + "/announcement/deleteScheduleAnnouncement/**").hasAnyRole(EmployeeRole.HR.name(),EmployeeRole.HR_ASSISTANCE.name())
         ).userDetailsService(USER_DETAILS_SERVICE).sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)).addFilterBefore(JWT_AUTHENTICATION_FILTER, UsernamePasswordAuthenticationFilter.class).build();
 
 

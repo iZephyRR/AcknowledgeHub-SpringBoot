@@ -81,6 +81,7 @@ public class NotificationController {
         docData.put("category", notificationDTO.getCategoryName());
         docData.put("Sender", CHECKING_BEAN.getRole().toString());
         docData.put("SenderName", CHECKING_BEAN.getName());
+        docData.put("SenderID", CHECKING_BEAN.getId().toString());
         LOGGER.info("noti user get id : " + notificationDTO.getUserId());
         docData.put("userId", notificationDTO.getUserId());
         docData.put("announcementId", String.valueOf(notificationDTO.getAnnouncementId()));

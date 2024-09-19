@@ -74,7 +74,7 @@ public class TelegramService extends TelegramLongPollingBot {
                 User user = callbackQuery.getFrom();
                 String username = user.getUserName();
                 Long chatId = user.getId();
-                Long employeeId = EMPLOYEE_SERVICE.getEmployeeIdByTelegramUsername(username.toLowerCase()); // to save in Firebase
+                Long employeeId = EMPLOYEE_SERVICE.getEmployeeIdByTelegramUsername(username); // to save in Firebase
                 LOGGER.info("User " + username + " userId " + employeeId + " clicked for announcement " + announcementId + " at " + formattedNow);
                 // Update the noticeAt time in Firebase
                 FIRE_BASE_NOTIFICATION_SERVICE.updateNoticeAtInFirebase(employeeId, announcementId, formattedNow);
@@ -114,7 +114,7 @@ public class TelegramService extends TelegramLongPollingBot {
         EditMessageCaption editMessage = new EditMessageCaption();
         editMessage.setChatId(callbackQuery.getMessage().getChatId().toString());
         editMessage.setMessageId(callbackQuery.getMessage().getMessageId());
-        String newCaption = callbackQuery.getMessage().getCaption() + "\n\nThanks";
+        String newCaption = callbackQuery.getMessage().getCaption() + "\n\nYou have successfully noted this announcement.\n\nThank you for acknowledging the announcement";
         editMessage.setCaption(newCaption);
         editMessage.setReplyMarkup(null);
         try {

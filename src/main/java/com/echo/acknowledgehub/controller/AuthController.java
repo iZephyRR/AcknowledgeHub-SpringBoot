@@ -59,7 +59,8 @@ public class AuthController {
 
     @GetMapping("/auth/check")
     private CheckingBean check() {
-        if(SYSTEM_DATA_BEAN.isRestSystem() && CHECKING_BEAN.getRole()!= EmployeeRole.ADMIN){
+        LOGGER.info(CHECKING_BEAN.toString());
+        if(SYSTEM_DATA_BEAN.isRestSystem() && CHECKING_BEAN.getRole()!= EmployeeRole.ADMIN && CHECKING_BEAN.getId()!=null){
             throw new RestingSystemException();
         }else {
             return this.CHECKING_BEAN;

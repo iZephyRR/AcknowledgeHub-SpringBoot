@@ -6,6 +6,5 @@ import lombok.Data;
 public class CommentDTO {
     private String content;
     private Long announcementId;
-
-
+    private Long employeeId;
 }

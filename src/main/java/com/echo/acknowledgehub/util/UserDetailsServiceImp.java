@@ -36,8 +36,8 @@ public class UserDetailsServiceImp implements UserDetailsService {
         }
         if (optionalEmployee.isEmpty()) {
             throw new UsernameNotFoundException("User not found by : " + input);
-        } else if (optionalEmployee.get().getStatus() != EmployeeStatus.ACTIVATED) {
-            throw new UserDeactivatedException("This account has been " + optionalEmployee.get().getStatus().name() + ".");
+        } else if ((optionalEmployee.get().getStatus() != EmployeeStatus.ACTIVATED) && (optionalEmployee.get().getStatus() != EmployeeStatus.DEFAULT)) {
+            throw new UserDeactivatedException("This account is " + optionalEmployee.get().getStatus().name() + ".");
         } else {
             List<GrantedAuthority> authorities = List.of(new SimpleGrantedAuthority("ROLE_" + optionalEmployee.get().getRole()));
             LOGGER.info("Authority : "+authorities);
@@ -51,6 +51,7 @@ public class UserDetailsServiceImp implements UserDetailsService {
             if(optionalEmployee.get().getDepartment()!=null){
                 CHECKING_BEAN.setDepartmentId(optionalEmployee.get().getDepartment().getId());
             }
+            LOGGER.info("User Detail "+CHECKING_BEAN);
             return new User(optionalEmployee.get().getId().toString(), optionalEmployee.get().getPassword(), authorities);
         }
     }

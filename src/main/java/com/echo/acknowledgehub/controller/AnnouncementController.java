@@ -9,9 +9,11 @@ import com.echo.acknowledgehub.util.CustomMultipartFile;
 import com.echo.acknowledgehub.util.EmailSender;
 import com.echo.acknowledgehub.util.JWTService;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.AllArgsConstructor;
 import org.apache.commons.compress.utils.IOUtils;
 import org.modelmapper.ModelMapper;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -447,6 +449,23 @@ public class AnnouncementController {
     @GetMapping(value = "/getNotedPercentageByDepartment", produces = MediaType.APPLICATION_JSON_VALUE)
     public Map<String, Integer> getNotedPercentageByDepartment() throws ExecutionException, InterruptedException {
         return EMPLOYEE_SERVICE.getPercentageForEachDepartment();
+    }
+
+    @GetMapping(value = "/getScheduleList", produces = MediaType.APPLICATION_JSON_VALUE)
+    public List<ScheduleList> getScheduleList () {
+        return ANNOUNCEMENT_SERVICE.getScheduleList();
+    }
+
+    @DeleteMapping(value = "/deleteScheduleAnnouncement/{id}" , produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<StringResponseDTO> deleteScheduleAnnouncement(@PathVariable("id") Long announcementId) {
+        try {
+            targetStorage.remove(announcementId);
+            ANNOUNCEMENT_SERVICE.deleteAnnouncement(announcementId);
+            return ResponseEntity.ok(new StringResponseDTO("Delete Successful"));
+        } catch (NoSuchElementException | EntityNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(new StringResponseDTO("Announcement not found"));
+        }
     }
 
 }

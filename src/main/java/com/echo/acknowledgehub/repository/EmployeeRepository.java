@@ -44,7 +44,7 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
     List<StringResponseDTO> getDefaultAccountEmails();
 
     @Modifying
-    @Query("UPDATE Employee em SET em.password= :newPassword WHERE em.email= :email")
+    @Query("UPDATE Employee em SET em.password= :newPassword, em.status='ACTIVATED' WHERE em.email= :email")
     int updatePasswordByEmail(@Param("email") String email, @Param("newPassword") String password);
 
     @Modifying
@@ -82,7 +82,7 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
     @Query("select em.telegramUserId from Employee em where em.department.id = :departmentId")
     List<Long> getAllChatIdByDepartmentId(@Param("departmentId") Long departmentId);
 
-    @Query("SELECT e.id FROM Employee e WHERE LOWER(e.telegramUsername) = LOWER(:telegramUsername)")
+    @Query("SELECT e.id FROM Employee e WHERE e.telegramUsername = :telegramUsername")
     Long getEmployeeIdByTelegramUsername(@Param("telegramUsername") String telegramUsername);
 
 

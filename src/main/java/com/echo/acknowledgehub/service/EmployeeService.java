@@ -100,7 +100,6 @@ public class EmployeeService {
     @Transactional
     public CompletableFuture<Void> updatePassword(ChangePasswordDTO changePasswordDTO) {
         LOGGER.info("Requested change password : " + changePasswordDTO);
-        //   int updatedRows = EMPLOYEE_REPOSITORY.updatePasswordByEmail(changePasswordDTO.getEmail(), PASSWORD_ENCODER.encode(changePasswordDTO.getPassword()));
         int updatedRows;
         if (changePasswordDTO.getEmail() != null) {
             updatedRows = EMPLOYEE_REPOSITORY.updatePasswordByEmail(changePasswordDTO.getEmail(), PASSWORD_ENCODER.encode(changePasswordDTO.getPassword()));
@@ -149,14 +148,24 @@ public class EmployeeService {
     @Async
     public CompletableFuture<Employee> saveMainHR(HRDTO mainHRDTO) {
         if (!existsMainHR().join()) {
-            Employee employee = new Employee();
-            employee.setName(mainHRDTO.getHrName());
-            employee.setEmail(mainHRDTO.getHrEmail());
-            employee.setStaffId(mainHRDTO.getStaffId());
-            employee.setCompany(COMPANY_SERVICE.save(new Company(mainHRDTO.getCompanyName())).join());
-            employee.setRole(EmployeeRole.MAIN_HR);
-            employee.setPassword(PASSWORD_ENCODER.encode(SYSTEM_DATA_BEAN.getDefaultPassword()));
-            return CompletableFuture.completedFuture(EMPLOYEE_REPOSITORY.save(employee));
+            final Employee MAIN_HR = new Employee();
+            final Optional<Employee> OPTIONAL_EMPLOYEE = EMPLOYEE_REPOSITORY.findById(CHECKING_BEAN.getId());
+            final Employee ADMIN;
+            final Company COMPANY = COMPANY_SERVICE.save(new Company(mainHRDTO.getCompanyName())).join();
+            if (OPTIONAL_EMPLOYEE.isPresent()) {
+                ADMIN = OPTIONAL_EMPLOYEE.get();
+                ADMIN.setCompany(COMPANY);
+                EMPLOYEE_REPOSITORY.save(ADMIN);
+            } else {
+                throw new DataNotFoundException("Cannot find admin details.");
+            }
+            MAIN_HR.setName(mainHRDTO.getHrName());
+            MAIN_HR.setEmail(mainHRDTO.getHrEmail());
+            MAIN_HR.setStaffId(mainHRDTO.getStaffId());
+            MAIN_HR.setCompany(COMPANY);
+            MAIN_HR.setRole(EmployeeRole.MAIN_HR);
+            MAIN_HR.setPassword(PASSWORD_ENCODER.encode(SYSTEM_DATA_BEAN.getDefaultPassword()));
+            return CompletableFuture.completedFuture(EMPLOYEE_REPOSITORY.save(MAIN_HR));
         } else {
             throw new DuplicatedEnteryException("Main HR account already added.");
         }
@@ -358,11 +367,13 @@ public class EmployeeService {
         Map<String, Integer> notedPercentageMap = new HashMap<>();
         Map<Long, Integer> employeeCountMap = getSubCompanyAnnouncements();
         LOGGER.info("before announcement count");
+        List<Long> announcementIds = ANNOUNCEMENT_REPOSITORY.findAnnouncementIdsByEmployeeId(CHECKING_BEAN.getId());
         int announcementCount = ANNOUNCEMENT_REPOSITORY.getAnnouncementCountByCompanyAndEmployee(CHECKING_BEAN.getId());
         employeeCountMap.forEach((departmentId, notedCount) -> {
             String departmentName = DEPARTMENT_REPOSITORY.findDepartmentNameById(departmentId);
             int employeeCount = employeeCountByDepartment(departmentId);
             int expectedCount = employeeCount * announcementCount;
+            LOGGER.info("announcement count : " + announcementCount);
             LOGGER.info("noted count : " + notedCount);
             LOGGER.info("employee count : " + employeeCount);
             LOGGER.info("expect count : " + expectedCount);
@@ -372,7 +383,7 @@ public class EmployeeService {
         return notedPercentageMap;
     }
 
-    public int employeeCountByDepartment (Long departmentId) {
+    public int employeeCountByDepartment(Long departmentId) {
         return EMPLOYEE_REPOSITORY.getEmployeeCountByDepartmentId(departmentId);
     }
 

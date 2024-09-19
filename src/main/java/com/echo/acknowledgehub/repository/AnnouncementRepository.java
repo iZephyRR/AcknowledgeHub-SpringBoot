@@ -103,7 +103,7 @@ public interface AnnouncementRepository extends JpaRepository<Announcement, Long
     @Query("SELECT a.employee.id FROM Announcement a WHERE a.id=:announcementId")
     Long getCreator(@Param("announcementId") Long announcementId);
 
-    @Query("SELECT COUNT(t) > 0 " +
+    @Query("SELECT t.announcement.id " +
             "FROM Target t " +
             "LEFT JOIN CustomTargetGroupEntity c ON c.customTargetGroup.id = t.sendTo " +
             "WHERE ((t.receiverType = 'COMPANY' AND t.sendTo = :companyId) " +
@@ -114,11 +114,21 @@ public interface AnnouncementRepository extends JpaRepository<Announcement, Long
             "OR (c.receiverType = 'DEPARTMENT' AND c.sendTo = :departmentId) " +
             "OR (c.receiverType = 'EMPLOYEE' AND c.sendTo = :id)))) "
     )
-    boolean canAccess(@Param("companyId") Long companyId, @Param("departmentId") Long departmentId, @Param("id") Long id);
+    List<Long> canAccess(@Param("companyId") Long companyId, @Param("departmentId") Long departmentId, @Param("id") Long id);
 
-    @Query("SELECT a.id FROM Announcement a WHERE a.employee.id = :employeeId")
+    @Query("SELECT a.id FROM Announcement a JOIN Target t ON t.announcement = a " +
+            "JOIN Employee e ON a.employee = e " +
+            "WHERE e.id = :employeeId AND t.receiverType = 'COMPANY' AND t.sendTo = e.company.id AND a.status = 'UPLOADED' " +
+            "GROUP BY a.id HAVING COUNT(t.id) = 1")
     List<Long> findAnnouncementIdsByEmployeeId(@Param("employeeId") Long employeeId);
 
-    @Query("SELECT COUNT(a) FROM Announcement a WHERE a.employee.id = :employeeId")
+    @Query("SELECT COUNT(DISTINCT a.id) FROM Announcement a " +
+            "JOIN Target t ON t.announcement = a " +
+            "JOIN Employee e ON a.employee = e " +
+            "WHERE e.id = :employeeId AND t.receiverType = 'COMPANY' AND t.sendTo = e.company.id AND a.status = 'UPLOADED'")
     int getAnnouncementCountByCompanyAndEmployee(@Param("employeeId") Long employeeId);
+
+    @Query("SELECT new com.echo.acknowledgehub.dto.ScheduleList(a.id,a.title,a.createdAt,a.contentType)" +
+            "FROM Announcement a WHERE a.status=:status AND a.employee.id=:employeeId")
+    List<ScheduleList> getScheduleList(@Param("status") AnnouncementStatus status, @Param("employeeId") Long employeeId);
 }

@@ -85,7 +85,8 @@ public class AnnouncementService {
             } else if (CHECKING_BEAN.getRole() == EmployeeRole.MAIN_HR) {
                 return AnnouncementResponseCondition.VIEWER;
             } else {
-                if (ANNOUNCEMENT_REPOSITORY.canAccess(CHECKING_BEAN.getCompanyId(), CHECKING_BEAN.getDepartmentId(), CHECKING_BEAN.getId())) {
+                List<Long> ids=ANNOUNCEMENT_REPOSITORY.canAccess(CHECKING_BEAN.getCompanyId(), CHECKING_BEAN.getDepartmentId(), CHECKING_BEAN.getId());
+                if (ids.contains(announcementId)) {
                     return AnnouncementResponseCondition.RECEIVER;
                 } else {
                     throw new DataNotFoundException("Post cannot find");
@@ -180,6 +181,15 @@ public class AnnouncementService {
                 , CHECKING_BEAN.getDepartmentId()
                 , CHECKING_BEAN.getId()
         ));
+    }
+
+    @Transactional
+    public List<ScheduleList> getScheduleList () {
+        return ANNOUNCEMENT_REPOSITORY.getScheduleList(AnnouncementStatus.PENDING, CHECKING_BEAN.getId());
+    }
+
+    public void deleteAnnouncement(Long id) {
+        ANNOUNCEMENT_REPOSITORY.delete(findById(id).join().get());
     }
 
 
