@@ -34,10 +34,11 @@ public class AnnouncementDTO {
     private IsSchedule isSchedule;
     private ContentType contentType;
     private EmployeeRole role;
-    private String channel;
+    private String isEmailSelected;
     private boolean selectAll;
 
-    public AnnouncementDTO(String title, LocalDateTime createdAt, AnnouncementStatus status, String categoryName, String createdBy){
+    public AnnouncementDTO(Long id,String title, LocalDateTime createdAt, AnnouncementStatus status, String categoryName, String createdBy){
+        this.id=id;
         this.title=title;
         this.createdAt=createdAt;
         this.status=status;

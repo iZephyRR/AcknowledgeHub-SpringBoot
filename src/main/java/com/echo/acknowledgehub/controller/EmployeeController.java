@@ -3,21 +3,18 @@ package com.echo.acknowledgehub.controller;
 import com.echo.acknowledgehub.bean.CheckingBean;
 import com.echo.acknowledgehub.dto.*;
 import com.echo.acknowledgehub.entity.Employee;
-import com.echo.acknowledgehub.repository.EmployeeRepository;
 import com.echo.acknowledgehub.service.EmployeeService;
-import com.echo.acknowledgehub.service.FirebaseNotificationService;
-import com.echo.acknowledgehub.util.JWTService;
 import lombok.AllArgsConstructor;
 import org.modelmapper.ModelMapper;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -29,7 +26,6 @@ public class EmployeeController {
     private final EmployeeService EMPLOYEE_SERVICE;
     private final CheckingBean CHECKING_BEAN;
     private final ModelMapper MODEL_MAPPER;
-
 
     @GetMapping(value = "/mr/users", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<List<UserDTO>> getAllUsers() {
@@ -53,9 +49,7 @@ public class EmployeeController {
 
     @GetMapping("/user/profile")
     private EmployeeProfileDTO findById(){
-        EmployeeProfileDTO employeeProfileDTO=EMPLOYEE_SERVICE.getProfileInfo(CHECKING_BEAN.getId()).join();
-        LOGGER.info("emp "+employeeProfileDTO);
-        return employeeProfileDTO;
+        return EMPLOYEE_SERVICE.getProfileInfo(CHECKING_BEAN.getId()).join();
     }
 
     @GetMapping("/hrs/user/by-department/{id}")
@@ -66,16 +60,27 @@ public class EmployeeController {
                 .collect(Collectors.toList());
     }
 
+    @PostMapping("/user/uploadProfileImage")
+    public ResponseEntity<StringResponseDTO> uploadProfileImage(@RequestParam("image") MultipartFile imageFile) {
+        try {
+            EMPLOYEE_SERVICE.uploadProfileImage(imageFile);
+            return ResponseEntity.ok(new StringResponseDTO("Profile image uploaded successfully"));
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new StringResponseDTO("Failed to upload image"));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new StringResponseDTO("Employee not found."));
+        }
+    }
+
     @GetMapping("/count")
     public long getEmployeeCount() {
         return EMPLOYEE_SERVICE.countEmployees();
     }
 
-    @PostMapping("/ad/add-user")
-    private Employee register(@RequestBody UserDTO user) {
-        return EMPLOYEE_SERVICE.save(user).join();
+    @PostMapping("/ad/main-hr")
+    private Employee register(@RequestBody HRDTO mainHRDTO) {
+        return EMPLOYEE_SERVICE.saveMainHR(mainHRDTO).join();
     }
-
 
     @PostMapping("/hrs/add-users")
     private List<Employee> register(@RequestBody UserExcelDTO users) {
@@ -106,6 +111,17 @@ public class EmployeeController {
 //        List<Long> userIdList = FIREBASE_NOTIFICATION_SERVICE.getNotificationsAndMatchWithEmployees(Long.parseLong(announcementId),3);
 //        return ResponseEntity.ok(EMPLOYEE_SERVICE.getEmployeeWhoNoted(userIdList));
 
+    }
+
+    @GetMapping("/ad/exists-main-hr")
+    private Boolean existsMainHR(){
+        return EMPLOYEE_SERVICE.existsMainHR().join();
+    }
+
+    @GetMapping(value = "/hrs/employee-count", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Long> countCompany() {
+        long count = EMPLOYEE_SERVICE.count();
+        return ResponseEntity.ok(count);
     }
 
 }

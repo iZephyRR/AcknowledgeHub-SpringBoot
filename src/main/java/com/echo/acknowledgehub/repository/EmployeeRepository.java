@@ -3,6 +3,7 @@ package com.echo.acknowledgehub.repository;
 import com.echo.acknowledgehub.dto.EmployeeNotedDTO;
 import com.echo.acknowledgehub.dto.EmployeeProfileDTO;
 import com.echo.acknowledgehub.constant.EmployeeRole;
+import com.echo.acknowledgehub.dto.StringResponseDTO;
 import com.echo.acknowledgehub.entity.Employee;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -14,7 +15,7 @@ import java.util.Optional;
 
 public interface EmployeeRepository extends JpaRepository<Employee, Long> {
 
-    @Query("SELECT new com.echo.acknowledgehub.dto.EmployeeProfileDTO(em.name, em.role, em.email, em.company.name, em.department.name) FROM Employee em WHERE em.id = :id")
+    @Query("SELECT new com.echo.acknowledgehub.dto.EmployeeProfileDTO(em.name, em.role, em.email, em.company.name, em.department.name, em.photoLink) FROM Employee em WHERE em.id = :id")
     EmployeeProfileDTO getProfileInfo(@Param("id") Long id);
 
     Optional<Employee> findByEmail(String email);
@@ -38,6 +39,9 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
     @Modifying
     @Query("UPDATE Employee em set em.password= :defaultPassword WHERE em.status= 'DEFAULT'")
     int changeDefaultPassword(@Param("defaultPassword") String encodedDefaultPassword);
+
+    @Query("SELECT new com.echo.acknowledgehub.dto.StringResponseDTO(e.email) FROM Employee e WHERE e.status='DEFAULT'")
+    List<StringResponseDTO> getDefaultAccountEmails();
 
     @Modifying
     @Query("UPDATE Employee em SET em.password= :newPassword WHERE em.email= :email")
@@ -78,7 +82,7 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
     @Query("select em.telegramUserId from Employee em where em.department.id = :departmentId")
     List<Long> getAllChatIdByDepartmentId(@Param("departmentId") Long departmentId);
 
-    @Query("SELECT e.id FROM Employee e WHERE e.telegramUsername = :telegramUsername")
+    @Query("SELECT e.id FROM Employee e WHERE LOWER(e.telegramUsername) = LOWER(:telegramUsername)")
     Long getEmployeeIdByTelegramUsername(@Param("telegramUsername") String telegramUsername);
 
 
@@ -118,7 +122,7 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
     @Query("Select count(e) From Employee e where e.company.id=:id")
     int getEmployeeCountByCompanyId(@Param("id") Long id);
 
-@Query("SELECT e.email FROM Employee e WHERE e.company.id= :id")
+    @Query("SELECT e.email FROM Employee e WHERE e.company.id= :id")
     List<String> getEmailsByCompanyId(@Param("id") Long id);
 
     @Query("SELECT e.email FROM Employee e WHERE e.department.id= :id")
@@ -126,5 +130,23 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
 
     @Query("SELECT e.email FROM Employee e WHERE e.id= :id")
     List<String> getEmailsByUserId(@Param("id") Long id);
+
+    @Query("SELECT e FROM Employee e JOIN Announcement a ON e.id = a.employee.id " +
+            "WHERE a.id = :announcementId AND e.role IN :roles")
+    List<Employee> findEmployeesByRolesAndAnnouncement(
+            @Param("roles") List<EmployeeRole> roles,
+            @Param("announcementId") Long announcementId);
+
+    @Query("SELECT new com.echo.acknowledgehub.dto.EmployeeProfileDTO(em.name, em.role, em.email, em.photoLink) FROM Employee em WHERE em.id = :id")
+    EmployeeProfileDTO getAdminProfileInfo(@Param("id") Long id);
+
+    @Query("SELECT COUNT(e) > 0 FROM Employee e WHERE e.role = 'MAIN_HR'")
+    Boolean existsMainHR();
+
+    @Query("SELECT COUNT(e) FROM Employee e WHERE e.company.id= :id")
+    long countForHR(@Param("id")Long companyId);
+
+    @Query("Select count(e) From Employee e where e.department.id=:id")
+    int getEmployeeCountByDepartmentId(@Param("id") Long id);
 }
 

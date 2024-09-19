@@ -24,4 +24,8 @@ public class Company {
   @OneToMany(mappedBy = "company", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
   @JsonManagedReference
   private List<Department> departments = new ArrayList<>();
+
+  public Company(String name){
+    this.name=name;
+  }
 }
