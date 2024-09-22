@@ -22,4 +22,9 @@ public interface CompanyRepository extends JpaRepository<Company, Long> {
     @Query("SELECT c.name FROM Company c WHERE c.id = :id")
     String findCompanyNameById(@Param("id") Long id);
 
+    @Query("SELECT d.company FROM Department d WHERE d.id = :departmentId")
+    Company getByDepartmentId(@Param("departmentId") Long id);
+
+    @Query("SELECT e.company FROM Employee e WHERE e.id=:employeeId")
+    Company findByEmployeeId(@Param("employeeId") Long employeeId);
 }

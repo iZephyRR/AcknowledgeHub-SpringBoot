@@ -6,21 +6,18 @@ import com.echo.acknowledgehub.dto.*;
 import com.echo.acknowledgehub.entity.Announcement;
 import com.echo.acknowledgehub.entity.AnnouncementCategory;
 import com.echo.acknowledgehub.exception_handler.DataNotFoundException;
+import com.echo.acknowledgehub.repository.AnnouncementCategoryRepository;
 import com.echo.acknowledgehub.repository.AnnouncementRepository;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
-import org.checkerframework.checker.units.qual.Temperature;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.io.IOException;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
-import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -80,7 +77,7 @@ public class AnnouncementService {
 
     private AnnouncementResponseCondition getResponseCondition(Long announcementId) {
         if (ANNOUNCEMENT_REPOSITORY.existsById(announcementId)) {
-            if (ANNOUNCEMENT_REPOSITORY.getCreator(announcementId) == CHECKING_BEAN.getId()) {
+            if (Objects.equals(ANNOUNCEMENT_REPOSITORY.getCreator(announcementId), CHECKING_BEAN.getId())) {
                 return AnnouncementResponseCondition.CREATOR;
             } else if (CHECKING_BEAN.getRole() == EmployeeRole.MAIN_HR) {
                 return AnnouncementResponseCondition.VIEWER;
@@ -98,7 +95,11 @@ public class AnnouncementService {
     }
 
     public CompletableFuture<List<AnnouncementDTO>> getByCompany() {
-        return CompletableFuture.completedFuture(ANNOUNCEMENT_REPOSITORY.getByCompany(CHECKING_BEAN.getCompanyId()));
+        if (CHECKING_BEAN.getRole() == EmployeeRole.MAIN_HR) {
+            return CompletableFuture.completedFuture(ANNOUNCEMENT_REPOSITORY.getAllAnnouncementsForMainHR());
+        }else {
+            return CompletableFuture.completedFuture(ANNOUNCEMENT_REPOSITORY.getByCompany(CHECKING_BEAN.getCompanyId()));
+        }
     }
 
     public long countAnnouncements() {
@@ -125,6 +126,31 @@ public class AnnouncementService {
         announcementsByMonth.put("August", getAnnouncementsForMonth(startOfAugust, endOfAugust));
         announcementsByMonth.put("September", getAnnouncementsForMonth(startOfSeptember, endOfSeptember));
         announcementsByMonth.put("October", getAnnouncementsForMonth(startOfOctober, endOfOctober));
+
+        return announcementsByMonth;
+    }
+
+    public List<Announcement> getAllAnnouncements() {
+        System.out.println("Fetching all announcements");
+        return ANNOUNCEMENT_REPOSITORY.findAllAnnouncements();
+    }
+
+
+    public Map<String, List<Announcement>> getAnnouncementsGroupedByMonthAndYear(int year) {
+        Map<String, List<Announcement>> announcementsByMonth = new LinkedHashMap<>();
+        List<Announcement> allAnnouncements = getAllAnnouncements(); // Check this method
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM");
+
+        for (Announcement announcement : allAnnouncements) {
+            int announcementYear = announcement.getCreatedAt().getYear();
+            if (announcementYear == year) {
+                String monthYear = announcement.getCreatedAt().format(formatter);
+                announcementsByMonth
+                        .computeIfAbsent(monthYear, k -> new ArrayList<>())
+                        .add(announcement);
+            }
+        }
 
         return announcementsByMonth;
     }
@@ -167,31 +193,44 @@ public class AnnouncementService {
         return dto;
     }
 
-    @Async
-    public CompletableFuture<List<DataPreviewDTO>> getMainPreviews() {
-        return CompletableFuture.completedFuture(ANNOUNCEMENT_REPOSITORY.getMainPreviews(CHECKING_BEAN.getCompanyId()
-                , CHECKING_BEAN.getDepartmentId()
-                , CHECKING_BEAN.getId()
-        ));
-    }
+@Async
+public CompletableFuture<Page<List<DataPreviewDTO>>> getMainPreviews(int page, int size) {
+    return CompletableFuture.completedFuture(ANNOUNCEMENT_REPOSITORY.getMainPreviews(CHECKING_BEAN.getCompanyId()
+            , CHECKING_BEAN.getDepartmentId()
+            , CHECKING_BEAN.getId()
+            , PageRequest.of(page, size)
+    ));
+}
 
     @Async
-    public CompletableFuture<List<DataPreviewDTO>> getSubPreviews() {
+    public CompletableFuture<Page<List<DataPreviewDTO>>> getSubPreviews(int page, int size) {
         return CompletableFuture.completedFuture(ANNOUNCEMENT_REPOSITORY.getSubPreviews(CHECKING_BEAN.getCompanyId()
                 , CHECKING_BEAN.getDepartmentId()
                 , CHECKING_BEAN.getId()
+                , PageRequest.of(page, size)
         ));
     }
 
     @Transactional
     public List<ScheduleList> getScheduleList () {
-        return ANNOUNCEMENT_REPOSITORY.getScheduleList(AnnouncementStatus.PENDING, CHECKING_BEAN.getId());
+        List<EmployeeRole> roles = Arrays.asList(EmployeeRole.MAIN_HR, EmployeeRole.MAIN_HR_ASSISTANCE,
+                EmployeeRole.HR, EmployeeRole.HR_ASSISTANCE);
+        List<Long> employeeIds =  ANNOUNCEMENT_REPOSITORY.findEmployeeIdsByRolesAndCompanyId(roles, CHECKING_BEAN.getCompanyId());
+        return ANNOUNCEMENT_REPOSITORY.getScheduleListByEmployeeIds(AnnouncementStatus.PENDING, employeeIds);
     }
 
     public void deleteAnnouncement(Long id) {
         ANNOUNCEMENT_REPOSITORY.delete(findById(id).join().get());
     }
 
+    public Announcement updateTimeAndStatus(Long announcementId) throws IOException {
+        CompletableFuture<Announcement> announcementCompletableFuture = findById(announcementId)
+                .thenApply(announcement -> announcement.orElseThrow(() -> new NoSuchElementException("Announcement not found")));
+        Announcement announcement = announcementCompletableFuture.join();
+        announcement.setCreatedAt(LocalDateTime.now());
+        announcement.setStatus(AnnouncementStatus.UPLOADED);
+        return save(announcement);
+    }
 
 }
 

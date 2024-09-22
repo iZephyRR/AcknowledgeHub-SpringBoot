@@ -91,4 +91,13 @@ public class CompanyService {
     public String getCompanyName(Long companyId) {
         return COMPANY_REPOSITORY.findCompanyNameById(companyId);
     }
+
+    @Async
+    public CompletableFuture<Company> getByDepartmentId(Long departmentId){
+        return CompletableFuture.completedFuture(COMPANY_REPOSITORY.getByDepartmentId(departmentId));
+    }
+
+    public Company findByEmployeeId(Long employeeId) {
+        return COMPANY_REPOSITORY.findByEmployeeId(employeeId);
+    }
 }

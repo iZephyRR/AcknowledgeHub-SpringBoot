@@ -1,10 +1,12 @@
 package com.echo.acknowledgehub.entity;
 
+import com.echo.acknowledgehub.bean.SystemDataBean;
 import com.echo.acknowledgehub.constant.EmployeeRole;
 import com.echo.acknowledgehub.constant.EmployeeStatus;
 import com.echo.acknowledgehub.constant.Gender;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
@@ -19,7 +21,9 @@ import java.util.logging.Logger;
 @NoArgsConstructor
 @Table(name = "employee")
 public class Employee implements UserDetails {
+
     private static final Logger LOGGER = Logger.getLogger(Employee.class.getName());
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", columnDefinition = "BIGINT")
@@ -30,7 +34,7 @@ public class Employee implements UserDetails {
     private Long telegramUserId;
     @Column(name = "email", unique = true, nullable = false, columnDefinition = "VARCHAR(100)")
     private String email;
-    @Column(name = "staff_id", unique = true, columnDefinition = "VARCHAR(12)")
+    @Column(name = "staff_id", unique = true, columnDefinition = "VARCHAR(12)", nullable = false)
     private String staffId;
     @Column(name = "nrc", unique = true, columnDefinition = "VARCHAR(20)")
     private String nrc;
@@ -53,18 +57,16 @@ public class Employee implements UserDetails {
     private byte[] photoLink;
     @Column(name = "address", columnDefinition = "VARCHAR(125)")
     private String address;
-    @Column(name = "work_entry_date", columnDefinition = "DATE")
-    private Date workEntryDate;
     @Column(name = "noted_count",  nullable = false )
     private int notedCount = 0;
 
     @JsonIgnore
-    @ManyToOne(cascade = CascadeType.MERGE)
+    @ManyToOne
     @JoinColumn(name = "department_id")
     private Department department;
 
     @JsonIgnore
-    @ManyToOne(cascade = CascadeType.MERGE)
+    @ManyToOne
     @JoinColumn(name = "company_id")
     private Company company;
 

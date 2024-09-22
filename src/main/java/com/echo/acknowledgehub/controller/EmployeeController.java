@@ -4,6 +4,7 @@ import com.echo.acknowledgehub.bean.CheckingBean;
 import com.echo.acknowledgehub.dto.*;
 import com.echo.acknowledgehub.entity.Employee;
 import com.echo.acknowledgehub.service.EmployeeService;
+import com.echo.acknowledgehub.service.FirebaseNotificationService;
 import lombok.AllArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
@@ -27,9 +28,9 @@ public class EmployeeController {
     private final CheckingBean CHECKING_BEAN;
     private final ModelMapper MODEL_MAPPER;
 
-    @GetMapping(value = "/mr/users", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<List<UserDTO>> getAllUsers() {
-        return ResponseEntity.ok(EMPLOYEE_SERVICE.getAllUsers());
+    @GetMapping("/hrs/users")
+    public List<UserDTO> getAllUsers() {
+        return EMPLOYEE_SERVICE.getAllUsers();
     }
 
     @GetMapping("/user/{id}")
@@ -87,30 +88,16 @@ public class EmployeeController {
         LOGGER.info("Adding users..."+users);
         return EMPLOYEE_SERVICE.saveAll(users).join();
     }
-    @PutMapping("/hrs/update-users")
-    private List<Employee> update(@RequestBody List<UserDTO> users){
-        LOGGER.info("Updating users : "+users);
-        return EMPLOYEE_SERVICE.updateUsers(users).join();
+
+    @PutMapping("/hrs/edit-users")
+    private List<Employee> update(@RequestBody List<UserExcelUpdateDTO> users) {
+        LOGGER.info("Updating users..."+users);
+     return EMPLOYEE_SERVICE.updateAll(users).join();
     }
 
     @GetMapping("/hrs/get-uniques")
     private UniqueFieldsDTO getUniqueFields(){
         return EMPLOYEE_SERVICE.getUniques().join();
-
-
-//    @GetMapping(value = "/getEmployeesWho1DNoted/{id}" , produces = MediaType.APPLICATION_JSON_VALUE)
-//    public ResponseEntity<List<EmployeeNotedDTO>> getEmployeesWho1DNoted(@PathVariable("id") String announcementId) {
-//        LOGGER.info("in one day");
-//        List<Long> userIdList = FIREBASE_NOTIFICATION_SERVICE.getNotificationsAndMatchWithEmployees(Long.parseLong(announcementId),1);
-//        return ResponseEntity.ok(EMPLOYEE_SERVICE.getEmployeeWhoNoted(userIdList));
-//    }
-//
-//    @GetMapping(value = "/getEmployeesWho3DNoted/{id}" , produces = MediaType.APPLICATION_JSON_VALUE)
-//    public ResponseEntity<List<EmployeeNotedDTO>> getEmployeesWho3DNoted(@PathVariable("id") String announcementId) {
-//        LOGGER.info("in three day");
-//        List<Long> userIdList = FIREBASE_NOTIFICATION_SERVICE.getNotificationsAndMatchWithEmployees(Long.parseLong(announcementId),3);
-//        return ResponseEntity.ok(EMPLOYEE_SERVICE.getEmployeeWhoNoted(userIdList));
-
     }
 
     @GetMapping("/ad/exists-main-hr")

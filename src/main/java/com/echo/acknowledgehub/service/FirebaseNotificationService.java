@@ -67,7 +67,7 @@ public class FirebaseNotificationService {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"); // Include milliseconds
 
         try {
-            // Query to find the documents to process
+
             ApiFuture<QuerySnapshot> future = dbFirestore.collection("notifications")
                     .whereEqualTo("announcementId", String.valueOf(announcementId))
                     .orderBy("noticeAt", Query.Direction.DESCENDING)
@@ -148,8 +148,7 @@ public class FirebaseNotificationService {
                 saveToNotedCollection(announcementId, targetName, title, senderName, senderId, formattedNow, dbFirestore);
 
 
-                sendNotificationsToHR(announcementId, targetName, title, senderName, senderId, dbFirestore);
-            } else {
+                sendNotificationsToHR(announcementId, targetName, title, senderName, senderId, dbFirestore);} else {
                 LOGGER.warning("No matching document found to update noticeAt.");
             }
         } catch (InterruptedException | ExecutionException e) {
@@ -176,7 +175,6 @@ public class FirebaseNotificationService {
                 Arrays.asList(EmployeeRole.MAIN_HR, EmployeeRole.HR, EmployeeRole.HR_ASSISTANCE),
                 announcementId);
 
-
         for (Employee hrEmployee : hrEmployees) {
             CHECKING_BEAN.setId(hrEmployee.getId());
             CHECKING_BEAN.setCompanyId(hrEmployee.getCompany().getId());
@@ -184,7 +182,6 @@ public class FirebaseNotificationService {
             CHECKING_BEAN.setStatus(hrEmployee.getStatus());
 
             if (isValidForNotification(CHECKING_BEAN)) {
-
 
                 Map<String, Object> hrNotification = new HashMap<>();
                 hrNotification.put("announcementId", announcementId);
@@ -227,13 +224,10 @@ public class FirebaseNotificationService {
         return false;
     }
 
-
-    // Save a reply in Firebase "replies" collection and notify the original commenter
-    public void saveComment(Long announcementId, Long commenterId, String commenterName, String content) {
+    public void saveComment(Long commentId,Long announcementId, Long commenterId, String commenterName, String content) {
         DateTimeFormatter formatDate = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
         String formattedDateTimes = LocalDateTime.now().format(formatDate);
         Firestore dbFirestore = FirestoreClient.getFirestore();
-        String commentId = UUID.randomUUID().toString();  // Generate a unique ID for the comment
 
         Map<String, Object> commentData = new HashMap<>();
         commentData.put("commentId", commentId);
@@ -243,12 +237,10 @@ public class FirebaseNotificationService {
         commentData.put("content", content);
         commentData.put("timestamp", formattedDateTimes);
 
-        // Save the comment in the comments collection
-        ApiFuture<WriteResult> future = dbFirestore.collection("comments").document(commentId).set(commentData);
-
+        ApiFuture<WriteResult> future = dbFirestore.collection("comments").document(String.valueOf(commentId)).set(commentData);
         future.addListener(() -> {
             try {
-                future.get();  // Block until the future is done
+                future.get();
                 LOGGER.info("Comment saved to Firebase for announcement: " + announcementId);
                 sendNotificationToCreator(announcementId, commenterName, content);
             } catch (InterruptedException | ExecutionException e) {
@@ -263,7 +255,6 @@ public class FirebaseNotificationService {
         Firestore dbFirestore = FirestoreClient.getFirestore();
 
         try {
-            // Query to get the notification details related to the announcement ID
             ApiFuture<QuerySnapshot> future = dbFirestore.collection("notifications")
                     .whereEqualTo("announcementId", String.valueOf(announcementId))
                     .limit(1)
@@ -272,26 +263,25 @@ public class FirebaseNotificationService {
             List<QueryDocumentSnapshot> documents = future.get().getDocuments();
             if (!documents.isEmpty()) {
                 DocumentSnapshot document = documents.get(0);
-                String creatorId = document.getString("SenderID");  // Creator's ID from the notification
-                String creatorName = document.getString("SenderName");  // Creator's Name (SenderName field)
+                String SenderID = document.getString("SenderID");
+                String SenderName = document.getString("SenderName");
 
-                if (creatorId != null && creatorName != null) {
+                if (SenderID != null && SenderName != null) {
                     Map<String, Object> notificationData = new HashMap<>();
                     notificationData.put("announcementId", announcementId);
                     notificationData.put("message", commenterName + " commented: " + content);
                     notificationData.put("noticeAt", formattedDateTimes);
                     notificationData.put("timestamp",formattedDateTimes);
                     notificationData.put("commentSenderName", commenterName);
-                    notificationData.put("SenderName", creatorName);  // Notification for the creator
-                    notificationData.put("sentTo", creatorName);  // Send to the creator
-                    notificationData.put("targetId", creatorId);  // Set the targetId as the creator's ID
+                    notificationData.put("SenderName", SenderName);
+                    notificationData.put("sentTo", SenderName);
+                    notificationData.put("targetId", SenderID);
                     notificationData.put("type", "NEW_COMMENT");
                     notificationData.put("isRead", false);
-                    // Save the new notification for the creator
                     dbFirestore.collection("notifications_for_comment").add(notificationData).get();
-                    LOGGER.info("Notification sent to creator for comment on announcement ID: " + announcementId);
+                    LOGGER.info("Notification sent to sender for comment on announcement ID: " + announcementId);
                 } else {
-                    LOGGER.warning("No creatorId or creatorName found in the notification for announcement ID: " + announcementId);
+                    LOGGER.warning("No SenderID or SenderName found in the notification for announcement ID: " + announcementId);
                 }
             } else {
                 LOGGER.warning("No notification found for announcement ID: " + announcementId);
@@ -301,46 +291,44 @@ public class FirebaseNotificationService {
         }
     }
 
-
-
-
-    public void saveReply(Long commentId, Long replierId, String replierName, String content, Long originalCommenterId) {
+    public void saveReply(Long announcementId,String replyId, String replierId, String replierName, String content, String originalCommenterId) {
         DateTimeFormatter formatDate = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
         String formattedDateTimes = LocalDateTime.now().format(formatDate);
         Firestore dbFirestore = FirestoreClient.getFirestore();
-        String replyId = UUID.randomUUID().toString();  // Generate a unique ID for the reply
 
         Map<String, Object> replyData = new HashMap<>();
         replyData.put("replyId", replyId);
-        replyData.put("commentId", commentId);
+        replyData.put("commentId", originalCommenterId);
         replyData.put("replierId", replierId);
         replyData.put("replierName", replierName);
-        replyData.put("content", content);
+        replyData.put("message", replierName + " replied to your comment " + content);
+        replyData.put("noticeAt",formattedDateTimes);
         replyData.put("timestamp", formattedDateTimes);
+        replyData.put("announcementId", announcementId);
 
-        // Save the reply in the replies collection
         ApiFuture<WriteResult> future = dbFirestore.collection("replies").document(replyId).set(replyData);
 
         future.addListener(() -> {
             try {
-                future.get();  // Block until the future is done
-                LOGGER.info("Reply saved to Firebase for comment ID: " + commentId);
-                sendNotificationToOriginalCommenter(commentId, replierName, content, originalCommenterId);
+                future.get();
+                LOGGER.info("Reply saved to Firebase for comment ID: " + originalCommenterId);
+                //sendNotificationToOriginalCommenter(originalCommenterId, replierName, content, Long.valueOf(originalCommenterId));
             } catch (InterruptedException | ExecutionException e) {
                 LOGGER.severe("Failed to save reply to Firebase: " + e.getMessage());
             }
         }, Executors.newSingleThreadExecutor());
     }
 
-    private void sendNotificationToOriginalCommenter(Long commentId, String replierName, String content, Long originalCommenterId) {
+    private void sendNotificationToOriginalCommenter(String commentId, String replierName, String content, Long originalCommenterId) {
         Firestore dbFirestore = FirestoreClient.getFirestore();
         DateTimeFormatter formatDate = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
         String formattedDateTimes = LocalDateTime.now().format(formatDate);
 
+        LOGGER.info("Fetching comment with commentId: " + commentId);
+
         try {
-            // Query to get the original comment details from the 'comments' collection
             ApiFuture<QuerySnapshot> future = dbFirestore.collection("comments")
-                    .whereEqualTo("commentId", String.valueOf(commentId))
+                    .whereEqualTo("commentId", commentId)
                     .limit(1)
                     .get();
 
@@ -351,14 +339,13 @@ public class FirebaseNotificationService {
 
                 if (originalCommenterName != null) {
                     Map<String, Object> notificationData = new HashMap<>();
-                    notificationData.put("commentId", commentId);
+                    notificationData.put("commenterId", commentId);
                     notificationData.put("message", replierName + " replied: " + content);
                     notificationData.put("noticeAt", formattedDateTimes);
                     notificationData.put("SenderName", replierName);
                     notificationData.put("type", "NEW_REPLY");
-                    notificationData.put("receiverName", originalCommenterName); // Notify the original commenter
+                    notificationData.put("receiverName", originalCommenterName);
 
-                    // Save the notification to Firebase
                     dbFirestore.collection("notifications_for_replies").add(notificationData).get();
                     LOGGER.info("Notification sent to original commenter for reply on comment ID: " + commentId);
                 } else {
@@ -371,9 +358,6 @@ public class FirebaseNotificationService {
             LOGGER.severe("Error sending notification to original commenter: " + e.getLocalizedMessage());
         }
     }
-
-
-
 
 //    public void insertIntoTableFromFirebase(Long employeeId, long announcementId) {
 //        Firestore dbFirestore = FirestoreClient.getFirestore();

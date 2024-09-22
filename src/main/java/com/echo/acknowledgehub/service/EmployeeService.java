@@ -139,9 +139,20 @@ public class EmployeeService {
         MAPPER.typeMap(UserDTO.class, Employee.class).addMappings(mapper -> {
             mapper.map(UserDTO::getDepartmentId, (Employee e, Long id) -> e.getDepartment().setId(id));
             mapper.map(UserDTO::getCompanyId, (Employee e, Long id) -> e.getCompany().setId(id));
+            if (user.getCompanyName() != null && user.getDepartmentName() != null) {
+                mapper.map(UserDTO::getDepartmentName, (Employee e, String name) -> e.getDepartment().setName(name));
+                mapper.map(UserDTO::getCompanyName, (Employee e, String name) -> e.getCompany().setName(name));
+            }
+
         });
         Employee employee = MAPPER.map(user, Employee.class);
+        LOGGER.info(employee.toString());
         employee.setPassword(PASSWORD_ENCODER.encode(SYSTEM_DATA_BEAN.getDefaultPassword()));
+        return CompletableFuture.completedFuture(EMPLOYEE_REPOSITORY.save(employee));
+    }
+
+    @Async
+    public CompletableFuture<Employee> save(Employee employee) {
         return CompletableFuture.completedFuture(EMPLOYEE_REPOSITORY.save(employee));
     }
 
@@ -169,17 +180,59 @@ public class EmployeeService {
         } else {
             throw new DuplicatedEnteryException("Main HR account already added.");
         }
-
     }
 
     @Async
     public CompletableFuture<List<Employee>> saveAll(UserExcelDTO users) {
-        Department department = DEPARTMENT_SERVICE.save(new Department(users.getDepartmentName(), users.getCompanyId())).join();
+        Department department = DEPARTMENT_SERVICE.save(new Department(users.getDepartmentId(), users.getDepartmentName(), users.getCompanyId())).join();
         List<Employee> employees = new ArrayList<>();
         users.getUsers().forEach(user -> {
             user.setDepartmentId(department.getId());
             user.setCompanyId(users.getCompanyId());
             this.save(user).thenAccept(employees::add);
+        });
+        return CompletableFuture.completedFuture(employees);
+    }
+
+//    @Async
+//    public CompletableFuture<List<Employee>> updateAll(UserExcelDTO users) {
+//        users.setUsers(users.getUsers().parallelStream()
+//                .peek(user -> {
+//                    if (Objects.isNull(user.getId())) {
+//                        user.setPassword(SYSTEM_DATA_BEAN.getDefaultPassword());
+//                    }
+//                })
+//                .collect(Collectors.toList()));
+//        return CompletableFuture.completedFuture(EMPLOYEE_REPOSITORY.saveAll(users.getUsers()));
+//    }
+
+    //  @Async
+    @Transactional
+    public CompletableFuture<List<Employee>> updateAll(List<UserExcelUpdateDTO> users) {
+        List<Employee> employees = new ArrayList<>();
+        LOGGER.info(users.toString());
+        users.parallelStream().forEach(user -> {
+            Employee employee = new Employee();
+            if (user.getId() != null) {
+                employee.setId(user.getId());
+                employee.setPhotoLink(EMPLOYEE_REPOSITORY.getPhotoById(user.getId()));
+                employee.setPassword(EMPLOYEE_REPOSITORY.findPasswordById(user.getId()));
+                employee.setStatus(user.getStatus());
+            }
+            employee.setNrc(user.getNrc());
+            Optional<Department> optionalDepartment = DEPARTMENT_REPOSITORY.findById(user.getDepartmentId());
+            optionalDepartment.ifPresent(employee::setDepartment);
+            employee.setCompany(COMPANY_SERVICE.getByDepartmentId(user.getDepartmentId()).join());
+            employee.setGender(user.getGender());
+            employee.setName(user.getName());
+            employee.setAddress(user.getAddress());
+            employee.setDob(user.getDob());
+            employee.setRole(user.getRole());
+            employee.setEmail(user.getEmail());
+            employee.setTelegramUsername(user.getTelegramUsername());
+            employee.setStaffId(user.getStaffId());
+            employees.add(EMPLOYEE_REPOSITORY.save(employee));
+
         });
         return CompletableFuture.completedFuture(employees);
     }
@@ -260,9 +313,10 @@ public class EmployeeService {
         return EMPLOYEE_REPOSITORY.existsById(sendTo);
     }
 
-    @Transactional
+    //@Transactional
     public List<UserDTO> getAllUsers() {
         List<Object[]> objectList = EMPLOYEE_REPOSITORY.getAllUsers();
+        LOGGER.info(objectList.toString());
         return mapToDtoList(objectList);
     }
 
@@ -454,7 +508,7 @@ public class EmployeeService {
         dto.setStatus((EmployeeStatus) row[8]);
         dto.setStaffId((String) row[9]);
         dto.setTelegramUsername((String) row[10]);
-        dto.setWorkEntryDate((Date) row[11]);
+        dto.setPhotoLink((byte[]) row[11]);
         dto.setCompanyName((String) row[12]);
         dto.setDepartmentName((String) row[13]);
         dto.setId((Long) row[14]);

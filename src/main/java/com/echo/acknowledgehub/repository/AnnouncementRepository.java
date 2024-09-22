@@ -2,14 +2,13 @@ package com.echo.acknowledgehub.repository;
 
 
 import com.echo.acknowledgehub.bean.CheckingBean;
-import com.echo.acknowledgehub.constant.AnnouncementStatus;
-import com.echo.acknowledgehub.constant.IsSchedule;
-import com.echo.acknowledgehub.constant.ReceiverType;
+import com.echo.acknowledgehub.constant.*;
 import com.echo.acknowledgehub.dto.*;
-import com.echo.acknowledgehub.constant.SelectAll;
 import com.echo.acknowledgehub.dto.AnnouncementDTO;
 import com.echo.acknowledgehub.entity.Announcement;
 import com.echo.acknowledgehub.entity.AnnouncementCategory;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -33,6 +32,9 @@ public interface AnnouncementRepository extends JpaRepository<Announcement, Long
 
     @Query("SELECT new com.echo.acknowledgehub.dto.AnnouncementDTO(a.id, a.title, a.createdAt, a.status, a.category.name, a.employee.name) FROM Announcement a WHERE a.employee.company.id = :id ORDER BY a.createdAt DESC")
     List<AnnouncementDTO> getByCompany(@Param("id") Long id);
+
+    @Query("SELECT new com.echo.acknowledgehub.dto.AnnouncementDTO(a.id, a.title, a.createdAt, a.status, a.category.name, a.employee.name) FROM Announcement a ORDER BY a.createdAt DESC")
+    List<AnnouncementDTO> getAllAnnouncementsForMainHR();
 
     @Query("SELECT a FROM Announcement a WHERE a.status = :status AND a.isSchedule = :isSchedule AND a.createdAt <= :now")
     List<Announcement> findByStatusAndScheduledTime(
@@ -68,9 +70,10 @@ public interface AnnouncementRepository extends JpaRepository<Announcement, Long
             "OR (c.receiverType = 'EMPLOYEE' AND c.sendTo = :employeeId)))) " +
             "GROUP BY t.announcement.id " +
             "ORDER BY t.announcement.createdAt DESC")
-    List<DataPreviewDTO> getMainPreviews(@Param("companyId") Long companyId,
+    Page<List<DataPreviewDTO>> getMainPreviews(@Param("companyId") Long companyId,
                                          @Param("departmentId") Long departmentId,
-                                         @Param("employeeId") Long employeeId);
+                                         @Param("employeeId") Long employeeId, Pageable pageable);
+
 
     @Query("SELECT new com.echo.acknowledgehub.dto.DataPreviewDTO(t.announcement.id, t.announcement.title) " +
             "FROM Target t " +
@@ -85,9 +88,10 @@ public interface AnnouncementRepository extends JpaRepository<Announcement, Long
             "OR (c.receiverType = 'EMPLOYEE' AND c.sendTo = :employeeId)))) " +
             "GROUP BY t.announcement.id " +
             "ORDER BY t.announcement.createdAt DESC")
-    List<DataPreviewDTO> getSubPreviews(@Param("companyId") Long companyId,
-                                        @Param("departmentId") Long departmentId,
-                                        @Param("employeeId") Long employeeId);
+    Page<List<DataPreviewDTO>> getSubPreviews(@Param("companyId") Long companyId,
+                                              @Param("departmentId") Long departmentId,
+                                              @Param("employeeId") Long employeeId,
+                                              Pageable pageable);
 
     @Query("SELECT new com.echo.acknowledgehub.dto.AnnouncementsForShowing( " +
             "a.id, a.title, a.contentType, a.pdfLink," +
@@ -128,7 +132,18 @@ public interface AnnouncementRepository extends JpaRepository<Announcement, Long
             "WHERE e.id = :employeeId AND t.receiverType = 'COMPANY' AND t.sendTo = e.company.id AND a.status = 'UPLOADED'")
     int getAnnouncementCountByCompanyAndEmployee(@Param("employeeId") Long employeeId);
 
-    @Query("SELECT new com.echo.acknowledgehub.dto.ScheduleList(a.id,a.title,a.createdAt,a.contentType)" +
-            "FROM Announcement a WHERE a.status=:status AND a.employee.id=:employeeId")
-    List<ScheduleList> getScheduleList(@Param("status") AnnouncementStatus status, @Param("employeeId") Long employeeId);
+
+
+    @Query("SELECT e.id FROM Employee e WHERE e.role IN (:roles) AND e.company.id = :companyId")
+    List<Long> findEmployeeIdsByRolesAndCompanyId(@Param("roles") List<EmployeeRole> roles, @Param("companyId") Long companyId);
+
+    @Query("SELECT new com.echo.acknowledgehub.dto.ScheduleList(a.id, a.title, a.createdAt, a.contentType, e.role) " +
+            "FROM Announcement a " +
+            "JOIN a.employee e " +
+            "WHERE a.status = :status AND e.id IN :employeeIds")
+    List<ScheduleList> getScheduleListByEmployeeIds(@Param("status") AnnouncementStatus status, @Param("employeeIds") List<Long> employeeIds);
+
+    @Query("SELECT a FROM Announcement a ORDER BY a.createdAt DESC")
+    List<Announcement> findAllAnnouncements();
+
 }

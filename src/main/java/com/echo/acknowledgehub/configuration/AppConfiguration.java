@@ -1,6 +1,5 @@
 package com.echo.acknowledgehub.configuration;
 
-import com.echo.acknowledgehub.bean.SystemDataBean;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.AllArgsConstructor;

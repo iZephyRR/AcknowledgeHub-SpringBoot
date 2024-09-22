@@ -86,13 +86,13 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
     Long getEmployeeIdByTelegramUsername(@Param("telegramUsername") String telegramUsername);
 
 
-    @Query("SELECT e.name, e.email, e.address, e.dob, e.gender, e.nrc, e.password, e.role, e.status, e.staffId, e.telegramUsername, e.workEntryDate, c.name AS companyName, d.name AS departmentName ,e.id " +
+    @Query("SELECT e.name, e.email, e.address, e.dob, e.gender, e.nrc, e.password, e.role, e.status, e.staffId, e.telegramUsername, e.photoLink, c.name AS companyName, d.name AS departmentName ,e.id " +
             "FROM Employee e " +
             "JOIN e.company c " +
             "JOIN e.department d")
     List<Object[]> getAllUsers();
 
-    @Query("SELECT e.name, e.email, e.address, e.dob, e.gender, e.nrc, e.password, e.role, e.status, e.staffId, e.telegramUsername, e.workEntryDate, c.name AS companyName, d.name AS departmentName ,e.id " +
+    @Query("SELECT e.name, e.email, e.address, e.dob, e.gender, e.nrc, e.password, e.role, e.status, e.staffId, e.telegramUsername, e.photoLink, c.name AS companyName, d.name AS departmentName ,e.id " +
             "FROM Employee e " +
             "JOIN e.company c " +
             "JOIN e.department d where e.company.id=:companyId")
@@ -148,5 +148,8 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
 
     @Query("Select count(e) From Employee e where e.department.id=:id")
     int getEmployeeCountByDepartmentId(@Param("id") Long id);
+
+    @Query("SELECT e.photoLink FROM Employee e WHERE e.id=:id")
+    byte[] getPhotoById(@Param("id")Long id);
 }
 

@@ -7,6 +7,7 @@ import com.echo.acknowledgehub.entity.Department;
 import com.echo.acknowledgehub.entity.Employee;
 import com.echo.acknowledgehub.exception_handler.DataNotFoundException;
 import com.echo.acknowledgehub.repository.DepartmentRepository;
+import jakarta.persistence.criteria.From;
 import lombok.AllArgsConstructor;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
@@ -59,5 +60,9 @@ public class DepartmentService {
 
     public boolean existsById(Long sendTo) {
         return DEPARTMENT_REPOSITORY.existsById(sendTo);
+    }
+
+    public Department findByEmployeeId(Long employeeId) {
+        return DEPARTMENT_REPOSITORY.findByEmployeeId(employeeId);
     }
 }

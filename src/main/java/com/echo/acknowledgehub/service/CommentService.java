@@ -3,6 +3,8 @@ package com.echo.acknowledgehub.service;
 import com.echo.acknowledgehub.bean.CheckingBean;
 import com.echo.acknowledgehub.dto.CommentDTO;
 import com.echo.acknowledgehub.dto.CommentResponseDTO;
+import com.echo.acknowledgehub.dto.ReplyDTO;
+import com.echo.acknowledgehub.dto.ReplyResponseDTO;
 import com.echo.acknowledgehub.entity.Announcement;
 import com.echo.acknowledgehub.entity.Comment;
 import com.echo.acknowledgehub.entity.Employee;
@@ -18,11 +20,13 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.concurrent.CompletableFuture;
+import java.util.logging.Logger;
 
 @Service
 @AllArgsConstructor
 public class CommentService {
 
+    private static final Logger LOGGER = Logger.getLogger(CommentService.class.getName());
     private final AnnouncementService ANNOUNCEMENT_SERVICE;
     private final EmployeeService EMPLOYEE_SERVICE;
     private final EmployeeRepository EMPLOYEE_REPOSITORY;
@@ -45,44 +49,42 @@ public class CommentService {
         comment.setContent(commentDTO.getContent());
         comment.setAnnouncement(announcementCompletableFuture.join());
         comment.setEmployee(employeeCompletableFuture.join());
-        comment = COMMENT_REPOSITORY.save(comment);
-
-        // Save the comment in Firebase and notify the announcement creator
-        FIREBASE_NOTIFICATION_SERVICE.saveComment(announcement.getId(), employee.getId(), employee.getName(), comment.getContent());
-
-        return comment;
+        Comment savedComment = COMMENT_REPOSITORY.save(comment);
+        FIREBASE_NOTIFICATION_SERVICE.saveComment(savedComment.getId(), announcement.getId(), employee.getId(), employeeName, savedComment.getContent());
+        return savedComment;
     }
-    public Comment replyToComment(Long commentId, CommentDTO replyDTO) {
-        // Fetch the original comment and replier details
-        Comment originalComment = COMMENT_REPOSITORY.findById(commentId)
+
+    public Reply replyToComment(ReplyDTO replyDTO) {
+        LOGGER.info("reply to comment service");
+        Comment originalComment = COMMENT_REPOSITORY.findById(replyDTO.getCommentId())
                 .orElseThrow(() -> new NoSuchElementException("Comment not found"));
 
-        Employee replier = EMPLOYEE_REPOSITORY.findById(replyDTO.getEmployeeId())
+        Employee replier = EMPLOYEE_REPOSITORY.findById(CHECKING_BEAN.getId())
                 .orElseThrow(() -> new NoSuchElementException("Employee not found"));
-
-        // Create and save the reply entity
         Reply reply = new Reply();
-        reply.setTitle(replyDTO.getContent());  // Using 'title' to store reply content
+        reply.setContent(replyDTO.getContent());
         reply.setComment(originalComment);
-        reply = REPLY_REPOSITORY.save(reply);
-
-        // Save the reply details to Firebase (with 4 arguments) and notify the original commenter
-        FIREBASE_NOTIFICATION_SERVICE.saveComment(
-                reply.getId(),  // Reply ID
-                replier.getId(), // Replier ID
-                replier.getName(), // Replier name
-                replyDTO.getContent() // Reply content
+        reply.setEmployee(replier);
+        Reply savedReply = REPLY_REPOSITORY.save(reply);
+        FIREBASE_NOTIFICATION_SERVICE.saveReply(
+                originalComment.getAnnouncement().getId(),
+                savedReply.getId().toString(),
+                originalComment.getId().toString(),
+                replier.getName(),
+                savedReply.getContent(),
+                originalComment.getEmployee().getId().toString()   // Original Commenter's ID (Long)
         );
-
-        // Return the original comment
-        return originalComment;
+        return savedReply;
     }
-
-
 
     @Transactional
     public List<CommentResponseDTO> getByAnnouncement (Long id) {
         return COMMENT_REPOSITORY.getByAnnouncement(id);
+    }
+
+    @Transactional
+    public List<ReplyResponseDTO> getByComment (Long id) {
+        return COMMENT_REPOSITORY.getByComment(id);
     }
 
 }

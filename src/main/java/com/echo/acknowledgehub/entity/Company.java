@@ -28,4 +28,8 @@ public class Company {
   public Company(String name){
     this.name=name;
   }
+
+  public Company(Long id){
+    this.id=id;
+  }
 }

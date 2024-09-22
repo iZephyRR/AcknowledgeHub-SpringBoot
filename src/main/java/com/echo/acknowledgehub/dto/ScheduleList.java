@@ -1,6 +1,7 @@
 package com.echo.acknowledgehub.dto;
 
 import com.echo.acknowledgehub.constant.ContentType;
+import com.echo.acknowledgehub.constant.EmployeeRole;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
@@ -13,4 +14,5 @@ public class ScheduleList {
     private String title;
     private LocalDateTime createdAt;
     private ContentType contentType;
+    private EmployeeRole role;
 }

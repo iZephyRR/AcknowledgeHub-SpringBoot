@@ -57,9 +57,9 @@ public class CompanyController {
         return DEPARTMENT_SERVICE.getAll();
     }
 
-    @GetMapping(value = "/get-categories", produces = MediaType.APPLICATION_JSON_VALUE)
+    @GetMapping(value = "/get-active-categories", produces = MediaType.APPLICATION_JSON_VALUE)
     public List<AnnouncementCategory> getCategories() {
-        return ANNOUNCEMENT_CATEGORY_SERVICE.findAll();
+        return ANNOUNCEMENT_CATEGORY_SERVICE.getActiveCategories();
     }
 
     @GetMapping(value = "/getCompanyById", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -82,6 +82,11 @@ public class CompanyController {
     @PostMapping("/mr/company")
     private HRDTO save(@RequestBody HRDTO hrdto){
         return COMPANY_SERVICE.saveHR(hrdto).join();
+    }
+
+    @GetMapping("/hrs/company/by-department/{departmentId}")
+    private Company getByDepartmentId(@PathVariable("departmentId") Long departmentId){
+        return COMPANY_SERVICE.getByDepartmentId(departmentId).join();
     }
 }
 
