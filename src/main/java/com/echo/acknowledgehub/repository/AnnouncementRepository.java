@@ -95,7 +95,7 @@ public interface AnnouncementRepository extends JpaRepository<Announcement, Long
 
     @Query("SELECT new com.echo.acknowledgehub.dto.AnnouncementsForShowing( " +
             "a.id, a.title, a.contentType, a.pdfLink," +
-            "a.category.name, a.employee.name, a.createdAt) " +
+            "a.category.name, a.employee.name, a.createdAt,a.channel) " +
             "FROM Announcement a " +
             "WHERE a.id=:announcementId")
     AnnouncementsForShowing getAnnouncementById(@Param("announcementId") Long announcementId);

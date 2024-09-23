@@ -42,7 +42,7 @@ public class CompanyController {
     }
 
     @GetMapping("/mr/get-companies")
-    public List<Company> getCompanies() {
+    public List<CompanyDTO> getCompanies() {
         return COMPANY_SERVICE.getAll();
     }
 

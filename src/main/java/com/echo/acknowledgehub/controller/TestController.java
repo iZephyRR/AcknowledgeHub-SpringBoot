@@ -87,9 +87,9 @@ public class TestController {
         return "testComplete";
     }
 
-    @GetMapping("/test-get-companies")
-    public List<Company> getCompanies() {
-        return COMPANY_SERVICE.getAll();
-    }
+//    @GetMapping("/test-get-companies")
+//    public List<Company> getCompanies() {
+//        return COMPANY_SERVICE.getAll();
+//    }
 }
 

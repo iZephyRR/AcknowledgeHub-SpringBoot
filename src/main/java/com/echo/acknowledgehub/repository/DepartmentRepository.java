@@ -24,4 +24,7 @@ public interface DepartmentRepository extends JpaRepository<Department, Long> {
 
     @Query("SELECT e.department FROM Employee e WHERE e.id=:employeeId")
     Department findByEmployeeId(@Param("employeeId") Long employeeId);
+
+    @Query("SELECT d FROM Department d WHERE d.company.id=:id")
+    List<Department> findByCompanyId(@Param("id") Long id);
 }

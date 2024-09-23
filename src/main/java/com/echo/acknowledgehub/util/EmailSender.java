@@ -62,6 +62,7 @@ public class EmailSender {
                 });
 
         try {
+            LOGGER.info("email address : " + email.getAddress());
             if (isDomainAvailable(email.getAddress())) {
                 Message message = new MimeMessage(session);
                 message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(email.getAddress()));

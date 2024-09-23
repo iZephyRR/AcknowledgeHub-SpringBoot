@@ -27,9 +27,10 @@ public class Department {
   @JsonBackReference
   private Company company=new Company();
 
-  @OneToMany(mappedBy = "department", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
-  @JsonManagedReference
-  private List<Employee> employees = new ArrayList<>();
+//  @JsonIgnore
+//  @OneToMany(mappedBy = "department", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+//  @JsonManagedReference
+//  private List<Employee> employees = new ArrayList<>();
 
   public Department (Long id, String name, Long companyId){
     this.id = id;

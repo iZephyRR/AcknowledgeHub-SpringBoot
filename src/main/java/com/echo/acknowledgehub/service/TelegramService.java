@@ -148,8 +148,10 @@
 //                }
 //            } else if (message.getChat().isUserChat()) {
 //                String username = message.getChat().getUserName();
+//                LOGGER.info("telegram username : "+ username);
 //                Employee telegramUser = EMPLOYEE_SERVICE.findByTelegramUsername(username);
-//                if (telegramUser.getUsername().equals(username) && telegramUser.getTelegramUserId() == null) {
+//                LOGGER.info("telegram user : " + telegramUser);
+//                if (telegramUser.getTelegramUsername().equals(username) && telegramUser.getTelegramUserId() == null) {
 //                    int updateResult = EMPLOYEE_SERVICE.updateTelegramUserId(chatId, username);
 //                    LOGGER.info("Update result : " + updateResult);
 //                    sendMessage(chatId, "Hello");

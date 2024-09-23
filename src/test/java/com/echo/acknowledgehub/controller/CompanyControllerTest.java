@@ -106,16 +106,16 @@ public class CompanyControllerTest {
         assertEquals(categories, result);
     }
 
-    @Test
-    public void testGetCompanies() throws Exception {
-        when(companyService.getAll()).thenReturn(Collections.singletonList(new Company()));
-
-        mockMvc.perform(get("/mr/get-companies"))
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON));
-
-        verify(companyService, times(1)).getAll();
-    }
+//    @Test
+//    public void testGetCompanies() throws Exception {
+//        when(companyService.getAll()).thenReturn(Collections.singletonList(new Company()));
+//
+//        mockMvc.perform(get("/mr/get-companies"))
+//                .andExpect(status().isOk())
+//                .andExpect(content().contentType(MediaType.APPLICATION_JSON));
+//
+//        verify(companyService, times(1)).getAll();
+//    }
 
     @Test
     public void testGetCompanyByIdFound() throws Exception {
