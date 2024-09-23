@@ -30,11 +30,11 @@ public interface AnnouncementRepository extends JpaRepository<Announcement, Long
             "JOIN a.employee e JOIN a.category c order by a.createdAt DESC")
     List<Object[]> getAllAnnouncements();
 
-    @Query("SELECT new com.echo.acknowledgehub.dto.AnnouncementDTO(a.id, a.title, a.createdAt, a.status, a.category.name, a.employee.name) FROM Announcement a WHERE a.employee.company.id = :id ORDER BY a.createdAt DESC")
-    List<AnnouncementDTO> getByCompany(@Param("id") Long id);
+    @Query("SELECT new com.echo.acknowledgehub.dto.AnnouncementDTO(a.id, a.title, a.createdAt, a.status, a.category.name, a.employee.name) FROM Announcement a WHERE a.employee.company.id = :id AND a.status=:status ORDER BY a.createdAt DESC")
+    List<AnnouncementDTO> getByCompany(@Param("id") Long id,@Param("status") AnnouncementStatus status);
 
-    @Query("SELECT new com.echo.acknowledgehub.dto.AnnouncementDTO(a.id, a.title, a.createdAt, a.status, a.category.name, a.employee.name) FROM Announcement a ORDER BY a.createdAt DESC")
-    List<AnnouncementDTO> getAllAnnouncementsForMainHR();
+    @Query("SELECT new com.echo.acknowledgehub.dto.AnnouncementDTO(a.id, a.title, a.createdAt, a.status, a.category.name, a.employee.name) FROM Announcement a WHERE a.status=:status ORDER BY a.createdAt DESC")
+    List<AnnouncementDTO> getAllAnnouncementsForMainHR(@Param("status") AnnouncementStatus status);
 
     @Query("SELECT a FROM Announcement a WHERE a.status = :status AND a.isSchedule = :isSchedule AND a.createdAt <= :now")
     List<Announcement> findByStatusAndScheduledTime(

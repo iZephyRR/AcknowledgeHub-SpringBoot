@@ -96,9 +96,9 @@ public class AnnouncementService {
 
     public CompletableFuture<List<AnnouncementDTO>> getByCompany() {
         if (CHECKING_BEAN.getRole() == EmployeeRole.MAIN_HR) {
-            return CompletableFuture.completedFuture(ANNOUNCEMENT_REPOSITORY.getAllAnnouncementsForMainHR());
+            return CompletableFuture.completedFuture(ANNOUNCEMENT_REPOSITORY.getAllAnnouncementsForMainHR(AnnouncementStatus.UPLOADED));
         }else {
-            return CompletableFuture.completedFuture(ANNOUNCEMENT_REPOSITORY.getByCompany(CHECKING_BEAN.getCompanyId()));
+            return CompletableFuture.completedFuture(ANNOUNCEMENT_REPOSITORY.getByCompany(CHECKING_BEAN.getCompanyId(),AnnouncementStatus.UPLOADED));
         }
     }
 
