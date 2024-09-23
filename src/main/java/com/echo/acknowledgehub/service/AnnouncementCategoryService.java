@@ -67,4 +67,8 @@ public class AnnouncementCategoryService {
     public Optional<AnnouncementCategory> findById(Long id){
         return ANNOUNCEMENT_CATEGORY_REPOSITORY.findById(id);
     }
+
+    public List<AnnouncementCategory> getActiveCategories() {
+        return ANNOUNCEMENT_CATEGORY_REPOSITORY.getActiveCategories(AnnouncementCategoryStatus.ACTIVE);
+    }
 }

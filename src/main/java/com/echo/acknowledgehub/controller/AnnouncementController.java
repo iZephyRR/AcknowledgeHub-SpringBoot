@@ -6,12 +6,15 @@ import com.echo.acknowledgehub.dto.*;
 import com.echo.acknowledgehub.entity.*;
 import com.echo.acknowledgehub.service.*;
 import com.echo.acknowledgehub.util.CustomMultipartFile;
+import com.echo.acknowledgehub.util.EmailSender;
 import com.echo.acknowledgehub.util.JWTService;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.inject.Qualifier;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.AllArgsConstructor;
 import org.apache.commons.compress.utils.IOUtils;
 import org.modelmapper.ModelMapper;
+import org.springframework.data.domain.Page;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -22,7 +25,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -42,21 +44,23 @@ import org.springframework.web.multipart.MultipartFile;
 public class AnnouncementController {
 
     private static final Logger LOGGER = Logger.getLogger(AnnouncementController.class.getName());
-    private final Map<Long, SaveTargetsForSchedule> targetStorage = new HashMap<>();
+    public final Map<Long, SaveTargetsForSchedule> targetStorage = new HashMap<>();
     private final AnnouncementService ANNOUNCEMENT_SERVICE;
-    private final JWTService JWT_SERVICE;
     private final CheckingBean CHECKING_BEAN;
     private final ModelMapper MODEL_MAPPER;
     private final EmployeeService EMPLOYEE_SERVICE;
     private final CompanyService COMPANY_SERVICE;
     private final DepartmentService DEPARTMENT_SERVICE;
     private final AnnouncementCategoryService ANNOUNCEMENT_CATEGORY_SERVICE;
-    //private final TelegramService TELEGRAM_SERVICE;
+//    private final TelegramService TELEGRAM_SERVICE;
     private final TargetService TARGET_SERVICE;
     private final DraftService DRAFT_SERVICE;
+    private final EmailSender EMAIL_SENDER;
+    private final CustomTargetGroupEntityService CUSTOM_TARGET_GROUP_ENTITY_SERVICE;
+    private final FirebaseNotificationService FIREBASE_NOTIFICATION_SERVICE;
 
     @Scheduled(fixedRate = 60000)
-    public void checkPendingAnnouncements() throws IOException {
+    public void checkPendingAnnouncements() throws IOException, ExecutionException, InterruptedException {
         List<Announcement> pendingAnnouncementsScheduled = ANNOUNCEMENT_SERVICE.findPendingAnnouncementsScheduledForNow(LocalDateTime.now());
         LOGGER.info("in schedule");
         for (Announcement announcement : pendingAnnouncementsScheduled) {
@@ -64,27 +68,40 @@ public class AnnouncementController {
             ANNOUNCEMENT_SERVICE.save(announcement);
             SaveTargetsForSchedule saveTargetsForSchedule = targetStorage.get(announcement.getId());
             List<Target> targetList = saveTargetsForSchedule.getTargets();
-            List<String> selectedChannels = saveTargetsForSchedule.getSelectedChannels();
-            TARGET_SERVICE.insertTargetWithNotifications(targetList, announcement);
-            List<Long> chatIdsList = List.of();
+            handleTargetsAndNotifications(targetList, announcement);
+            MultipartFile excelFile = null;
+            if (announcement.getContentType() == ContentType.EXCEL) {
+                excelFile = convertToMultipartFile(saveTargetsForSchedule.getFilePath(), saveTargetsForSchedule.getFilename());
+            }
+            Set<Long> chatIdsSet = new HashSet<>();
+            Set<String> emails = new HashSet<>();
             for (Target target : targetList) {
-                String receiverType = target.getReceiverType().name();
+                ReceiverType receiverType = target.getReceiverType();
                 Long sendTo = target.getSendTo();
-                if (receiverType.equals("COMPANY")) {
-                    chatIdsList = EMPLOYEE_SERVICE.getAllChatIdByCompanyId(sendTo);
-                } else if (receiverType.equals("DEPARTMENT")) {
-                    chatIdsList = EMPLOYEE_SERVICE.getAllChatIdByDepartmentId(sendTo);
-                }
-                for (String channel : selectedChannels) {
-                    if ("Telegram".equalsIgnoreCase(channel)) {
-                        LOGGER.info("link : " + announcement.getPdfLink());
-                        //TELEGRAM_SERVICE.sendToTelegram(chatIdsList, announcement.getContentType().getFirstValue(), announcement.getId(), announcement.getPdfLink(), announcement.getTitle(), announcement.getEmployee().getName());
-                    }
-                    if ("Email".equalsIgnoreCase(channel)) {
-                        // email service
-                    }
+                if (receiverType == ReceiverType.COMPANY) {
+                    chatIdsSet.addAll(EMPLOYEE_SERVICE.getAllChatIdByCompanyId(sendTo));
+                    emails.addAll(EMPLOYEE_SERVICE.getEmailsByCompanyId(sendTo).join());
+                } else if (receiverType == ReceiverType.DEPARTMENT) {
+                    chatIdsSet.addAll(EMPLOYEE_SERVICE.getAllChatIdByDepartmentId(sendTo));
+                    emails.addAll(EMPLOYEE_SERVICE.getEmailsByDepartmentId(sendTo).join());
+                } else if (receiverType == ReceiverType.EMPLOYEE) {
+                    chatIdsSet.add(EMPLOYEE_SERVICE.getChatIdByUserId(sendTo));
+                    emails.add(EMPLOYEE_SERVICE.getEmailsByUserId(sendTo).join().get(0));
+                } else if (receiverType == ReceiverType.CUSTOM) {
+                    List<CustomTargetGroupEntity> groupEntities = CUSTOM_TARGET_GROUP_ENTITY_SERVICE.getAllGroupEntity(sendTo);
+                    chatIdsSet.addAll(handleChatIds(groupEntities));
+                    emails.addAll(handleEmails(groupEntities));
                 }
             }
+            List<Long> chatIdsList = new ArrayList<>(chatIdsSet);
+            //TELEGRAM_SERVICE.sendToTelegram(chatIdsList, excelFile, announcement.getContentType().getFirstValue(), announcement.getId(), announcement.getPdfLink(), announcement.getTitle(), announcement.getEmployee().getName());
+            if (announcement.getChannel() == Channel.BOTH) {
+                for (String address : emails) {
+                    EMAIL_SENDER.sendEmail(new EmailDTO(address, announcement.getTitle(), announcement.getPdfLink(), null));
+                }
+            }
+            Path path = Paths.get(saveTargetsForSchedule.getFilePath());
+            Files.deleteIfExists(path);
             targetStorage.remove(announcement.getId());
         }
     }
@@ -92,11 +109,10 @@ public class AnnouncementController {
     @PostMapping(value = "/create", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public void createAnnouncement(
             @ModelAttribute AnnouncementDTO announcementDTO
-    ) throws IOException {
+    ) throws IOException, ExecutionException, InterruptedException {
         ObjectMapper objectMapper = new ObjectMapper();
-        List<String> selectedChannels = objectMapper.readValue(announcementDTO.getChannel(), new TypeReference<List<String>>() {});
-        validateChannels(selectedChannels);
-        List<TargetDTO> targetDTOList = objectMapper.readValue(announcementDTO.getTarget(), new TypeReference<List<TargetDTO>>() {});
+        List<TargetDTO> targetDTOList = objectMapper.readValue(announcementDTO.getTarget(), new TypeReference<List<TargetDTO>>() {
+        });
         Long loggedInId = CHECKING_BEAN.getId();
         CompletableFuture<Employee> conFuEmployee = EMPLOYEE_SERVICE.findById(loggedInId)
                 .thenApply(optionalEmployee -> optionalEmployee.orElseThrow(() -> new NoSuchElementException("Employee not found")));
@@ -109,6 +125,7 @@ public class AnnouncementController {
         }
         AnnouncementStatus status;
         IsSchedule isSchedule;
+        Channel channel;
         if (announcementDTO.getScheduleOption().equals("later")) {
             status = AnnouncementStatus.PENDING;
             isSchedule = IsSchedule.TRUE;
@@ -116,14 +133,20 @@ public class AnnouncementController {
             status = AnnouncementStatus.UPLOADED;
             isSchedule = IsSchedule.FALSE;
         }
+        if (!"emailSelected".equalsIgnoreCase(announcementDTO.getIsEmailSelected())){
+            channel = Channel.TELEGRAM;
+        } else {
+            channel = Channel.BOTH;
+        }
         announcementDTO.setStatus(status);
         announcementDTO.setIsSchedule(isSchedule);
+        announcementDTO.setChannel(channel);
         Announcement entity = MODEL_MAPPER.map(announcementDTO, Announcement.class);
         entity.setEmployee(conFuEmployee.join());
         entity.setCategory(category);
         if (announcementDTO.isSelectAll()) {
             entity.setSelectAll(SelectAll.TRUE);
-        }else {
+        } else {
             entity.setSelectAll(SelectAll.FALSE);
         }
         if (announcementDTO.getFile() == null) {
@@ -136,6 +159,7 @@ public class AnnouncementController {
         String url = ANNOUNCEMENT_SERVICE.handleFileUpload(announcementDTO.getFile()); // cloud
         entity.setPdfLink(url);
         assert contentType != null;
+        MultipartFile excelFile = announcementDTO.getFile();
         if (contentType.startsWith("audio/")) {
             entity.setContentType(ContentType.AUDIO);
         } else if (contentType.startsWith("video/")) {
@@ -162,69 +186,106 @@ public class AnnouncementController {
             LOGGER.info("announcement status : " + status);
             List<Target> targets = TARGET_SERVICE.saveTargets(targetList);
             handleTargetsAndNotifications(targets, announcement); // target save, send notification
-            List<Long> chatIdsList = List.of();
+            Set<Long> chatIdsSet = new HashSet<Long>();
+            Set<String> emails = new HashSet<>();
             for (Target target : targets) {
-                String receiverType = target.getReceiverType().name();
+                ReceiverType receiverType = target.getReceiverType();
                 Long sendTo = target.getSendTo();
-                if (receiverType.equals("COMPANY")) {
-                    chatIdsList = EMPLOYEE_SERVICE.getAllChatIdByCompanyId(sendTo);
-                    LOGGER.info("Chat IDs for COMPANY with ID " + sendTo + ": " + chatIdsList);
-                } else if (receiverType.equals("DEPARTMENT")) {
-                    chatIdsList = EMPLOYEE_SERVICE.getAllChatIdByDepartmentId(sendTo);
-                    LOGGER.info("Chat IDs for DEPARTMENT with ID " + sendTo + ": " + chatIdsList);
-                } else if (receiverType.equals(("EMPLOYEE"))) {
-                    Long chatId = EMPLOYEE_SERVICE.getChatIdByUserId(sendTo);
-                    chatIdsList = List.of(chatId);
+                if (receiverType == ReceiverType.COMPANY) {
+                    chatIdsSet.addAll(EMPLOYEE_SERVICE.getAllChatIdByCompanyId(sendTo));
+                    emails.addAll(EMPLOYEE_SERVICE.getEmailsByCompanyId(sendTo).join());
+                } else if (receiverType == ReceiverType.DEPARTMENT) {
+                    chatIdsSet.addAll(EMPLOYEE_SERVICE.getAllChatIdByDepartmentId(sendTo));
+                    emails.addAll(EMPLOYEE_SERVICE.getEmailsByDepartmentId(sendTo).join());
+                } else if (receiverType == ReceiverType.EMPLOYEE) {
+                    chatIdsSet.add(EMPLOYEE_SERVICE.getChatIdByUserId(sendTo));
+                    emails.add(EMPLOYEE_SERVICE.getEmailsByUserId(sendTo).join().get(0));
+                } else if (receiverType == ReceiverType.CUSTOM) {
+                    List<CustomTargetGroupEntity> groupEntities = CUSTOM_TARGET_GROUP_ENTITY_SERVICE.getAllGroupEntity(sendTo);
+                    chatIdsSet.addAll(handleChatIds(groupEntities));
+                    emails.addAll(handleEmails(groupEntities));
                 }
-                for (String channel : selectedChannels) {
-                    if ("Telegram".equalsIgnoreCase(channel)) {
-                        //TELEGRAM_SERVICE.sendToTelegram(chatIdsList, announcement.getContentType().getFirstValue(), announcement.getId(), announcement.getPdfLink(), announcement.getTitle(), announcement.getEmployee().getName());
-                    }
-                    if ("Email".equalsIgnoreCase(channel)) {
-                        // email service
-                    }
+            }
+            LOGGER.info("final result chat set : " + chatIdsSet);
+            List<Long> chatIdsList = new ArrayList<>(chatIdsSet);
+            LOGGER.info("final result chat list : " + chatIdsList);
+//            TELEGRAM_SERVICE.sendToTelegram(chatIdsList, excelFile, announcement.getContentType().getFirstValue(), announcement.getId(), announcement.getPdfLink(), announcement.getTitle(), announcement.getEmployee().getName());
+            if (announcement.getChannel() == Channel.BOTH) {
+                for (String address : emails) {
+                    EMAIL_SENDER.sendEmail(new EmailDTO(address, announcement.getTitle(), announcement.getPdfLink(), null));
                 }
             }
         } else {
             LOGGER.info("announcement status : " + status);
             SaveTargetsForSchedule saveTargetsForSchedule = new SaveTargetsForSchedule();
             saveTargetsForSchedule.setTargets(targetList);
-            saveTargetsForSchedule.setSelectedChannels(selectedChannels);
+            //saveTargetsForSchedule.setIsEmailSelected(announcementDTO.getIsEmailSelected());
+            assert excelFile != null;
+            String fileUrl = saveFileAndGetUrl(excelFile);
+            saveTargetsForSchedule.setFilePath(fileUrl);
+            saveTargetsForSchedule.setFilename(announcementDTO.getFilename());
             targetStorage.put(announcement.getId(), saveTargetsForSchedule);
         }
     }
 
-    private void handleTargetsAndNotifications(List<Target> targetList, Announcement announcement) {
+    public Set<String> handleEmails(List<CustomTargetGroupEntity> customTargetGroupEntities) {
+        Set<String> emailsSet = new HashSet<>();
+        for (CustomTargetGroupEntity entity : customTargetGroupEntities) {
+            ReceiverType receiverType = entity.getReceiverType();
+            Long sendTo = entity.getSendTo();
+            if (receiverType == ReceiverType.COMPANY) {
+                emailsSet.addAll(EMPLOYEE_SERVICE.getEmailsByCompanyId(sendTo).join());
+            } else if (receiverType == ReceiverType.DEPARTMENT) {
+                emailsSet.addAll(EMPLOYEE_SERVICE.getEmailsByDepartmentId(sendTo).join());
+            } else if (receiverType == ReceiverType.EMPLOYEE) {
+                emailsSet.add(EMPLOYEE_SERVICE.getEmailsByUserId(sendTo).join().get(0));
+            }
+        }
+        return emailsSet;
+    }
+
+    public Set<Long> handleChatIds(List<CustomTargetGroupEntity> customTargetGroupEntities) {
+        Set<Long> chatIdsSet = new HashSet<>();
+        for (CustomTargetGroupEntity entity : customTargetGroupEntities) {
+            ReceiverType receiverType = entity.getReceiverType();
+            Long sendTo = entity.getSendTo();
+            if (receiverType == ReceiverType.COMPANY) {
+                chatIdsSet.addAll(EMPLOYEE_SERVICE.getAllChatIdByCompanyId(sendTo));
+            } else if (receiverType == ReceiverType.DEPARTMENT) {
+                chatIdsSet.addAll(EMPLOYEE_SERVICE.getAllChatIdByDepartmentId(sendTo));
+            } else if (receiverType == ReceiverType.EMPLOYEE) {
+                chatIdsSet.add(EMPLOYEE_SERVICE.getChatIdByUserId(sendTo));
+            }
+        }
+        return chatIdsSet;
+    }
+
+    public void handleTargetsAndNotifications(List<Target> targetList, Announcement announcement) throws ExecutionException, InterruptedException {
         TARGET_SERVICE.insertTargetWithNotifications(targetList, announcement);
     }
 
-    private void validateTargets(List<TargetDTO> targetDTOList) {
+    public void validateTargets(List<TargetDTO> targetDTOList) {
         for (TargetDTO targetDTO : targetDTOList) {
             ReceiverType receiverType = targetDTO.getReceiverType();
             Long sendTo = targetDTO.getSendTo();
-            if (receiverType==ReceiverType.COMPANY) {
+            if (receiverType == ReceiverType.COMPANY) {
                 if (!COMPANY_SERVICE.existsById(sendTo)) {
                     throw new NoSuchElementException("Company does not exist.");
                 }
-            } else if (receiverType==ReceiverType.DEPARTMENT) {
+            } else if (receiverType == ReceiverType.DEPARTMENT) {
                 if (!DEPARTMENT_SERVICE.existsById(sendTo)) {
                     throw new NoSuchElementException("Department does not exist.");
                 }
-            } else if (receiverType==ReceiverType.EMPLOYEE) {
+            } else if (receiverType == ReceiverType.EMPLOYEE) {
+                if (!EMPLOYEE_SERVICE.existsById(sendTo)) {
+                    throw new NoSuchElementException("Employee does not exist.");
+                }
+            } else if (receiverType == ReceiverType.CUSTOM) {
                 if (!EMPLOYEE_SERVICE.existsById(sendTo)) {
                     throw new NoSuchElementException("Employee does not exist.");
                 }
             } else {
                 throw new IllegalArgumentException("Invalid receiver type: " + receiverType);
-            }
-        }
-    }
-
-    private void validateChannels(List<String> selectedChannels) {
-        List<String> allowedChannels = Arrays.asList("telegram", "email");
-        for (String channel : selectedChannels) {
-            if (!allowedChannels.contains(channel)) {
-                throw new IllegalArgumentException("Invalid channel selected: " + channel);
             }
         }
     }
@@ -273,8 +334,13 @@ public class AnnouncementController {
     }
 
     @GetMapping(value = "/get-all", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<List<AnnouncementDTO>> getAllAnnouncements() {
-        return ResponseEntity.ok(ANNOUNCEMENT_SERVICE.getAllAnnouncements());
+    public ResponseEntity<List<AnnouncementsShowInDashboard>> getAll() {
+        return ResponseEntity.ok(ANNOUNCEMENT_SERVICE.getAllAnnouncementsForDashboard());
+    }
+
+    @GetMapping(value = "/get-by-company", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<List<AnnouncementDTO>> getByCompany() {
+        return ResponseEntity.ok(ANNOUNCEMENT_SERVICE.getByCompany().join());
     }
 
     @GetMapping(value = "/aug-to-oct-2024", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -346,9 +412,9 @@ public class AnnouncementController {
         return new CustomMultipartFile(fileBytes, fileName, contentType);
     }
 
-    @GetMapping(value = "/{id}" , produces = MediaType.APPLICATION_JSON_VALUE)
-    private Optional<Announcement> findById(@PathVariable("id") Long id){
-        return ANNOUNCEMENT_SERVICE.findById(id).join();
+    @GetMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
+    private ResponseEntity<AnnouncementsForShowing> findById(@PathVariable("id") Long id) {
+        return ResponseEntity.ok(ANNOUNCEMENT_SERVICE.getAnnouncementById(id));
     }
 
     @GetMapping(value = "/count", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -359,20 +425,127 @@ public class AnnouncementController {
 
     @GetMapping(value = "/getAnnouncementsByCompanyId", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<List<AnnouncementDTOForShowing>> getAnnouncementsByCompanyId() {
-        return ResponseEntity.ok(ANNOUNCEMENT_SERVICE.getAnnouncementByReceiverTypeAndId(ReceiverType.COMPANY,CHECKING_BEAN.getCompanyId()));
+        return ResponseEntity.ok(ANNOUNCEMENT_SERVICE.getAnnouncementByReceiverTypeAndId(ReceiverType.COMPANY, CHECKING_BEAN.getCompanyId()));
     }
+
     @GetMapping(value = "/getAnnouncementsByDepartmentId", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<List<AnnouncementDTOForShowing>> getAnnouncementsByDepartmentId() {
-        return ResponseEntity.ok(ANNOUNCEMENT_SERVICE.getAnnouncementByReceiverTypeAndId(ReceiverType.DEPARTMENT,CHECKING_BEAN.getDepartmentId()));
+        return ResponseEntity.ok(ANNOUNCEMENT_SERVICE.getAnnouncementByReceiverTypeAndId(ReceiverType.DEPARTMENT, CHECKING_BEAN.getDepartmentId()));
     }
 
     @GetMapping(value = "/get-By-EmployeeId", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<List<AnnouncementDTOForShowing>> getAnnouncementsByEmployeeId() {
-        return ResponseEntity.ok(ANNOUNCEMENT_SERVICE.getAnnouncementByReceiverTypeAndId(ReceiverType.EMPLOYEE,CHECKING_BEAN.getId()));
+        return ResponseEntity.ok(ANNOUNCEMENT_SERVICE.getAnnouncementByReceiverTypeAndId(ReceiverType.EMPLOYEE, CHECKING_BEAN.getId()));
     }
-    @GetMapping(value = "/pieChart" ,  produces = MediaType.APPLICATION_JSON_VALUE)
-    public Map<String, Double> getPercentage() throws ExecutionException, InterruptedException {
+
+    @GetMapping(value = "/pieChart", produces = MediaType.APPLICATION_JSON_VALUE)
+    public Map<String, Integer> getPercentage() throws ExecutionException, InterruptedException {
         return EMPLOYEE_SERVICE.getPercentage();
+    }
+
+    @GetMapping("/get-main-previews")
+    private Page<List<DataPreviewDTO>> getMainPreviews(
+            @RequestParam int page,
+            @RequestParam(defaultValue = "5") int size) {
+        return ANNOUNCEMENT_SERVICE.getMainPreviews(page, size).join();
+    }
+
+    @GetMapping("/get-sub-previews")
+    private Page<List<DataPreviewDTO>> getSubPreviews(
+            @RequestParam int page,
+            @RequestParam(defaultValue = "5") int size) {
+        return ANNOUNCEMENT_SERVICE.getSubPreviews(page, size).join();
+    }
+
+//    @PostMapping("/get-noted-in")
+//    public ResponseEntity<List<EmployeeNotedDTO>> getNotedIn(
+//            @RequestParam Long id,
+//            @RequestParam int min
+//    ) {
+//        LOGGER.info("in one day"+id+"|"+min);
+//        List<Long> userIdList = FIREBASE_NOTIFICATION_SERVICE.getNotificationsAndMatchWithEmployees(id,min);
+//        return ResponseEntity.ok(EMPLOYEE_SERVICE.getEmployeeWhoNoted(userIdList));
+//    }
+
+    @PostMapping("/get-noted-in")
+    public ResponseEntity<List<EmployeeNotedDTO>> getNotedIn(
+            @RequestParam Long id,
+            @RequestParam int min
+    ) {
+        LOGGER.info("in one day"+id+"|"+min);
+        List<Long> userIdList = FIREBASE_NOTIFICATION_SERVICE.getNotificationsAndMatchWithEmployees(id,min);
+        return ResponseEntity.ok(EMPLOYEE_SERVICE.getEmployeeWhoNoted(userIdList));
+    }
+
+    @GetMapping(value = "/getNotedPercentageByDepartment", produces = MediaType.APPLICATION_JSON_VALUE)
+    public Map<String, Integer> getNotedPercentageByDepartment() throws ExecutionException, InterruptedException {
+        return EMPLOYEE_SERVICE.getPercentageForEachDepartment();
+    }
+
+    @GetMapping(value = "/getScheduleList", produces = MediaType.APPLICATION_JSON_VALUE)
+    public List<ScheduleList> getScheduleList() {
+        return ANNOUNCEMENT_SERVICE.getScheduleList();
+    }
+
+    @GetMapping(value = "/updateNow/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<StringResponseDTO> updateNow(@PathVariable("id") Long announcementId) throws IOException, ExecutionException, InterruptedException {
+        Announcement announcement = ANNOUNCEMENT_SERVICE.updateTimeAndStatus(announcementId);
+        SaveTargetsForSchedule saveTargetsForSchedule = targetStorage.get(announcement.getId());
+        List<Target> targetList = saveTargetsForSchedule.getTargets();
+        handleTargetsAndNotifications(targetList, announcement);
+        MultipartFile excelFile = null;
+        if (announcement.getContentType() == ContentType.EXCEL) {
+            excelFile = convertToMultipartFile(saveTargetsForSchedule.getFilePath(), saveTargetsForSchedule.getFilename());
+        }
+        Set<Long> chatIdsSet = new HashSet<>();
+        Set<String> emails = new HashSet<>();
+        for (Target target : targetList) {
+            ReceiverType receiverType = target.getReceiverType();
+            Long sendTo = target.getSendTo();
+            if (receiverType == ReceiverType.COMPANY) {
+                chatIdsSet.addAll(EMPLOYEE_SERVICE.getAllChatIdByCompanyId(sendTo));
+                emails.addAll(EMPLOYEE_SERVICE.getEmailsByCompanyId(sendTo).join());
+            } else if (receiverType == ReceiverType.DEPARTMENT) {
+                chatIdsSet.addAll(EMPLOYEE_SERVICE.getAllChatIdByDepartmentId(sendTo));
+                emails.addAll(EMPLOYEE_SERVICE.getEmailsByDepartmentId(sendTo).join());
+            } else if (receiverType == ReceiverType.EMPLOYEE) {
+                chatIdsSet.add(EMPLOYEE_SERVICE.getChatIdByUserId(sendTo));
+                emails.add(EMPLOYEE_SERVICE.getEmailsByUserId(sendTo).join().get(0));
+            } else if (receiverType == ReceiverType.CUSTOM) {
+                List<CustomTargetGroupEntity> groupEntities = CUSTOM_TARGET_GROUP_ENTITY_SERVICE.getAllGroupEntity(sendTo);
+                chatIdsSet.addAll(handleChatIds(groupEntities));
+                emails.addAll(handleEmails(groupEntities));
+            }
+        }
+        List<Long> chatIdsList = new ArrayList<>(chatIdsSet);
+        //TELEGRAM_SERVICE.sendToTelegram(chatIdsList, excelFile, announcement.getContentType().getFirstValue(), announcement.getId(), announcement.getPdfLink(), announcement.getTitle(), announcement.getEmployee().getName());
+        if (announcement.getChannel() == Channel.BOTH) {
+            for (String address : emails) {
+                EMAIL_SENDER.sendEmail(new EmailDTO(address, announcement.getTitle(), announcement.getPdfLink(), null));
+            }
+        }
+        Path path = Paths.get(saveTargetsForSchedule.getFilePath());
+        Files.deleteIfExists(path);
+        targetStorage.remove(announcement.getId());
+        return ResponseEntity.ok(new StringResponseDTO("Upload Success"));
+    }
+
+    @DeleteMapping(value = "/deleteScheduleAnnouncement/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<StringResponseDTO> deleteScheduleAnnouncement(@PathVariable("id") Long announcementId) {
+        try {
+            targetStorage.remove(announcementId);
+            ANNOUNCEMENT_SERVICE.deleteAnnouncement(announcementId);
+            return ResponseEntity.ok(new StringResponseDTO("Delete Successful"));
+        } catch (NoSuchElementException | EntityNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(new StringResponseDTO("Announcement not found"));
+        }
+    }
+
+    @GetMapping(value = "/monthly_announcement", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Map<String, List<Announcement>>> getMonthlyAnnouncements(@RequestParam("year") int year) {
+        Map<String, List<Announcement>> announcementsByMonth = ANNOUNCEMENT_SERVICE.getAnnouncementsGroupedByMonthAndYear(year);
+        return ResponseEntity.ok(announcementsByMonth);
     }
 
 }

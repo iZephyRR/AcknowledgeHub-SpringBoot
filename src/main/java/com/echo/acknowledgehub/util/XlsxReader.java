@@ -86,9 +86,6 @@ public class XlsxReader {
                                         case "dateofbirth":
                                             EMPLOYEE.setDob((Date) finalObjects.get(index));
                                             break;
-                                        case "entrydate":
-                                            EMPLOYEE.setWorkEntryDate((Date) finalObjects.get(index));
-                                            break;
                                         case "address":
                                             EMPLOYEE.setAddress((String) finalObjects.get(index));
                                             break;

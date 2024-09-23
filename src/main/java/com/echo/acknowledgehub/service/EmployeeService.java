@@ -4,12 +4,15 @@ import com.echo.acknowledgehub.bean.SystemDataBean;
 import com.echo.acknowledgehub.bean.CheckingBean;
 import com.echo.acknowledgehub.constant.*;
 import com.echo.acknowledgehub.dto.*;
+import com.echo.acknowledgehub.entity.Company;
 import com.echo.acknowledgehub.entity.Department;
 import com.echo.acknowledgehub.entity.Employee;
 import com.echo.acknowledgehub.exception_handler.DataNotFoundException;
+import com.echo.acknowledgehub.exception_handler.DuplicatedEnteryException;
 import com.echo.acknowledgehub.exception_handler.UpdatePasswordException;
 import com.echo.acknowledgehub.repository.AnnouncementRepository;
 import com.echo.acknowledgehub.repository.CompanyRepository;
+import com.echo.acknowledgehub.repository.DepartmentRepository;
 import com.echo.acknowledgehub.repository.EmployeeRepository;
 import com.google.api.core.ApiFuture;
 import com.google.cloud.firestore.*;
@@ -20,6 +23,9 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -41,14 +47,16 @@ public class EmployeeService {
     private final CheckingBean CHECKING_BEAN;
     private final FirebaseNotificationService FIREBASE_NOTIFICATION_SERVICE;
     private final CompanyRepository COMPANY_REPOSITORY;
-
+    private final CompanyService COMPANY_SERVICE;
+    private final DepartmentRepository DEPARTMENT_REPOSITORY;
 
     @Async
     public CompletableFuture<Optional<Employee>> findById(Long id) {
         return CompletableFuture.completedFuture(EMPLOYEE_REPOSITORY.findById(id));
     }
+
     @Async
-    public CompletableFuture<List<Employee>> getAll(){
+    public CompletableFuture<List<Employee>> getAll() {
         return CompletableFuture.completedFuture(EMPLOYEE_REPOSITORY.findAll());
     }
 
@@ -92,7 +100,6 @@ public class EmployeeService {
     @Transactional
     public CompletableFuture<Void> updatePassword(ChangePasswordDTO changePasswordDTO) {
         LOGGER.info("Requested change password : " + changePasswordDTO);
-     //   int updatedRows = EMPLOYEE_REPOSITORY.updatePasswordByEmail(changePasswordDTO.getEmail(), PASSWORD_ENCODER.encode(changePasswordDTO.getPassword()));
         int updatedRows;
         if (changePasswordDTO.getEmail() != null) {
             updatedRows = EMPLOYEE_REPOSITORY.updatePasswordByEmail(changePasswordDTO.getEmail(), PASSWORD_ENCODER.encode(changePasswordDTO.getPassword()));
@@ -112,36 +119,72 @@ public class EmployeeService {
     @Transactional
     public CompletableFuture<Integer> changeDefaultPassword(String rawPassword) {
         SYSTEM_DATA_BEAN.setDefaultPassword(rawPassword);
+        List<StringResponseDTO> stringResponseDTOS = EMPLOYEE_REPOSITORY.getDefaultAccountEmails();
         return CompletableFuture.completedFuture(EMPLOYEE_REPOSITORY.changeDefaultPassword(PASSWORD_ENCODER.encode(rawPassword)));
     }
 
     @Async
-    public CompletableFuture<Boolean> isPasswordDefault(String email){
-        return CompletableFuture.completedFuture(PASSWORD_ENCODER.matches(SYSTEM_DATA_BEAN.getDefaultPassword(),EMPLOYEE_REPOSITORY.findPasswordByEmail(email)));
+    public CompletableFuture<Boolean> isPasswordDefault(String email) {
+        return CompletableFuture.completedFuture(PASSWORD_ENCODER.matches(SYSTEM_DATA_BEAN.getDefaultPassword(), EMPLOYEE_REPOSITORY.findPasswordByEmail(email)));
     }
 
     @Async
     @Transactional
-    public CompletableFuture<Integer> makePasswordAsDefault(Long id){
-        return CompletableFuture.completedFuture(EMPLOYEE_REPOSITORY.updatePasswordById(id,PASSWORD_ENCODER.encode(SYSTEM_DATA_BEAN.getDefaultPassword())));
+    public CompletableFuture<Integer> makePasswordAsDefault(Long id) {
+        return CompletableFuture.completedFuture(EMPLOYEE_REPOSITORY.updatePasswordById(id, PASSWORD_ENCODER.encode(SYSTEM_DATA_BEAN.getDefaultPassword())));
     }
 
     @Async
-    public CompletableFuture<Employee> save(UserDTO user) {
+    private CompletableFuture<Employee> save(UserDTO user) {
         MAPPER.typeMap(UserDTO.class, Employee.class).addMappings(mapper -> {
             mapper.map(UserDTO::getDepartmentId, (Employee e, Long id) -> e.getDepartment().setId(id));
             mapper.map(UserDTO::getCompanyId, (Employee e, Long id) -> e.getCompany().setId(id));
+            if (user.getCompanyName() != null && user.getDepartmentName() != null) {
+                mapper.map(UserDTO::getDepartmentName, (Employee e, String name) -> e.getDepartment().setName(name));
+                mapper.map(UserDTO::getCompanyName, (Employee e, String name) -> e.getCompany().setName(name));
+            }
+
         });
         Employee employee = MAPPER.map(user, Employee.class);
-        employee.setPassword(PASSWORD_ENCODER.encode("root"));
-        LOGGER.info("Mapped employee : " + employee);
+        LOGGER.info(employee.toString());
+        employee.setPassword(PASSWORD_ENCODER.encode(SYSTEM_DATA_BEAN.getDefaultPassword()));
         return CompletableFuture.completedFuture(EMPLOYEE_REPOSITORY.save(employee));
     }
 
     @Async
+    public CompletableFuture<Employee> save(Employee employee) {
+        return CompletableFuture.completedFuture(EMPLOYEE_REPOSITORY.save(employee));
+    }
+
+    @Async
+    public CompletableFuture<Employee> saveMainHR(HRDTO mainHRDTO) {
+        if (!existsMainHR().join()) {
+            final Employee MAIN_HR = new Employee();
+            final Optional<Employee> OPTIONAL_EMPLOYEE = EMPLOYEE_REPOSITORY.findById(CHECKING_BEAN.getId());
+            final Employee ADMIN;
+            final Company COMPANY = COMPANY_SERVICE.save(new Company(mainHRDTO.getCompanyName())).join();
+            if (OPTIONAL_EMPLOYEE.isPresent()) {
+                ADMIN = OPTIONAL_EMPLOYEE.get();
+                ADMIN.setCompany(COMPANY);
+                EMPLOYEE_REPOSITORY.save(ADMIN);
+            } else {
+                throw new DataNotFoundException("Cannot find admin details.");
+            }
+            MAIN_HR.setName(mainHRDTO.getHrName());
+            MAIN_HR.setEmail(mainHRDTO.getHrEmail());
+            MAIN_HR.setStaffId(mainHRDTO.getStaffId());
+            MAIN_HR.setCompany(COMPANY);
+            MAIN_HR.setRole(EmployeeRole.MAIN_HR);
+            MAIN_HR.setPassword(PASSWORD_ENCODER.encode(SYSTEM_DATA_BEAN.getDefaultPassword()));
+            return CompletableFuture.completedFuture(EMPLOYEE_REPOSITORY.save(MAIN_HR));
+        } else {
+            throw new DuplicatedEnteryException("Main HR account already added.");
+        }
+    }
+
+    @Async
     public CompletableFuture<List<Employee>> saveAll(UserExcelDTO users) {
-        LOGGER.info("HERE DATA : "+users);
-        Department department=DEPARTMENT_SERVICE.save(new Department(users.getDepartmentName(), users.getCompanyId())).join();
+        Department department = DEPARTMENT_SERVICE.save(new Department(users.getDepartmentId(), users.getDepartmentName(), users.getCompanyId())).join();
         List<Employee> employees = new ArrayList<>();
         users.getUsers().forEach(user -> {
             user.setDepartmentId(department.getId());
@@ -151,19 +194,65 @@ public class EmployeeService {
         return CompletableFuture.completedFuture(employees);
     }
 
+//    @Async
+//    public CompletableFuture<List<Employee>> updateAll(UserExcelDTO users) {
+//        users.setUsers(users.getUsers().parallelStream()
+//                .peek(user -> {
+//                    if (Objects.isNull(user.getId())) {
+//                        user.setPassword(SYSTEM_DATA_BEAN.getDefaultPassword());
+//                    }
+//                })
+//                .collect(Collectors.toList()));
+//        return CompletableFuture.completedFuture(EMPLOYEE_REPOSITORY.saveAll(users.getUsers()));
+//    }
+
+    //  @Async
+    @Transactional
+    public CompletableFuture<List<Employee>> updateAll(List<UserExcelUpdateDTO> users) {
+        List<Employee> employees = new ArrayList<>();
+        LOGGER.info(users.toString());
+        users.parallelStream().forEach(user -> {
+            Employee employee = new Employee();
+            if (user.getId() != null) {
+                employee.setId(user.getId());
+                employee.setPhotoLink(EMPLOYEE_REPOSITORY.getPhotoById(user.getId()));
+                employee.setPassword(EMPLOYEE_REPOSITORY.findPasswordById(user.getId()));
+                employee.setStatus(user.getStatus());
+            }
+            employee.setNrc(user.getNrc());
+            Optional<Department> optionalDepartment = DEPARTMENT_REPOSITORY.findById(user.getDepartmentId());
+            optionalDepartment.ifPresent(employee::setDepartment);
+            employee.setCompany(COMPANY_SERVICE.getByDepartmentId(user.getDepartmentId()).join());
+            employee.setGender(user.getGender());
+            employee.setName(user.getName());
+            employee.setAddress(user.getAddress());
+            employee.setDob(user.getDob());
+            employee.setRole(user.getRole());
+            employee.setEmail(user.getEmail());
+            employee.setTelegramUsername(user.getTelegramUsername());
+            employee.setStaffId(user.getStaffId());
+            employees.add(EMPLOYEE_REPOSITORY.save(employee));
+
+        });
+        return CompletableFuture.completedFuture(employees);
+    }
+
     public Long getEmployeeIdByTelegramUsername(String telegramUsername) {
         return EMPLOYEE_REPOSITORY.getEmployeeIdByTelegramUsername(telegramUsername);
     }
-@Async
-    public CompletableFuture<EmployeeProfileDTO> getProfileInfo(long id) {
-        LOGGER.info("id : "+id);
-        return CompletableFuture.completedFuture(EMPLOYEE_REPOSITORY.getProfileInfo(id));
+
+    @Async
+    public CompletableFuture<EmployeeProfileDTO> getProfileInfo(Long id) {
+        EmployeeProfileDTO employeeProfileDTO = EMPLOYEE_REPOSITORY.getProfileInfo(id);
+        if (employeeProfileDTO == null) {
+            return CompletableFuture.completedFuture(EMPLOYEE_REPOSITORY.getAdminProfileInfo(id));
+        } else {
+            return CompletableFuture.completedFuture(employeeProfileDTO);
+        }
     }
 
     public long countEmployees() {
-        long count=EMPLOYEE_REPOSITORY.count();
-        LOGGER.info("Count : "+count);
-        return count;
+        return EMPLOYEE_REPOSITORY.count();
     }
 
     public List<Long> getMainHRAndHRIds() {
@@ -176,12 +265,11 @@ public class EmployeeService {
 
 
     @Async
-    public CompletableFuture<UniqueFieldsDTO> getUniques(){
+    public CompletableFuture<UniqueFieldsDTO> getUniques() {
         List<String> emails = EMPLOYEE_REPOSITORY.findDistinctEmails();
         List<String> nrcs = EMPLOYEE_REPOSITORY.findDistinctNrc();
         List<String> staffIds = EMPLOYEE_REPOSITORY.findDistinctStaffIds();
         List<String> telegramUsernames = EMPLOYEE_REPOSITORY.findDistinctTelegramUsernames();
-
         return CompletableFuture.completedFuture(new UniqueFieldsDTO(emails, nrcs, staffIds, telegramUsernames));
     }
 
@@ -225,14 +313,15 @@ public class EmployeeService {
         return EMPLOYEE_REPOSITORY.existsById(sendTo);
     }
 
-    @Transactional
+    //@Transactional
     public List<UserDTO> getAllUsers() {
         List<Object[]> objectList = EMPLOYEE_REPOSITORY.getAllUsers();
+        LOGGER.info(objectList.toString());
         return mapToDtoList(objectList);
     }
 
     @Transactional
-    public List<EmployeeNotedDTO> getEmployeeWhoNoted (List<Long> userIdList){
+    public List<EmployeeNotedDTO> getEmployeeWhoNoted(List<Long> userIdList) {
         Map<Long, LocalDateTime> notedAtStorage = FIREBASE_NOTIFICATION_SERVICE.getNotedAtStorage();
         List<EmployeeNotedDTO> employeeNotedDTOS = new ArrayList<>();
         for (Long userId : userIdList) {
@@ -272,7 +361,7 @@ public class EmployeeService {
                     CompletableFuture<Employee> comFuEmployee = findById(userId)
                             .thenApply(employee -> employee.orElseThrow(() -> new NoSuchElementException("Employee not found")));
                     Long companyId = comFuEmployee.join().getCompany().getId();
-                    employeeCountMap.merge(companyId,1,Integer::sum);
+                    employeeCountMap.merge(companyId, 1, Integer::sum);
 
 
                 }
@@ -281,19 +370,101 @@ public class EmployeeService {
         return employeeCountMap;
     }
 
-    public Map<String, Double> getPercentage() throws ExecutionException, InterruptedException {
-        Map<String, Double> notedPercentageMap = new HashMap<>();
-        Map<Long,Integer> employeeCountMap = getSelectedAllAnnouncements();
+    public Map<String, Integer> getPercentage() throws ExecutionException, InterruptedException {
+        Map<String, Integer> notedPercentageMap = new HashMap<>();
+        Map<Long, Integer> employeeCountMap = getSelectedAllAnnouncements();
         LOGGER.info("before announcement count");
         int announcementCount = ANNOUNCEMENT_REPOSITORY.getSelectAllCountAnnouncements(SelectAll.TRUE);
-        employeeCountMap.forEach((companyId,notedCount)-> {
+        employeeCountMap.forEach((companyId, notedCount) -> {
             String companyName = COMPANY_REPOSITORY.findCompanyNameById(companyId);
             int employeeCount = employeeCountByCompany(companyId);
             int expectedCount = employeeCount * announcementCount;
-            double notedPercentage = (double) (notedCount * 100) /expectedCount;
-            notedPercentageMap.put(companyName,notedPercentage);
+            int notedPercentage = (notedCount * 100) / expectedCount;
+            notedPercentageMap.put(companyName, notedPercentage);
         });
         return notedPercentageMap;
+    }
+
+    // sub company's announcements
+    public Map<Long, Integer> getSubCompanyAnnouncements() throws ExecutionException, InterruptedException {
+        Firestore dbFirestore = FirestoreClient.getFirestore();
+        Map<Long, Integer> employeeCountMap = new HashMap<>();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        LOGGER.info("before announcement ids");
+        List<Long> announcementIds = ANNOUNCEMENT_REPOSITORY.findAnnouncementIdsByEmployeeId(CHECKING_BEAN.getId());
+        for (Long announcementId : announcementIds) {
+            ApiFuture<QuerySnapshot> future = dbFirestore.collection("notifications")
+                    .whereEqualTo("announcementId", String.valueOf(announcementId))
+                    .orderBy("noticeAt", Query.Direction.DESCENDING)
+                    .orderBy("timestamp", Query.Direction.DESCENDING)
+                    .get();
+            List<QueryDocumentSnapshot> documents = future.get().getDocuments();
+            for (DocumentSnapshot document : documents) {
+                Long userId = document.getLong("userId");
+                LOGGER.info("User ID from Firebase service: " + userId);
+                LocalDateTime noticeAt = LocalDateTime.parse(
+                        Objects.requireNonNull(document.getString("noticeAt")), formatter);
+                LocalDateTime timestamp = LocalDateTime.parse(
+                        Objects.requireNonNull(document.getString("timestamp")), formatter);
+                if (noticeAt.isAfter(timestamp)) {
+                    CompletableFuture<Employee> comFuEmployee = findById(userId)
+                            .thenApply(employee -> employee.orElseThrow(() -> new NoSuchElementException("Employee not found")));
+                    Long departmentId = comFuEmployee.join().getDepartment().getId();
+                    employeeCountMap.merge(departmentId, 1, Integer::sum);
+                }
+            }
+        }
+        return employeeCountMap;
+    }
+
+    public Map<String, Integer> getPercentageForEachDepartment() throws ExecutionException, InterruptedException {
+        Map<String, Integer> notedPercentageMap = new HashMap<>();
+        Map<Long, Integer> employeeCountMap = getSubCompanyAnnouncements();
+        LOGGER.info("before announcement count");
+        List<Long> announcementIds = ANNOUNCEMENT_REPOSITORY.findAnnouncementIdsByEmployeeId(CHECKING_BEAN.getId());
+        int announcementCount = ANNOUNCEMENT_REPOSITORY.getAnnouncementCountByCompanyAndEmployee(CHECKING_BEAN.getId());
+        employeeCountMap.forEach((departmentId, notedCount) -> {
+            String departmentName = DEPARTMENT_REPOSITORY.findDepartmentNameById(departmentId);
+            int employeeCount = employeeCountByDepartment(departmentId);
+            int expectedCount = employeeCount * announcementCount;
+            LOGGER.info("announcement count : " + announcementCount);
+            LOGGER.info("noted count : " + notedCount);
+            LOGGER.info("employee count : " + employeeCount);
+            LOGGER.info("expect count : " + expectedCount);
+            int notedPercentage = (notedCount * 100) / expectedCount;
+            notedPercentageMap.put(departmentName, notedPercentage);
+        });
+        return notedPercentageMap;
+    }
+
+    public int employeeCountByDepartment(Long departmentId) {
+        return EMPLOYEE_REPOSITORY.getEmployeeCountByDepartmentId(departmentId);
+    }
+
+    public void uploadProfileImage(MultipartFile imageFile) throws IOException {
+        Employee employee = EMPLOYEE_REPOSITORY.findById(CHECKING_BEAN.getId()).orElseThrow(() -> new RuntimeException("User not found"));
+        LOGGER.info("in employee service uploadProfileImage");
+        employee.setPhotoLink(imageFile.getBytes());
+        EMPLOYEE_REPOSITORY.save(employee);
+    }
+
+    // Method to update an employee with duplicate check
+    public CompletableFuture<Employee> updateEmployee(Employee employee) {
+        return CompletableFuture.supplyAsync(() -> {
+            // Optional: Check if employee already exists by ID
+            if (EMPLOYEE_REPOSITORY.existsById(employee.getId())) {
+                // Update the employee if it exists
+                return EMPLOYEE_REPOSITORY.save(employee);
+            } else {
+                // Handle the case where the employee doesn't exist (optional)
+                throw new IllegalArgumentException("Employee does not exist");
+            }
+        });
+    }
+
+    // Method to check if an employee exists by ID
+    public CompletableFuture<Boolean> employeeExists(Long employeeId) {
+        return CompletableFuture.supplyAsync(() -> EMPLOYEE_REPOSITORY.existsById(employeeId));
     }
 
 //    @Async
@@ -314,12 +485,12 @@ public class EmployeeService {
 //    }
 //
 
-    public List<UserDTO> getUsersByCompanyId(Long companyId){
+    public List<UserDTO> getUsersByCompanyId(Long companyId) {
         List<Object[]> objectList = EMPLOYEE_REPOSITORY.getUserByCompanyId(companyId);
         return mapToDtoList(objectList);
     }
 
-    public List<UserDTO> mapToDtoList (List<Object[]> objLists) {
+    public List<UserDTO> mapToDtoList(List<Object[]> objLists) {
 
         return objLists.stream().map(this::mapToDto).collect(Collectors.toList());
     }
@@ -337,7 +508,7 @@ public class EmployeeService {
         dto.setStatus((EmployeeStatus) row[8]);
         dto.setStaffId((String) row[9]);
         dto.setTelegramUsername((String) row[10]);
-        dto.setWorkEntryDate((Date) row[11]);
+        dto.setPhotoLink((byte[]) row[11]);
         dto.setCompanyName((String) row[12]);
         dto.setDepartmentName((String) row[13]);
         dto.setId((Long) row[14]);
@@ -347,8 +518,36 @@ public class EmployeeService {
     public CompletableFuture<List<Employee>> updateUsers(List<UserDTO> users) {
         List<Employee> employees = new ArrayList<>();
         users.forEach(user -> {
-           employees.add(save(user).join());
+            employees.add(save(user).join());
         });
         return CompletableFuture.completedFuture(employees);
+    }
+
+    @Async
+    public CompletableFuture<List<String>> getEmailsByCompanyId(Long sendTo) {
+        return CompletableFuture.completedFuture(EMPLOYEE_REPOSITORY.getEmailsByCompanyId(sendTo));
+    }
+
+    @Async
+    public CompletableFuture<List<String>> getEmailsByDepartmentId(Long sendTo) {
+        return CompletableFuture.completedFuture(EMPLOYEE_REPOSITORY.getEmailsByDepartmentId(sendTo));
+    }
+
+    @Async
+    public CompletableFuture<List<String>> getEmailsByUserId(Long sendTo) {
+        return CompletableFuture.completedFuture(EMPLOYEE_REPOSITORY.getEmailsByUserId(sendTo));
+    }
+
+    @Async
+    public CompletableFuture<Boolean> existsMainHR() {
+        return CompletableFuture.completedFuture(EMPLOYEE_REPOSITORY.existsMainHR());
+    }
+
+    public long count() {
+        if (CHECKING_BEAN.getRole() == EmployeeRole.HR || CHECKING_BEAN.getRole() == EmployeeRole.HR_ASSISTANCE) {
+            return EMPLOYEE_REPOSITORY.countForHR(CHECKING_BEAN.getCompanyId());
+        } else {
+            return EMPLOYEE_REPOSITORY.count();
+        }
     }
 }

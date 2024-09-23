@@ -21,7 +21,15 @@ public class Company {
   @Column(name = "name", unique = true, nullable = false, columnDefinition = "VARCHAR(45)")
   private String name;
 
-  @OneToMany(mappedBy = "company", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
-  @JsonManagedReference
-  private List<Department> departments = new ArrayList<>();
+//  @OneToMany(mappedBy = "company", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+//  @JsonManagedReference
+//  private List<Department> departments = new ArrayList<>();
+
+  public Company(String name){
+    this.name=name;
+  }
+
+  public Company(Long id){
+    this.id=id;
+  }
 }

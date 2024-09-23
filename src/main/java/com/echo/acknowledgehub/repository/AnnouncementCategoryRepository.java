@@ -17,4 +17,6 @@ public interface AnnouncementCategoryRepository extends JpaRepository<Announceme
     @Query("select ac from AnnouncementCategory ac order by ac.id DESC")
     List<AnnouncementCategory> getAllCategories();
 
+    @Query("select ac from AnnouncementCategory ac where ac.status = :status")
+    List<AnnouncementCategory> getActiveCategories(@Param("status") AnnouncementCategoryStatus status);
 }

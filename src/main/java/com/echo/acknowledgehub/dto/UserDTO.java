@@ -26,7 +26,7 @@ public class UserDTO {
     private Date dob;
     private EmployeeStatus status;
     private String address;
-    private Date workEntryDate;
+    private byte[] photoLink;
     private Long departmentId;
     private String departmentName;
     private Long companyId;

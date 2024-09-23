@@ -55,7 +55,17 @@ public class CustomTargetGroupService {
     }
 
     @Async
+    public CompletableFuture<List<CustomTargetGroup>> byHR(){
+        return CompletableFuture.completedFuture(CUSTOM_TARGET_GROUP_REPOSITORY.byHR(CHECKING_BEAN.getId()));
+    }
+
+    @Async
     public void deleteById(Long id){
         CUSTOM_TARGET_GROUP_REPOSITORY.deleteById(id);
     }
+
+//    public boolean existById(Long id) {
+//        return CUSTOM_TARGET_GROUP_REPOSITORY
+//    }
+
 }

@@ -2,8 +2,10 @@ package com.echo.acknowledgehub.controller;
 
 import com.echo.acknowledgehub.bean.CheckingBean;
 import com.echo.acknowledgehub.bean.SystemDataBean;
+import com.echo.acknowledgehub.constant.EmployeeRole;
 import com.echo.acknowledgehub.dto.*;
 import com.echo.acknowledgehub.entity.Employee;
+import com.echo.acknowledgehub.exception_handler.RestingSystemException;
 import com.echo.acknowledgehub.service.EmployeeService;
 import com.echo.acknowledgehub.util.EmailSender;
 import com.echo.acknowledgehub.util.JWTService;
@@ -17,6 +19,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.web.bind.annotation.*;
+
 import java.io.IOException;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -41,8 +44,7 @@ public class AuthController {
         AUTHENTICATION_MANAGER.authenticate(new UsernamePasswordAuthenticationToken(login.getEmail(), login.getPassword()));
         final UserDetails USER_DETAILS = USER_DETAILS_SERVICE.loadUserByUsername(login.getEmail());
         if (login.getPassword().equals(SYSTEM_DATA_BEAN.getDefaultPassword())) { //For first login.
-            // return new StringResponseDTO("NAME_".concat(CHECKING_BEAN.getName()).concat("_ID_").concat(CHECKING_BEAN.getId().toString()));
-            return new StringResponseDTO("NAME_".concat(CHECKING_BEAN.getName()));
+            return new StringResponseDTO("NAME_"+CHECKING_BEAN.getName());
         } else {
             final String JWT_TOKEN = JWT_SERVICE.generateToken(USER_DETAILS.getUsername());
             LOGGER.info("Token : " + JWT_TOKEN);
@@ -57,7 +59,12 @@ public class AuthController {
 
     @GetMapping("/auth/check")
     private CheckingBean check() {
-        return this.CHECKING_BEAN;
+        LOGGER.info(CHECKING_BEAN.toString());
+        if(SYSTEM_DATA_BEAN.isRestSystem() && CHECKING_BEAN.getRole()!= EmployeeRole.ADMIN && CHECKING_BEAN.getId()!=null){
+            throw new RestingSystemException();
+        }else {
+            return this.CHECKING_BEAN;
+        }
     }
 
     @PostMapping(value = "/auth/send-email", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -72,37 +79,50 @@ public class AuthController {
     }
 
     @PostMapping("/auth/is-password-default")
-    private BooleanResponseDTO isPasswordDefault(@RequestBody String email){
+    private BooleanResponseDTO isPasswordDefault(@RequestBody String email) {
         return new BooleanResponseDTO(EMPLOYEE_SERVICE.isPasswordDefault(email).join());
     }
 
 
-    @GetMapping("ad/default-password")
-    private StringResponseDTO getDefaultPassword(){
+    @GetMapping("/user/default-password")
+    private StringResponseDTO getDefaultPassword() {
         return new StringResponseDTO(SYSTEM_DATA_BEAN.getDefaultPassword());
     }
+
+    @PostMapping("/ad/rest-system")
+    private void restSystem() {
+        SYSTEM_DATA_BEAN.setRestSystem(!SYSTEM_DATA_BEAN.isRestSystem());
+    }
+
+    @GetMapping("/ad/rest-system")
+    private boolean isSystemInResting(){
+        return SYSTEM_DATA_BEAN.isRestSystem();
+    }
+
     @PutMapping("/ad/default-password")
-    private StringResponseDTO changeDefaultPassword(@RequestBody String password){
+    private StringResponseDTO changeDefaultPassword(@RequestBody String password) {
         EMPLOYEE_SERVICE.changeDefaultPassword(password).join();
         return new StringResponseDTO(SYSTEM_DATA_BEAN.getDefaultPassword());
     }
-    @PutMapping("ad/make-password-as-default")
+
+    @PutMapping("/ad/make-password-as-default")
     private BooleanResponseDTO makePasswordAsDefault(@RequestBody Long id) {
         return new BooleanResponseDTO(EMPLOYEE_SERVICE.makePasswordAsDefault(id).join() > 0);
     }
+
     @PostMapping("/user/check-password")
-    private BooleanResponseDTO checkPassword(@RequestBody String password){
+    private BooleanResponseDTO checkPassword(@RequestBody String password) {
         return EMPLOYEE_SERVICE.checkPassword(password).join();
     }
 
     @PostMapping("/auth/find-name-by-email")
     private StringResponseDTO findNameByEmail(@RequestBody String email) {
-       return EMPLOYEE_SERVICE.findNameByEmail(email).join();
+        return EMPLOYEE_SERVICE.findNameByEmail(email).join();
 
     }
 
     @GetMapping("/auth/sever-connection-test")
-    private StringResponseDTO severConnectionTest(){
+    private StringResponseDTO severConnectionTest() {
         return new StringResponseDTO("Test success");
     }
 }

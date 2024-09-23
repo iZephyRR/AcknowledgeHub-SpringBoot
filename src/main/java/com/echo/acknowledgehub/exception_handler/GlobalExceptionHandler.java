@@ -55,6 +55,9 @@ public class GlobalExceptionHandler {
         STATUS_MAP.put(UnknownHostException.class, new ErrorResponseDTO(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Please try again later"));
         STATUS_MAP.put(NoSuchElementException.class, new ErrorResponseDTO(HttpStatus.INTERNAL_SERVER_ERROR.value(), null));
         STATUS_MAP.put(IllegalArgumentException.class, new ErrorResponseDTO(HttpStatus.INTERNAL_SERVER_ERROR.value(), null));
+        STATUS_MAP.put(RestingSystemException.class, new ErrorResponseDTO(HttpStatus.SERVICE_UNAVAILABLE.value(), null));
+
+
         //Can add more exception that you want to handle.
     }
 

@@ -15,17 +15,15 @@ spring:
         callable: false
     hibernate:
       ddl-auto: update
-      
+
   servlet:
     multipart:
       max-file-size: 50MB
       max-request-size: 50MB
-      
+
 server:
+  address: 0.0.0.0
   port: 8080
-  error:
-    include-message: always
-    include-binding-errors: always
 
 app:
   api:

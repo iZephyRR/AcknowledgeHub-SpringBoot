@@ -7,12 +7,15 @@ import com.echo.acknowledgehub.constant.NotificationType;
 import com.echo.acknowledgehub.constant.*;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Nullable;
 import java.time.LocalDateTime;
 
 @Data
+@NoArgsConstructor
+
 public class AnnouncementDTO {
     private Long id;
     private String title;
@@ -31,7 +34,16 @@ public class AnnouncementDTO {
     private IsSchedule isSchedule;
     private ContentType contentType;
     private EmployeeRole role;
-    private String channel;
+    private String isEmailSelected;
+    private  Channel channel;
     private boolean selectAll;
-}
 
+    public AnnouncementDTO(Long id,String title, LocalDateTime createdAt, AnnouncementStatus status, String categoryName, String createdBy){
+        this.id=id;
+        this.title=title;
+        this.createdAt=createdAt;
+        this.status=status;
+        this.categoryName=categoryName;
+        this.createdBy=createdBy;
+    }
+}
