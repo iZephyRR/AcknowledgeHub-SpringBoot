@@ -30,9 +30,9 @@ public class CompanyController {
     private final CheckingBean CHECKING_BEAN;
 
     @GetMapping("/user/get-company/{id}")
-    private Company getCompany(@PathVariable Long id) {
+    private CompanyDTO getCompany(@PathVariable Long id) {
         LOGGER.info("Company id : " + id);
-        return COMPANY_SERVICE.findById(id).join().get();
+        return COMPANY_SERVICE.findById(id).join();
     }
 
     @GetMapping("/user/get-company-dto/{id}")

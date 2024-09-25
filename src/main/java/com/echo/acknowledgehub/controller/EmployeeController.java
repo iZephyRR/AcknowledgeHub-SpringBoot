@@ -111,4 +111,9 @@ public class EmployeeController {
         return ResponseEntity.ok(count);
     }
 
+    @GetMapping(value = "/getNotedCount" , produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<List<UserDTO>> getNotedCount() {
+        return ResponseEntity.ok(EMPLOYEE_SERVICE.getDescNotedCount());
+    }
+
 }

@@ -3,11 +3,11 @@ package com.echo.acknowledgehub.service;
 import com.echo.acknowledgehub.bean.CheckingBean;
 import com.echo.acknowledgehub.constant.*;
 import com.echo.acknowledgehub.dto.*;
-import com.echo.acknowledgehub.entity.Announcement;
-import com.echo.acknowledgehub.entity.AnnouncementCategory;
+import com.echo.acknowledgehub.entity.*;
 import com.echo.acknowledgehub.exception_handler.DataNotFoundException;
 import com.echo.acknowledgehub.repository.AnnouncementCategoryRepository;
 import com.echo.acknowledgehub.repository.AnnouncementRepository;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -32,6 +32,9 @@ public class AnnouncementService {
     private final AnnouncementRepository ANNOUNCEMENT_REPOSITORY;
     private final CloudinaryService CLOUD_SERVICE;
     private final CheckingBean CHECKING_BEAN;
+    private final CompanyService COMPANY_SERVICE;
+    private final DepartmentService DEPARTMENT_SERVICE;
+    private final EmployeeService EMPLOYEE_SERVICE;
 
     @Async
     public CompletableFuture<Optional<Announcement>> findById(Long id) {
@@ -66,7 +69,13 @@ public class AnnouncementService {
     }
 
     public List<AnnouncementsShowInDashboard> getAllAnnouncementsForDashboard() {
-        return ANNOUNCEMENT_REPOSITORY.getAllAnnouncementsForDashboard();
+        List<EmployeeRole> roles = Arrays.asList(EmployeeRole.MAIN_HR, EmployeeRole.MAIN_HR_ASSISTANCE,
+                EmployeeRole.HR, EmployeeRole.HR_ASSISTANCE);
+        List<Long> employeeIds =  ANNOUNCEMENT_REPOSITORY.findEmployeeIdsByRolesAndCompanyId(roles, CHECKING_BEAN.getCompanyId());
+        if (CHECKING_BEAN.getRole() == EmployeeRole.MAIN_HR) {
+            return ANNOUNCEMENT_REPOSITORY.getAllAnnouncementsForDashboard(AnnouncementStatus.UPLOADED);
+        }
+        return ANNOUNCEMENT_REPOSITORY.getAllAnnouncementsForDashboardByCompany(AnnouncementStatus.UPLOADED,employeeIds);
     }
 
     public AnnouncementsForShowing getAnnouncementById(Long id) {
@@ -230,6 +239,59 @@ public CompletableFuture<Page<List<DataPreviewDTO>>> getMainPreviews(int page, i
         announcement.setCreatedAt(LocalDateTime.now());
         announcement.setStatus(AnnouncementStatus.UPLOADED);
         return save(announcement);
+    }
+
+    public List<AnnouncementDTOForReport> announcementDTOForReport() {
+        List<EmployeeRole> roles = Arrays.asList(EmployeeRole.MAIN_HR, EmployeeRole.MAIN_HR_ASSISTANCE,
+                EmployeeRole.HR, EmployeeRole.HR_ASSISTANCE);
+        List<Long> employeeIds =  ANNOUNCEMENT_REPOSITORY.findEmployeeIdsByRolesAndCompanyId(roles, CHECKING_BEAN.getCompanyId());
+        if (CHECKING_BEAN.getRole() == EmployeeRole.MAIN_HR) {
+            return ANNOUNCEMENT_REPOSITORY.announcementDTOForReport(AnnouncementStatus.UPLOADED);
+        }
+        return ANNOUNCEMENT_REPOSITORY.announcementDTOForReportByCompany(AnnouncementStatus.UPLOADED,employeeIds);
+    }
+
+    public List<TargetCompany> targetsByAnnouncementId (Long announcementId) {
+        List<Target> targets = ANNOUNCEMENT_REPOSITORY.targetsByAnnouncementId(announcementId);
+        Map<Long, TargetCompany> companyMap = new HashMap<>();
+        for (Target target : targets) {
+            Long receiverId = target.getSendTo();
+            if(target.getReceiverType() == ReceiverType.COMPANY){
+                Company company = COMPANY_SERVICE.getCompanyById(receiverId)
+                        .orElseThrow(() -> new EntityNotFoundException("Company not found"));
+                if (company != null) {
+                    companyMap.putIfAbsent(company.getId(), new TargetCompany(company.getName(), new ArrayList<>()));
+                }
+            } else if (target.getReceiverType() == ReceiverType.DEPARTMENT) {
+                Department department = DEPARTMENT_SERVICE.getDepartmentById(receiverId);
+                if (department != null) {
+                    TargetCompany targetCompany = companyMap.computeIfAbsent(department.getCompany().getId(),
+                            id -> new TargetCompany(department.getCompany().getName(), new ArrayList<>()));
+                    List<TargetDepartment> departments = targetCompany.getDepartments();
+                    TargetDepartment targetDepartment = new TargetDepartment(department.getName(), new ArrayList<>());
+                    departments.add(targetDepartment);
+                }
+            } else if (target.getReceiverType() == ReceiverType.EMPLOYEE) {
+                Employee employee = EMPLOYEE_SERVICE.getEmployeeById(receiverId);
+                if (employee != null) {
+                    Department department = DEPARTMENT_SERVICE.getDepartmentById(employee.getDepartment().getId());
+                    if (department != null) {
+                        TargetCompany targetCompany = companyMap.computeIfAbsent(department.getCompany().getId(),
+                                id -> new TargetCompany(department.getCompany().getName(), new ArrayList<>()));
+                        List<TargetDepartment> departments = targetCompany.getDepartments();
+                        TargetDepartment targetDepartment = departments.stream()
+                                .filter(d -> d.getDepartmentName().equals(department.getName()))
+                                .findFirst().orElseGet(() -> {
+                                    TargetDepartment newDept = new TargetDepartment(department.getName(), new ArrayList<>());
+                                    departments.add(newDept);
+                                    return newDept;
+                                });
+                        targetDepartment.getEmployees().add(new TargetEmployee(employee.getName()));
+                    }
+                }
+            }
+        }
+        return new ArrayList<>(companyMap.values());
     }
 
 }

@@ -54,7 +54,8 @@ public class SecurityConfig {
                 .requestMatchers(BASE_URL + "/ad/**").hasRole(EmployeeRole.ADMIN.name())
                 // Configure routes to allow access only for the main HR section.
                 .requestMatchers(BASE_URL + "/mr/**", BASE_URL + "/announcement/aug-to-oct-2024", BASE_URL + "/announcement/get-all",
-                        BASE_URL + "/announcement/count", BASE_URL + "/announcement/get-noted-in", BASE_URL + "/announcement/pieChart").hasRole(EmployeeRole.MAIN_HR.name())
+                        BASE_URL + "/announcement/count", BASE_URL + "/announcement/get-noted-in", BASE_URL + "/announcement/pieChart",
+                        BASE_URL + "/getNotedCount").hasRole(EmployeeRole.MAIN_HR.name())
                 // Configure routes to allow access only for main HR assistance.
                 .requestMatchers(BASE_URL + "/ma/**").hasRole(EmployeeRole.MAIN_HR_ASSISTANCE.name())
                 //Configure routes to allow access only for the 'company/HR' subdirectory.
@@ -71,7 +72,7 @@ public class SecurityConfig {
                         BASE_URL + "/announcement/delete-draft/**", BASE_URL + "/custom-target/**", BASE_URL + "/notifications/noted-count/**",
                         BASE_URL + "/getUsersByCompanyId",BASE_URL +"/announcement/getNotedPercentageByDepartment",
                         BASE_URL + "/announcement/getScheduleList", BASE_URL + "/announcement/deleteScheduleAnnouncement/**",BASE_URL+"/comments/replyToComment",
-                        BASE_URL + "/announcement/updateNow/**").hasAnyRole(EmployeeRole.MAIN_HR.name(),
+                        BASE_URL + "/announcement/updateNow/**", BASE_URL + "/announcement/announcementsForReport", BASE_URL + "/announcement/targetsByAnnouncement/**").hasAnyRole(EmployeeRole.MAIN_HR.name(),
                         EmployeeRole.HR.name(), EmployeeRole.MAIN_HR_ASSISTANCE.name(), EmployeeRole.HR_ASSISTANCE.name())
         ).userDetailsService(USER_DETAILS_SERVICE).sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)).addFilterBefore(JWT_AUTHENTICATION_FILTER, UsernamePasswordAuthenticationFilter.class).build();
 

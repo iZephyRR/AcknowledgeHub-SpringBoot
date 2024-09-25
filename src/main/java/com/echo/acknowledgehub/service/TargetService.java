@@ -4,6 +4,7 @@ import com.echo.acknowledgehub.bean.CheckingBean;
 import com.echo.acknowledgehub.constant.NotificationType;
 import com.echo.acknowledgehub.constant.ReceiverType;
 import com.echo.acknowledgehub.controller.NotificationController;
+import com.echo.acknowledgehub.dto.CompanyDTO;
 import com.echo.acknowledgehub.dto.NotificationDTO;
 import com.echo.acknowledgehub.entity.*;
 import com.echo.acknowledgehub.repository.TargetRepository;
@@ -139,11 +140,11 @@ public class TargetService {
         if (department.isPresent()) {
             return department.get().getName();  // Retrieve department name if applicable
         }
-        Optional<Company> company = COMPANY_SERVICE.findById(targetId).join();
-        if (company.isPresent()) {
-            return company.get().getName();  // Retrieve company name if applicable
-        }
-        return "Unknown";  // Default if none found
+        CompanyDTO company = COMPANY_SERVICE.findById(targetId).join();
+        // if (company.isPresent()) {
+        return company.getName();  // Retrieve company name if applicable
+        // }
+        //return "Unknown";  // Default if none found
     }
 
     public List<Target> saveTargets(List<Target> entityList) {

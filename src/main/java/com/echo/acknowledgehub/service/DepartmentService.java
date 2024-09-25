@@ -2,11 +2,13 @@ package com.echo.acknowledgehub.service;
 
 import com.echo.acknowledgehub.dto.CompanyDTO;
 import com.echo.acknowledgehub.dto.DepartmentDTO;
+import com.echo.acknowledgehub.dto.DepartmentInfo;
 import com.echo.acknowledgehub.dto.UserDTO;
 import com.echo.acknowledgehub.entity.Department;
 import com.echo.acknowledgehub.entity.Employee;
 import com.echo.acknowledgehub.exception_handler.DataNotFoundException;
 import com.echo.acknowledgehub.repository.DepartmentRepository;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.persistence.criteria.From;
 import lombok.AllArgsConstructor;
 import org.springframework.scheduling.annotation.Async;
@@ -64,5 +66,10 @@ public class DepartmentService {
 
     public Department findByEmployeeId(Long employeeId) {
         return DEPARTMENT_REPOSITORY.findByEmployeeId(employeeId);
+    }
+
+    public Department getDepartmentById(Long id) {
+        return DEPARTMENT_REPOSITORY.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Department not found"));
     }
 }

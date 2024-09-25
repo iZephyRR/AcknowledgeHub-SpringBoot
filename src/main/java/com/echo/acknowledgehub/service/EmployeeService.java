@@ -17,6 +17,7 @@ import com.echo.acknowledgehub.repository.EmployeeRepository;
 import com.google.api.core.ApiFuture;
 import com.google.cloud.firestore.*;
 import com.google.firebase.cloud.FirestoreClient;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.AllArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.scheduling.annotation.Async;
@@ -352,7 +353,7 @@ public class EmployeeService {
             List<QueryDocumentSnapshot> documents = future.get().getDocuments();
             for (DocumentSnapshot document : documents) {
                 Long userId = document.getLong("userId");
-                LOGGER.info("User ID from Firebase service: " + userId);
+                //LOGGER.info("User ID from Firebase service: " + userId);
                 LocalDateTime noticeAt = LocalDateTime.parse(
                         Objects.requireNonNull(document.getString("noticeAt")), formatter);
                 LocalDateTime timestamp = LocalDateTime.parse(
@@ -401,7 +402,7 @@ public class EmployeeService {
             List<QueryDocumentSnapshot> documents = future.get().getDocuments();
             for (DocumentSnapshot document : documents) {
                 Long userId = document.getLong("userId");
-                LOGGER.info("User ID from Firebase service: " + userId);
+                //LOGGER.info("User ID from Firebase service: " + userId);
                 LocalDateTime noticeAt = LocalDateTime.parse(
                         Objects.requireNonNull(document.getString("noticeAt")), formatter);
                 LocalDateTime timestamp = LocalDateTime.parse(
@@ -491,7 +492,6 @@ public class EmployeeService {
     }
 
     public List<UserDTO> mapToDtoList(List<Object[]> objLists) {
-
         return objLists.stream().map(this::mapToDto).collect(Collectors.toList());
     }
 
@@ -550,4 +550,31 @@ public class EmployeeService {
             return EMPLOYEE_REPOSITORY.count();
         }
     }
+
+    public List<UserDTO> getDescNotedCount() {
+        LOGGER.info("in get asc noted Count");
+        return mapToDtoListForNotedCount(EMPLOYEE_REPOSITORY.getAscNotedCount());
+    }
+
+    public List<UserDTO> mapToDtoListForNotedCount(List<Object[]> objLists) {
+        LOGGER.info("in mapToDtoListForNotedCount");
+        return objLists.stream().map(this::mapToDtoForNotedCount).collect(Collectors.toList());
+    }
+
+    public UserDTO mapToDtoForNotedCount(Object[] row) {
+        UserDTO dto = new UserDTO();
+        dto.setId((Long) row[0]);
+        dto.setName((String) row[1]);
+        dto.setNotedCount((int) row[2]);
+        dto.setCompanyName((String) row[3]);
+        dto.setDepartmentName((String) row[4]);
+        dto.setStaffId((String) row[5]);
+        return dto;
+    }
+
+    public Employee getEmployeeById(Long id) {
+        return EMPLOYEE_REPOSITORY.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Employee not found"));
+    }
+
 }

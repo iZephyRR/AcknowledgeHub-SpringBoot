@@ -31,5 +31,5 @@ public class UserDTO {
     private String departmentName;
     private Long companyId;
     private String companyName;
-
+    private int notedCount;
 }

@@ -12,6 +12,7 @@ import com.echo.acknowledgehub.exception_handler.DataNotFoundException;
 import com.echo.acknowledgehub.repository.CompanyRepository;
 import com.echo.acknowledgehub.repository.DepartmentRepository;
 import com.echo.acknowledgehub.repository.EmployeeRepository;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import org.springframework.scheduling.annotation.Async;
@@ -35,8 +36,13 @@ public class CompanyService {
     private final DepartmentRepository DEPARTMENT_REPOSITORY;
 
     @Async
-    public CompletableFuture<Optional<Company>> findById(Long id) {
-        return CompletableFuture.completedFuture(COMPANY_REPOSITORY.findById(id));
+    public CompletableFuture<CompanyDTO> findById(Long id) {
+        Optional<Company> optionalCompany=COMPANY_REPOSITORY.findById(id);
+        if(optionalCompany.isPresent()){
+            return CompletableFuture.completedFuture(mapToDTO(optionalCompany.get()));
+        }else{
+            throw new DataNotFoundException("Cannot find company");
+        }
     }
 
     @Async
@@ -73,27 +79,31 @@ public class CompanyService {
         return CompletableFuture.completedFuture(COMPANY_REPOSITORY.findByName(name));
     }
 
+//    public List<CompanyDTO> getAll() {
+//        List<Company> companies = COMPANY_REPOSITORY.findAll();
+//        List<CompanyDTO> companyDTOS = new LinkedList<>();
+//        companies.forEach((company -> {
+//            CompanyDTO companyDTO = new CompanyDTO();
+//            companyDTO.setId(company.getId());
+//            companyDTO.setName(company.getName());
+//            List<DepartmentDTO> departmentDTOS = new LinkedList<>();
+//            List<Department> departments = DEPARTMENT_REPOSITORY.findByCompanyId(company.getId());
+//            departments.forEach((department -> {
+//                DepartmentDTO departmentDTO = new DepartmentDTO();
+//                departmentDTO.setId(department.getId());
+//                departmentDTO.setName(department.getName());
+//                List<Employee>employees=EMPLOYEE_REPOSITORY.getByDepartmentId(department.getId());
+//                departmentDTO.setEmployees(employees);
+//                departmentDTOS.add(departmentDTO);
+//            }));
+//            companyDTO.setDepartments(departmentDTOS);
+//            companyDTOS.add(companyDTO);
+//        }));
+//        return companyDTOS;
+//    }
+
     public List<CompanyDTO> getAll() {
-        List<Company> companies = COMPANY_REPOSITORY.findAll();
-        List<CompanyDTO> companyDTOS = new LinkedList<>();
-        companies.forEach((company -> {
-            CompanyDTO companyDTO = new CompanyDTO();
-            companyDTO.setId(company.getId());
-            companyDTO.setName(company.getName());
-            List<DepartmentDTO> departmentDTOS = new LinkedList<>();
-            List<Department> departments = DEPARTMENT_REPOSITORY.findByCompanyId(company.getId());
-            departments.forEach((department -> {
-                DepartmentDTO departmentDTO = new DepartmentDTO();
-                departmentDTO.setId(department.getId());
-                departmentDTO.setName(department.getName());
-                List<Employee>employees=EMPLOYEE_REPOSITORY.getByDepartmentId(department.getId());
-                departmentDTO.setEmployees(employees);
-                departmentDTOS.add(departmentDTO);
-            }));
-            companyDTO.setDepartments(departmentDTOS);
-            companyDTOS.add(companyDTO);
-        }));
-        return companyDTOS;
+        return mapToDTOList(COMPANY_REPOSITORY.findAll());
     }
 
     public List<CompanyDTO> getAllDTO() {
@@ -125,4 +135,38 @@ public class CompanyService {
     public Company findByEmployeeId(Long employeeId) {
         return COMPANY_REPOSITORY.findByEmployeeId(employeeId);
     }
+
+    private CompanyDTO mapToDTO(Company company){
+        CompanyDTO companyDTO = new CompanyDTO();
+        companyDTO.setId(company.getId());
+        companyDTO.setName(company.getName());
+        List<DepartmentDTO> departmentDTOS = new LinkedList<>();
+        List<Department> departments = DEPARTMENT_REPOSITORY.findByCompanyId(company.getId());
+        departments.forEach((department -> {
+            DepartmentDTO departmentDTO = new DepartmentDTO();
+            departmentDTO.setId(department.getId());
+            departmentDTO.setName(department.getName());
+            List<Employee>employees=EMPLOYEE_REPOSITORY.getByDepartmentId(department.getId());
+            departmentDTO.setEmployees(employees);
+            departmentDTOS.add(departmentDTO);
+        }));
+        companyDTO.setDepartments(departmentDTOS);
+        return companyDTO;
+    }
+
+    private List<CompanyDTO> mapToDTOList(List<Company> companies){
+        List<CompanyDTO> companyDTOS = new LinkedList<>();
+        companies.forEach((company -> {
+            companyDTOS.add(mapToDTO(company));
+        }));
+        return companyDTOS;
+    }
+
+//    public Company getCompanyById(Long id) {
+//        return COMPANY_REPOSITORY.findById(id)
+//                .orElseThrow(() -> new EntityNotFoundException("Department not found"));
+//    }
+
+
+
 }

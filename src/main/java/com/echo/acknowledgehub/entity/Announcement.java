@@ -28,12 +28,13 @@ public class Announcement {
     @Column(name = "contentType", nullable = false)
     private ContentType contentType;
     @Enumerated(EnumType.STRING)
-    @Column(name = "selectAll", nullable = false)
+    @Column(name = "selectAll", nullable = false , columnDefinition = "ENUM('TRUE', 'FALSE')")
     private SelectAll selectAll;
     @Enumerated(EnumType.STRING)
-    @Column(name ="isSchedule", nullable = false)
+    @Column(name ="isSchedule", nullable = false, columnDefinition = "ENUM('TRUE', 'FALSE')")
     private IsSchedule isSchedule;
-    @Column(name ="channel", nullable = false)
+    @Enumerated(EnumType.STRING)
+    @Column(name ="channel", nullable = false , columnDefinition = "ENUM('TELEGRAM', 'BOTH')")
     private Channel channel;
 
     @JsonIgnore

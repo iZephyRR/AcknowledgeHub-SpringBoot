@@ -60,12 +60,12 @@ public class Employee implements UserDetails {
     @Column(name = "noted_count",  nullable = false )
     private int notedCount = 0;
 
-    @JsonIgnore
+    //@JsonIgnore
     @ManyToOne
     @JoinColumn(name = "department_id")
     private Department department;
 
-    @JsonIgnore
+    //@JsonIgnore
     @ManyToOne
     @JoinColumn(name = "company_id")
     private Company company;

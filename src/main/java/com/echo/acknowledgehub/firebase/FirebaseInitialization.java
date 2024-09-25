@@ -23,7 +23,7 @@ public class FirebaseInitialization {
 
             FirebaseOptions options = new FirebaseOptions.Builder()
                     .setCredentials(GoogleCredentials.fromStream(serviceAccount))
-                    .setDatabaseUrl("https://cheatsheet1-d5b26.firebaseio.com/")
+                    .setDatabaseUrl("https://acknowledge-hub.firebaseapp.com/")
                     .build();
 
             // Initialize Firebase app if not already initialized

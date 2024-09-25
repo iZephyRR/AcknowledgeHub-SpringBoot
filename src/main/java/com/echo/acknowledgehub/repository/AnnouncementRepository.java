@@ -7,6 +7,7 @@ import com.echo.acknowledgehub.dto.*;
 import com.echo.acknowledgehub.dto.AnnouncementDTO;
 import com.echo.acknowledgehub.entity.Announcement;
 import com.echo.acknowledgehub.entity.AnnouncementCategory;
+import com.echo.acknowledgehub.entity.Target;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -101,8 +102,12 @@ public interface AnnouncementRepository extends JpaRepository<Announcement, Long
     AnnouncementsForShowing getAnnouncementById(@Param("announcementId") Long announcementId);
 
     @Query("SELECT new com.echo.acknowledgehub.dto.AnnouncementsShowInDashboard(a.id,a.title,c.name,e.name,e.role,a.createdAt)" +
-            "FROM Announcement a JOIN a.category c JOIN a.employee e")
-    List<AnnouncementsShowInDashboard> getAllAnnouncementsForDashboard();
+            "FROM Announcement a JOIN a.category c JOIN a.employee e WHERE a.status= :status")
+    List<AnnouncementsShowInDashboard> getAllAnnouncementsForDashboard(@Param("status") AnnouncementStatus status);
+
+    @Query("SELECT new com.echo.acknowledgehub.dto.AnnouncementsShowInDashboard(a.id,a.title,c.name,e.name,e.role,a.createdAt)" +
+            "FROM Announcement a JOIN a.category c JOIN a.employee e WHERE e.id IN :employeeIds AND a.status= :status")
+    List<AnnouncementsShowInDashboard> getAllAnnouncementsForDashboardByCompany(@Param("status") AnnouncementStatus status, @Param("employeeIds") List<Long> employeeIds);
 
     @Query("SELECT a.employee.id FROM Announcement a WHERE a.id=:announcementId")
     Long getCreator(@Param("announcementId") Long announcementId);
@@ -132,8 +137,6 @@ public interface AnnouncementRepository extends JpaRepository<Announcement, Long
             "WHERE e.id = :employeeId AND t.receiverType = 'COMPANY' AND t.sendTo = e.company.id AND a.status = 'UPLOADED'")
     int getAnnouncementCountByCompanyAndEmployee(@Param("employeeId") Long employeeId);
 
-
-
     @Query("SELECT e.id FROM Employee e WHERE e.role IN (:roles) AND e.company.id = :companyId")
     List<Long> findEmployeeIdsByRolesAndCompanyId(@Param("roles") List<EmployeeRole> roles, @Param("companyId") Long companyId);
 
@@ -145,5 +148,19 @@ public interface AnnouncementRepository extends JpaRepository<Announcement, Long
 
     @Query("SELECT a FROM Announcement a ORDER BY a.createdAt DESC")
     List<Announcement> findAllAnnouncements();
+
+    @Query("SELECT new com.echo.acknowledgehub.dto.AnnouncementDTOForReport(a.id,a.title,a.category.name," +
+            "a.contentType,a.createdAt,a.channel,e.name,e.role,e.company.name, a.selectAll,a.status)" +
+            "FROM Announcement a JOIN a.employee e WHERE a.status = :status")
+    List<AnnouncementDTOForReport> announcementDTOForReport(@Param("status") AnnouncementStatus status);
+
+    @Query("SELECT new com.echo.acknowledgehub.dto.AnnouncementDTOForReport(a.id,a.title,a.category.name," +
+            "a.contentType,a.createdAt,a.channel,e.name,e.role,e.company.name,a.selectAll,a.status)" +
+            "FROM Announcement a JOIN a.employee e WHERE a.status = :status AND e.id IN :employeeIds")
+    List<AnnouncementDTOForReport> announcementDTOForReportByCompany(@Param("status") AnnouncementStatus status,@Param("employeeIds") List<Long> employeeIds);
+
+    @Query("SELECT t FROM Target t WHERE t.announcement.id = :announcementId")
+    List<Target> targetsByAnnouncementId(@Param("announcementId") Long announcementId);
+
 
 }

@@ -35,7 +35,7 @@ public class AnnouncementDTO {
     private ContentType contentType;
     private EmployeeRole role;
     private String isEmailSelected;
-    private  Channel channel;
+    private Channel channel;
     private boolean selectAll;
 
     public AnnouncementDTO(Long id,String title, LocalDateTime createdAt, AnnouncementStatus status, String categoryName, String createdBy){

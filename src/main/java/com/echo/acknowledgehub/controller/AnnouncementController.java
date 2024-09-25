@@ -11,6 +11,7 @@ import com.echo.acknowledgehub.util.JWTService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.AllArgsConstructor;
+import lombok.Getter;
 import org.apache.commons.compress.utils.IOUtils;
 import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.Page;
@@ -52,7 +53,7 @@ public class AnnouncementController {
     private final CompanyService COMPANY_SERVICE;
     private final DepartmentService DEPARTMENT_SERVICE;
     private final AnnouncementCategoryService ANNOUNCEMENT_CATEGORY_SERVICE;
-//    private final TelegramService TELEGRAM_SERVICE;
+   //private final TelegramService TELEGRAM_SERVICE;
     private final TargetService TARGET_SERVICE;
     private final DraftService DRAFT_SERVICE;
     private final EmailSender EMAIL_SENDER;
@@ -94,7 +95,7 @@ public class AnnouncementController {
                 }
             }
             List<Long> chatIdsList = new ArrayList<>(chatIdsSet);
-            //TELEGRAM_SERVICE.sendToTelegram(chatIdsList, excelFile, announcement.getContentType().getFirstValue(), announcement.getId(), announcement.getPdfLink(), announcement.getTitle(), announcement.getEmployee().getName());
+            //TELEGRAM_SERVICE.sendToTelegram(chatIdsList, excelFile, announcement.getContentType().getFirstValue(), announcement.getId(), announcement.getPdfLink(), announcement.getTitle(), announcement.getEmployee().getCompany().getName());
             if (announcement.getChannel() == Channel.BOTH) {
                 for (String address : emails) {
                     EMAIL_SENDER.sendEmail(new EmailDTO(address, announcement.getTitle(), announcement.getPdfLink(), null));
@@ -119,6 +120,7 @@ public class AnnouncementController {
         Optional<AnnouncementCategory> optionalAnnouncementCategory = ANNOUNCEMENT_CATEGORY_SERVICE.findById(announcementDTO.getCategoryId());
         AnnouncementCategory category = optionalAnnouncementCategory.orElse(null);
         validateTargets(targetDTOList); // validate targets are exist or not
+
         String scheduleOption = announcementDTO.getScheduleOption();
         if (!"later".equals(scheduleOption) && !"now".equals(scheduleOption)) {
             throw new IllegalArgumentException("Invalid option");
@@ -209,7 +211,7 @@ public class AnnouncementController {
             LOGGER.info("final result chat set : " + chatIdsSet);
             List<Long> chatIdsList = new ArrayList<>(chatIdsSet);
             LOGGER.info("final result chat list : " + chatIdsList);
-//            TELEGRAM_SERVICE.sendToTelegram(chatIdsList, excelFile, announcement.getContentType().getFirstValue(), announcement.getId(), announcement.getPdfLink(), announcement.getTitle(), announcement.getEmployee().getName());
+           //TELEGRAM_SERVICE.sendToTelegram(chatIdsList, excelFile, announcement.getContentType().getFirstValue(), announcement.getId(), announcement.getPdfLink(), announcement.getTitle(), announcement.getEmployee().getCompany().getName());
             if (announcement.getChannel() == Channel.BOTH) {
                 for (String address : emails) {
                     EMAIL_SENDER.sendEmail(new EmailDTO(address, announcement.getTitle(), announcement.getPdfLink(), null));
@@ -219,7 +221,6 @@ public class AnnouncementController {
             LOGGER.info("announcement status : " + status);
             SaveTargetsForSchedule saveTargetsForSchedule = new SaveTargetsForSchedule();
             saveTargetsForSchedule.setTargets(targetList);
-            //saveTargetsForSchedule.setIsEmailSelected(announcementDTO.getIsEmailSelected());
             assert excelFile != null;
             String fileUrl = saveFileAndGetUrl(excelFile);
             saveTargetsForSchedule.setFilePath(fileUrl);
@@ -518,7 +519,7 @@ public class AnnouncementController {
             }
         }
         List<Long> chatIdsList = new ArrayList<>(chatIdsSet);
-        //TELEGRAM_SERVICE.sendToTelegram(chatIdsList, excelFile, announcement.getContentType().getFirstValue(), announcement.getId(), announcement.getPdfLink(), announcement.getTitle(), announcement.getEmployee().getName());
+        //TELEGRAM_SERVICE.sendToTelegram(chatIdsList, excelFile, announcement.getContentType().getFirstValue(), announcement.getId(), announcement.getPdfLink(), announcement.getTitle(), announcement.getEmployee().getCompany().getName());
         if (announcement.getChannel() == Channel.BOTH) {
             for (String address : emails) {
                 EMAIL_SENDER.sendEmail(new EmailDTO(address, announcement.getTitle(), announcement.getPdfLink(), null));
@@ -547,6 +548,17 @@ public class AnnouncementController {
         Map<String, List<Announcement>> announcementsByMonth = ANNOUNCEMENT_SERVICE.getAnnouncementsGroupedByMonthAndYear(year);
         return ResponseEntity.ok(announcementsByMonth);
     }
+
+    @GetMapping(value = "/announcementsForReport", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<List<AnnouncementDTOForReport>> announcementsForReport() {
+        return ResponseEntity.ok(ANNOUNCEMENT_SERVICE.announcementDTOForReport());
+    }
+
+    @GetMapping(value = "/targetsByAnnouncement/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<List<TargetCompany>> targetsByAnnouncementId(@PathVariable ("id") Long id) {
+        return ResponseEntity.ok(ANNOUNCEMENT_SERVICE.targetsByAnnouncementId(id));
+    }
+
 
 }
 

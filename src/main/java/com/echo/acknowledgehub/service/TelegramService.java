@@ -6,10 +6,7 @@
 //import com.echo.acknowledgehub.entity.Employee;
 //import com.echo.acknowledgehub.entity.TelegramGroup;
 //import lombok.AllArgsConstructor;
-//import org.springframework.cache.annotation.EnableCaching;
-//import org.springframework.context.annotation.Primary;
 //import org.springframework.scheduling.annotation.Async;
-//import org.springframework.scheduling.annotation.EnableAsync;
 //import org.springframework.stereotype.Service;
 //import org.springframework.web.multipart.MultipartFile;
 //import org.telegram.telegrambots.bots.TelegramLongPollingBot;
@@ -68,7 +65,7 @@
 //            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 //            String formattedNow = now.format(formatter); // to save in Firebase
 //
-//            if (callbackData.startsWith("seen_confirmed:")) {
+//            if (callbackData.startsWith("Seen_and_Confirmed:")) {
 //                String[] dataParts = callbackData.split(":");
 //                long announcementId = Long.parseLong(dataParts[1]); // to save in Firebase
 //                User user = callbackQuery.getFrom();
@@ -78,7 +75,7 @@
 //                LOGGER.info("User " + username + " userId " + employeeId + " clicked for announcement " + announcementId + " at " + formattedNow);
 //                // Update the noticeAt time in Firebase
 //                FIRE_BASE_NOTIFICATION_SERVICE.updateNoticeAtInFirebase(employeeId, announcementId, formattedNow);
-//                countNoted(employeeId,announcementId);
+//                countNoted(employeeId, announcementId);
 //                updateCaption(callbackQuery, chatId);
 //            }
 //        } else if (updateInfo.hasMessage()) {
@@ -110,13 +107,17 @@
 //        }).join();
 //    }
 //
-//    public void updateCaption(CallbackQuery callbackQuery, Long chatId){
+//    public void updateCaption(CallbackQuery callbackQuery, Long chatId) {
 //        EditMessageCaption editMessage = new EditMessageCaption();
 //        editMessage.setChatId(callbackQuery.getMessage().getChatId().toString());
 //        editMessage.setMessageId(callbackQuery.getMessage().getMessageId());
-//        String newCaption = callbackQuery.getMessage().getCaption() + "\n\nYou have successfully noted this announcement." +
+//        String originalCaption = callbackQuery.getMessage().getCaption();
+//        LOGGER.info("Original Caption: " + callbackQuery.getMessage().getCaption());
+//
+//        String newCaption = originalCaption + "\n\nYou have successfully noted this announcement." +
 //                "\n\nThank you for acknowledging the announcement";
 //        editMessage.setCaption(newCaption);
+//        editMessage.setParseMode("HTML");
 //        editMessage.setReplyMarkup(null);
 //        try {
 //            execute(editMessage);
@@ -144,17 +145,41 @@
 //                TelegramGroup telegramGroup = TELEGRAM_GROUP_SERVICE.findByGroupName(groupTitle);
 //                if (telegramGroup.getGroupName().equals(groupTitle) && telegramGroup.getGroupChatId() == null) {
 //                    int updateResult = TELEGRAM_GROUP_SERVICE.updateGroupChatId(chatId, groupTitle);
-//                    sendMessage(chatId, "Hello Everyone.");
+//                    LOGGER.info("before telegram group message send");
+//                    String text = "Hello [Everyone]! \uD83D\uDC4B\n" +
+//                            "\n" +
+//                            "Welcome to ["+BOT_USERNAME+"], your company's official announcement bot.\n" +
+//                            "\n" +
+//                            "We’ll be sending you important announcements, updates, and news from your company right here. You'll be able to read, review, and acknowledge each message we send.\n" +
+//                            "\n" +
+//                            "\uD83D\uDD14 Keep an eye out for announcements – your acknowledgment will be required for some important updates.\n" +
+//                            "\n" +
+//                            "Let's get started! Feel free to ask any questions or click below to acknowledge you're ready to receive updates.\n";
+//                    sendMessage(chatId, text);
 //                }
 //            } else if (message.getChat().isUserChat()) {
 //                String username = message.getChat().getUserName();
-//                LOGGER.info("telegram username : "+ username);
 //                Employee telegramUser = EMPLOYEE_SERVICE.findByTelegramUsername(username);
-//                LOGGER.info("telegram user : " + telegramUser);
-//                if (telegramUser.getTelegramUsername().equals(username) && telegramUser.getTelegramUserId() == null) {
-//                    int updateResult = EMPLOYEE_SERVICE.updateTelegramUserId(chatId, username);
-//                    LOGGER.info("Update result : " + updateResult);
-//                    sendMessage(chatId, "Hello");
+//                if (telegramUser != null && telegramUser.getId() != null) {
+//                    if (telegramUser.getTelegramUsername().equals(username) && telegramUser.getTelegramUserId() == null) {
+//                        int updateResult = EMPLOYEE_SERVICE.updateTelegramUserId(chatId, username);
+//                        LOGGER.info("Update result : " + updateResult);
+//                        String text = "Hello [" + username + "]! \uD83D\uDC4B\n" +
+//                                "\n" +
+//                                "Welcome to ["+BOT_USERNAME+"], your company's official announcement bot.\n" +
+//                                "\n" +
+//                                "We’ll be sending you important announcements, updates, and news from your company right here. You'll be able to read, review, and acknowledge each message we send.\n" +
+//                                "\n" +
+//                                "\uD83D\uDD14 Keep an eye out for announcements – your acknowledgment will be required for some important updates.\n" +
+//                                "\n" +
+//                                "Let's get started! Feel free to ask any questions or click below to acknowledge you're ready to receive updates.\n";
+//                        sendMessage(chatId, text);
+//                    }
+//                } else {
+//                    String text = "Hello! It seems you're not registered in our system yet. Please contact your administrator to register your details.\n" +
+//                            "\n" +
+//                            "Once you're registered, you will receive important announcements and updates from your company here.";
+//                    sendMessage(chatId, text);
 //                }
 //            }
 //        }
@@ -170,7 +195,7 @@
 //    }
 //
 //    @Async
-//    public void sendToTelegram(List<Long> chatIdsList,MultipartFile file,String contentType, Long announcementId, String filePathOrUrl, String title, String creator) {
+//    public void sendToTelegram(List<Long> chatIdsList, MultipartFile file, String contentType, Long announcementId, String filePathOrUrl, String title, String creator) {
 //        LOGGER.info("in send to telegram");
 //        LOGGER.info("Content Type: " + contentType);
 //        contentType = contentType.trim();
@@ -184,15 +209,15 @@
 //            LOGGER.info("send image");
 //            sendImageInBatches(chatIdsList, announcementId, filePathOrUrl, title, creator);
 //        } else if (contentType.equals(ContentType.PDF.getValues()[0])) {
-//            LOGGER.info("send excel ");
-//            sendReportsInBatches(chatIdsList, announcementId, filePathOrUrl, title, creator );
-//        } else if ( contentType.equals(ContentType.EXCEL.getValues()[0]) ||
+//            LOGGER.info("send pdf ");
+//            sendReportsInBatches(chatIdsList, announcementId, filePathOrUrl, title, creator);
+//        } else if (contentType.equals(ContentType.EXCEL.getValues()[0]) ||
 //                contentType.equals(ContentType.EXCEL.getValues()[1])) {
 //            LOGGER.info("send excel");
-//            sendExcelInBatches(chatIdsList,announcementId,file,title,creator);
+//            sendExcelInBatches(chatIdsList, announcementId, file, title, creator);
 //        } else if (contentType.equals(ContentType.ZIP.getValues()[0])) {
 //            LOGGER.info("send zip ");
-//            sendZipInBatches(chatIdsList, announcementId,filePathOrUrl,title, creator);
+//            sendZipInBatches(chatIdsList, announcementId, filePathOrUrl, title, creator);
 //        } else {
 //            LOGGER.info("Unknown content type: " + contentType);
 //        }
@@ -268,21 +293,21 @@
 //    }
 //
 //    // send report pdf or excel if u want to send to more than one user, call ....InBatches
-//    private void sendReports(Long chatId,Long announcementId, String filePathOrUrl, String title, String creator) throws TelegramApiException {
+//    private void sendReports(Long chatId, Long announcementId, String filePathOrUrl, String title, String creator) throws TelegramApiException {
 //        SendDocument sendDocumentRequest = new SendDocument();
 //        sendDocumentRequest.setChatId(chatId);
 //        InputFile file = new InputFile(filePathOrUrl);
 //        sendDocumentRequest.setDocument(file);
-//        sendDocumentRequest.setCaption("Title: " + title + "\nSent by: " + creator +
-//                "\nVisit: http://0.0.0.0:4200/announcement-page/" + announcementId);
+//        sendDocumentRequest.setCaption(caption(creator,title,announcementId));
+//        sendDocumentRequest.setParseMode("HTML");
 //        InlineKeyboardMarkup markupInline = getInlineKeyboardMarkup(announcementId);
 //        sendDocumentRequest.setReplyMarkup(markupInline);
-//        LOGGER.info("Before sending pdf or excel to : "+ chatId);
+//        LOGGER.info("Before sending pdf : " + chatId);
 //        execute(sendDocumentRequest);
-//        LOGGER.info("After sending pdf or excel to : "+ chatId);
+//        LOGGER.info("After sending pdf : " + chatId);
 //    }
 //
-//    private void sendReportsInBatches(List<Long> chatIds,Long announcementId, String filePath, String title, String creator) {
+//    private void sendReportsInBatches(List<Long> chatIds, Long announcementId, String filePath, String title, String creator) {
 //        int batchSize = 30;
 //        int delay = 1; // 1-second delay between batches
 //        ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
@@ -290,10 +315,14 @@
 //            List<Long> batch = chatIds.subList(i, Math.min(i + batchSize, chatIds.size()));
 //            executor.schedule(() -> {
 //                for (Long chatId : batch) {
-//                    try {
-//                        sendReports(chatId,announcementId, filePath, title, creator);
-//                    } catch (TelegramApiException e) {
-//                        throw new RuntimeException(e);
+//                    if (chatId != null) {
+//                        try {
+//                            sendReports(chatId, announcementId, filePath, title, creator);
+//                        } catch (TelegramApiException e) {
+//                            throw new RuntimeException(e);
+//                        }
+//                    }else {
+//                        LOGGER.info("Skipped sending report to null chatId");
 //                    }
 //                }
 //            }, delay * (i / batchSize), TimeUnit.SECONDS);
@@ -302,16 +331,17 @@
 //    }
 //
 //    // send excel if u want to send to more than one user, call ....InBatches
-//    private void sendExcel(Long chatId,Long announcementId, InputFile file, String title, String creator) throws TelegramApiException, IOException {
+//    private void sendExcel(Long chatId, Long announcementId, InputFile file, String title, String creator) throws TelegramApiException, IOException {
 //        SendDocument sendDocumentRequest = new SendDocument();
 //        sendDocumentRequest.setChatId(chatId);
 //        sendDocumentRequest.setDocument(file);
-//        sendDocumentRequest.setCaption("Title : " + title + "\nSend By : " + creator);
+//        sendDocumentRequest.setCaption(caption(creator,title,announcementId));
+//        sendDocumentRequest.setParseMode("HTML");
 //        InlineKeyboardMarkup markupInline = getInlineKeyboardMarkup(announcementId);
 //        sendDocumentRequest.setReplyMarkup(markupInline);
-//        LOGGER.info("Before sending excel to : "+ chatId);
+//        LOGGER.info("Before sending excel to : " + chatId);
 //        execute(sendDocumentRequest);
-//        LOGGER.info("After sending excel to : "+ chatId);
+//        LOGGER.info("After sending excel to : " + chatId);
 //    }
 //
 //    private void sendExcelInBatches(List<Long> chatIds, Long announcementId, MultipartFile filePath, String title, String creator) {
@@ -329,11 +359,15 @@
 //            List<Long> batch = chatIds.subList(i, Math.min(i + batchSize, chatIds.size()));
 //            executor.schedule(() -> {
 //                for (Long chatId : batch) {
-//                    try {
-//                        InputFile inputFile = new InputFile(new ByteArrayInputStream(fileBytes), filePath.getOriginalFilename());
-//                        sendExcel(chatId, announcementId, inputFile, title, creator);
-//                    } catch (TelegramApiException | IOException e) {
-//                        LOGGER.info("Failed to send document to chatId " + e.getMessage());
+//                    if(chatId != null){
+//                        try {
+//                            InputFile inputFile = new InputFile(new ByteArrayInputStream(fileBytes), filePath.getOriginalFilename());
+//                            sendExcel(chatId, announcementId, inputFile, title, creator);
+//                        } catch (TelegramApiException | IOException e) {
+//                            LOGGER.info("Failed to send document to chatId " + e.getMessage());
+//                        }
+//                    }else {
+//                        LOGGER.info("Skipped sending excel to null chatId");
 //                    }
 //                }
 //            }, delayBetweenBatches * (i / batchSize), TimeUnit.SECONDS);
@@ -351,19 +385,20 @@
 //    }
 //
 //    //send audio if u want to send to more than one user, call ....InBatches
-//    private void sendAudio(Long chatId,Long announcementId, String fileUrl, String title, String senderName) throws TelegramApiException {
+//    private void sendAudio(Long chatId, Long announcementId, String fileUrl, String title, String creator) throws TelegramApiException {
 //        SendAudio sendAudio = new SendAudio();
 //        sendAudio.setChatId(chatId.toString());
 //        sendAudio.setAudio(new InputFile(fileUrl));
-//        sendAudio.setCaption("Title : " + title + "\nSent by: " + senderName);
+//        sendAudio.setCaption(caption(creator,title,announcementId));
+//        sendAudio.setParseMode("HTML");
 //        InlineKeyboardMarkup markupInline = getInlineKeyboardMarkup(announcementId);
 //        sendAudio.setReplyMarkup(markupInline);
-//        LOGGER.info("Before sending audio to : "+chatId);
+//        LOGGER.info("Before sending audio to : " + chatId);
 //        execute(sendAudio);
-//        LOGGER.info("After sending audio to :"+ chatId);
+//        LOGGER.info("After sending audio to :" + chatId);
 //    }
 //
-//    private void sendAudioInBatches(List<Long> chatIds,Long announcementId, String fileUrl, String title, String senderName) {
+//    private void sendAudioInBatches(List<Long> chatIds, Long announcementId, String fileUrl, String title, String senderName) {
 //        int batchSize = 30;
 //        int delay = 1; // 1-second delay between batches
 //        ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
@@ -371,11 +406,16 @@
 //            List<Long> batch = chatIds.subList(i, Math.min(i + batchSize, chatIds.size()));
 //            executor.schedule(() -> {
 //                for (Long chatId : batch) {
-//                    try {
-//                        sendAudio(chatId,announcementId, fileUrl, title, senderName);
-//                    } catch (TelegramApiException e) {
-//                        throw new RuntimeException(e);
+//                    if (chatId != null) {
+//                        try {
+//                            sendAudio(chatId, announcementId, fileUrl, title, senderName);
+//                        } catch (TelegramApiException e) {
+//                            throw new RuntimeException(e);
+//                        }
+//                    }else {
+//                        LOGGER.info("Skipped sending audio to null chatId");
 //                    }
+//
 //                }
 //            }, delay * (i / batchSize), TimeUnit.SECONDS);
 //        }
@@ -383,19 +423,20 @@
 //    }
 //
 //    // send video if u want to send to more than one user, call ....InBatches
-//    private void sendVideo(Long chatId,Long announcementId, String fileUrl, String title, String senderName) throws TelegramApiException {
+//    private void sendVideo(Long chatId, Long announcementId, String fileUrl, String title, String creator) throws TelegramApiException {
 //        SendVideo sendVideo = new SendVideo();
 //        sendVideo.setChatId(chatId.toString());
 //        sendVideo.setVideo(new InputFile(fileUrl));
-//        sendVideo.setCaption("Title : " + title + "\nSent by: " + senderName);
+//        sendVideo.setCaption(caption(creator,title,announcementId));
+//        sendVideo.setParseMode("HTML");
 //        InlineKeyboardMarkup markupInline = getInlineKeyboardMarkup(announcementId);
 //        sendVideo.setReplyMarkup(markupInline);
-//        LOGGER.info("Before sending to : "+chatId);
+//        LOGGER.info("Before sending to : " + chatId);
 //        execute(sendVideo);
-//        LOGGER.info("After sending video to :"+ chatId);
+//        LOGGER.info("After sending video to :" + chatId);
 //    }
 //
-//    private void sendVideoInBatches(List<Long> chatIds,Long announcementId, String fileUrl, String filename, String senderName) {
+//    private void sendVideoInBatches(List<Long> chatIds, Long announcementId, String fileUrl, String filename, String senderName) {
 //        int batchSize = 30;
 //        int delay = 1; // 1-second delay between batches
 //        ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
@@ -403,11 +444,16 @@
 //            List<Long> batch = chatIds.subList(i, Math.min(i + batchSize, chatIds.size()));
 //            executor.schedule(() -> {
 //                for (Long chatId : batch) {
-//                    try {
-//                        sendVideo(chatId,announcementId, fileUrl, filename, senderName);
-//                    } catch (TelegramApiException e) {
-//                        throw new RuntimeException(e);
+//                    if (chatId != null) {
+//                        try {
+//                            sendVideo(chatId, announcementId, fileUrl, filename, senderName);
+//                        } catch (TelegramApiException e) {
+//                            throw new RuntimeException(e);
+//                        }
+//                    } else {
+//                        LOGGER.info("Skipped sending video to null chatId");
 //                    }
+//
 //                }
 //            }, delay * (i / batchSize), TimeUnit.SECONDS);
 //        }
@@ -415,19 +461,20 @@
 //    }
 //
 //    // send image if u want to send to more than one user, call ....InBatches
-//    private void sendImage(Long chatId,Long announcementId, String fileUrl, String title, String senderName) throws TelegramApiException {
+//    private void sendImage(Long chatId, Long announcementId, String fileUrl, String title, String creator) throws TelegramApiException {
 //        SendPhoto sendPhoto = new SendPhoto();
 //        sendPhoto.setChatId(chatId.toString());
 //        sendPhoto.setPhoto(new InputFile(fileUrl));
-//        sendPhoto.setCaption("Title : " + title + "\nSent by: " + senderName);
+//        sendPhoto.setCaption(caption(creator,title,announcementId));
+//        sendPhoto.setParseMode("HTML");
 //        InlineKeyboardMarkup markupInline = getInlineKeyboardMarkup(announcementId);
 //        sendPhoto.setReplyMarkup(markupInline);
-//        LOGGER.info("Before sending photo to :"+ chatId);
+//        LOGGER.info("Before sending photo to :" + chatId);
 //        execute(sendPhoto);
-//        LOGGER.info("After sending photo to :"+ chatId);
+//        LOGGER.info("After sending photo to :" + chatId);
 //    }
 //
-//    private void sendImageInBatches(List<Long> chatIds,Long announcementId, String fileUrl, String title, String senderName) {
+//    private void sendImageInBatches(List<Long> chatIds, Long announcementId, String fileUrl, String title, String senderName) {
 //        int batchSize = 30;
 //        int delay = 1; // 1-second delay between batches
 //        ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
@@ -435,10 +482,14 @@
 //            List<Long> batch = chatIds.subList(i, Math.min(i + batchSize, chatIds.size()));
 //            executor.schedule(() -> {
 //                for (Long chatId : batch) {
-//                    try {
-//                        sendImage(chatId,announcementId, fileUrl, title, senderName);
-//                    } catch (TelegramApiException e) {
-//                        throw new RuntimeException(e);
+//                    if (chatId != null) {
+//                        try {
+//                            sendImage(chatId, announcementId, fileUrl, title, senderName);
+//                        } catch (TelegramApiException e) {
+//                            throw new RuntimeException(e);
+//                        }
+//                    } else {
+//                        LOGGER.info("Skipped sending image to null chatId");
 //                    }
 //                }
 //            }, delay * (i / batchSize), TimeUnit.SECONDS);
@@ -447,16 +498,17 @@
 //    }
 //
 //    // send zip if u want to send to more than one user, call ....InBatches
-//    private void sendZip(Long chatId,Long announcementId, String file, String title, String senderName) throws TelegramApiException, IOException {
+//    private void sendZip(Long chatId, Long announcementId, String file, String title, String creator) throws TelegramApiException, IOException {
 //        SendDocument sendZip = new SendDocument();
 //        sendZip.setChatId(chatId.toString());
 //        sendZip.setDocument(new InputFile(file));
-//        sendZip.setCaption("Title : " + title + "\nSent by: " + senderName);
+//        sendZip.setCaption(caption(creator,title,announcementId));
+//        sendZip.setParseMode("HTML");
 //        InlineKeyboardMarkup markupInline = getInlineKeyboardMarkup(announcementId);
 //        sendZip.setReplyMarkup(markupInline);
-//        LOGGER.info("Before sending zip to :"+ chatId);
+//        LOGGER.info("Before sending zip to :" + chatId);
 //        execute(sendZip);
-//        LOGGER.info("After sending zip to :"+ chatId);
+//        LOGGER.info("After sending zip to :" + chatId);
 //    }
 //
 //    public void sendZipInBatches(List<Long> chatIds, Long announcementId, String file, String title, String senderName) {
@@ -467,11 +519,16 @@
 //            List<Long> batch = chatIds.subList(i, Math.min(i + batchSize, chatIds.size()));
 //            executor.schedule(() -> {
 //                for (Long chatId : batch) {
-//                    try {
-//                        sendZip(chatId,announcementId, file, title, senderName);
-//                    } catch (TelegramApiException | IOException e) {
-//                        throw new RuntimeException(e);
+//                    if (chatId != null) {
+//                        try {
+//                            sendZip(chatId, announcementId, file, title, senderName);
+//                        } catch (TelegramApiException | IOException e) {
+//                            throw new RuntimeException(e);
+//                        }
+//                    } else {
+//                        LOGGER.info("Skipped sending zip to null chatId");
 //                    }
+//
 //                }
 //            }, delay * (i / batchSize), TimeUnit.SECONDS);
 //        }
@@ -483,11 +540,21 @@
 //        List<List<InlineKeyboardButton>> rowsInline = new ArrayList<>();
 //        List<InlineKeyboardButton> rowInline = new ArrayList<>();
 //        InlineKeyboardButton button = new InlineKeyboardButton();
-//        button.setText("Click For Your Confirmation");
-//        button.setCallbackData("seen_confirmed:"+ announcementId);
+//        button.setText("Acknowledge Announcement");
+//        button.setCallbackData("Seen_and_Confirmed:" + announcementId);
 //        rowInline.add(button);
 //        rowsInline.add(rowInline);
 //        markupInline.setKeyboard(rowsInline);
 //        return markupInline;
 //    }
+//
+//    private String caption (String creator, String title, Long announcementId) {
+//        String caption = "Hello! You’ve received a new announcement from - <b>" + creator + "</b> regarding - <b>" + title + "</b>.\n\n" +
+//                "🔗 <a href='http://127.0.0.1:4200/announcement-page/" + announcementId + "'>[View the full announcement here]</a>\n\n" +
+//                "Please confirm you’ve seen this by clicking the button below.";
+//
+//        //return caption;
+//        return "Hello! You’ve received a new announcement from - <b>" + creator + "</b> regarding - <b>" + title;
+//    }
+//
 //}

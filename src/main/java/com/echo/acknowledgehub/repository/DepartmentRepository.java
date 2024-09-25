@@ -1,6 +1,7 @@
 package com.echo.acknowledgehub.repository;
 
 import com.echo.acknowledgehub.dto.DepartmentDTO;
+import com.echo.acknowledgehub.dto.DepartmentInfo;
 import com.echo.acknowledgehub.entity.Department;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -27,4 +28,6 @@ public interface DepartmentRepository extends JpaRepository<Department, Long> {
 
     @Query("SELECT d FROM Department d WHERE d.company.id=:id")
     List<Department> findByCompanyId(@Param("id") Long id);
+
+
 }

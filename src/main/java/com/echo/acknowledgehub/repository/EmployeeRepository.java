@@ -151,5 +151,9 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
 
     @Query("SELECT e.photoLink FROM Employee e WHERE e.id=:id")
     byte[] getPhotoById(@Param("id")Long id);
+
+    @Query("SELECT e.id, e.name, e.notedCount,e.company.name,e.department.name,e.staffId FROM Employee e ORDER BY e.notedCount DESC LIMIT 10")
+    List<Object[]> getAscNotedCount();
+
 }
 
