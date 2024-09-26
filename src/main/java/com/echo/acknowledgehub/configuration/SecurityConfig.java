@@ -49,7 +49,7 @@ public class SecurityConfig {
                 .requestMatchers(BASE_URL + "/auth/**", BASE_URL + "/check", BASE_URL + "/test/**", BASE_URL + "/send-email").permitAll()
 
                 // Configure routes to allow access for all authenticated users.
-                .requestMatchers(BASE_URL + "/user/**", BASE_URL + "/notifications/**", BASE_URL + "/announcement/getAnnouncementsByCompanyId", BASE_URL + "/announcement/getAnnouncementsByDepartmentId", BASE_URL + "/announcement/get-By-EmployeeId", BASE_URL + "/announcement/{id}", BASE_URL + "/announcement/get-main-previews", BASE_URL + "/announcement/get-sub-previews", BASE_URL + "/comments/add", BASE_URL + "/comments/getById/**", BASE_URL + "/comments/getReplyBy/**",BASE_URL + "/announcement/monthly_announcement").authenticated()
+                .requestMatchers(BASE_URL + "/user/**", BASE_URL + "/notifications/**", BASE_URL + "/announcement/getAnnouncementsByCompanyId", BASE_URL + "/announcement/getAnnouncementsByDepartmentId", BASE_URL + "/announcement/get-By-EmployeeId", BASE_URL + "/announcement/{id}", BASE_URL + "/announcement/get-main-previews", BASE_URL + "/announcement/get-sub-previews", BASE_URL + "/comments/add", BASE_URL + "/comments/getById/**", BASE_URL + "/comments/getReplyBy/**", BASE_URL + "/announcement/monthly_announcement").authenticated()
                 // Configure routes to allow access only for system admin.
                 .requestMatchers(BASE_URL + "/ad/**").hasRole(EmployeeRole.ADMIN.name())
                 // Configure routes to allow access only for the main HR section.
@@ -70,9 +70,10 @@ public class SecurityConfig {
                         BASE_URL + "/announcement/get-drafts",
                         BASE_URL + "/getCompanyById", BASE_URL + "/get-active-categories", BASE_URL + "/announcement/getDraftById/**", BASE_URL + "/announcement/get-by-company",
                         BASE_URL + "/announcement/delete-draft/**", BASE_URL + "/custom-target/**", BASE_URL + "/notifications/noted-count/**",
-                        BASE_URL + "/getUsersByCompanyId",BASE_URL +"/announcement/getNotedPercentageByDepartment",
-                        BASE_URL + "/announcement/getScheduleList", BASE_URL + "/announcement/deleteScheduleAnnouncement/**",BASE_URL+"/comments/replyToComment",
-                        BASE_URL + "/announcement/updateNow/**", BASE_URL + "/announcement/announcementsForReport", BASE_URL + "/announcement/targetsByAnnouncement/**").hasAnyRole(EmployeeRole.MAIN_HR.name(),
+                        BASE_URL + "/getUsersByCompanyId", BASE_URL + "/announcement/getNotedPercentageByDepartment",
+                        BASE_URL + "/announcement/getScheduleList", BASE_URL + "/announcement/deleteScheduleAnnouncement/**", BASE_URL + "/comments/replyToComment",
+                        BASE_URL + "/announcement/updateNow/**", BASE_URL + "/announcement/announcementsForReport", BASE_URL + "/announcement/targetsByAnnouncement/**",
+                        BASE_URL + "/announcement/noted-list/**").hasAnyRole(EmployeeRole.MAIN_HR.name(),
                         EmployeeRole.HR.name(), EmployeeRole.MAIN_HR_ASSISTANCE.name(), EmployeeRole.HR_ASSISTANCE.name())
         ).userDetailsService(USER_DETAILS_SERVICE).sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)).addFilterBefore(JWT_AUTHENTICATION_FILTER, UsernamePasswordAuthenticationFilter.class).build();
 

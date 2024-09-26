@@ -53,7 +53,7 @@ public class AnnouncementController {
     private final CompanyService COMPANY_SERVICE;
     private final DepartmentService DEPARTMENT_SERVICE;
     private final AnnouncementCategoryService ANNOUNCEMENT_CATEGORY_SERVICE;
-   //private final TelegramService TELEGRAM_SERVICE;
+   private final TelegramService TELEGRAM_SERVICE;
     private final TargetService TARGET_SERVICE;
     private final DraftService DRAFT_SERVICE;
     private final EmailSender EMAIL_SENDER;
@@ -211,7 +211,7 @@ public class AnnouncementController {
             LOGGER.info("final result chat set : " + chatIdsSet);
             List<Long> chatIdsList = new ArrayList<>(chatIdsSet);
             LOGGER.info("final result chat list : " + chatIdsList);
-           //TELEGRAM_SERVICE.sendToTelegram(chatIdsList, excelFile, announcement.getContentType().getFirstValue(), announcement.getId(), announcement.getPdfLink(), announcement.getTitle(), announcement.getEmployee().getCompany().getName());
+           TELEGRAM_SERVICE.sendToTelegram(chatIdsList, excelFile, announcement.getContentType().getFirstValue(), announcement.getId(), announcement.getPdfLink(), announcement.getTitle(), announcement.getEmployee().getCompany().getName());
             if (announcement.getChannel() == Channel.BOTH) {
                 for (String address : emails) {
                     EMAIL_SENDER.sendEmail(new EmailDTO(address, announcement.getTitle(), announcement.getPdfLink(), null));
@@ -559,6 +559,9 @@ public class AnnouncementController {
         return ResponseEntity.ok(ANNOUNCEMENT_SERVICE.targetsByAnnouncementId(id));
     }
 
-
+    @GetMapping("/noted-list")
+    private NotedDTO getNotedList(@RequestParam Long announcementId, @RequestParam(defaultValue = "0") long duration) throws ExecutionException, InterruptedException {
+        return ANNOUNCEMENT_SERVICE.getNotedList(announcementId, duration);
+    }
 }
 

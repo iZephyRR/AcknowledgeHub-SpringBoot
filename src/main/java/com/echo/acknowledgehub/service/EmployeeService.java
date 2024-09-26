@@ -316,9 +316,10 @@ public class EmployeeService {
 
     //@Transactional
     public List<UserDTO> getAllUsers() {
-        List<Object[]> objectList = EMPLOYEE_REPOSITORY.getAllUsers();
-        LOGGER.info(objectList.toString());
-        return mapToDtoList(objectList);
+        if (CHECKING_BEAN.getRole() == EmployeeRole.MAIN_HR || CHECKING_BEAN.getRole() == EmployeeRole.MAIN_HR_ASSISTANCE) {
+            return mapToDtoList(EMPLOYEE_REPOSITORY.getAllUsers());
+        }
+        return mapToDtoList((EMPLOYEE_REPOSITORY.getAllUsersByCompany(CHECKING_BEAN.getCompanyId())));
     }
 
     @Transactional
@@ -553,7 +554,7 @@ public class EmployeeService {
 
     public List<UserDTO> getDescNotedCount() {
         LOGGER.info("in get asc noted Count");
-        return mapToDtoListForNotedCount(EMPLOYEE_REPOSITORY.getAscNotedCount());
+        return mapToDtoListForNotedCount(EMPLOYEE_REPOSITORY.getDescNotedCount());
     }
 
     public List<UserDTO> mapToDtoListForNotedCount(List<Object[]> objLists) {
@@ -563,12 +564,22 @@ public class EmployeeService {
 
     public UserDTO mapToDtoForNotedCount(Object[] row) {
         UserDTO dto = new UserDTO();
-        dto.setId((Long) row[0]);
-        dto.setName((String) row[1]);
-        dto.setNotedCount((int) row[2]);
-        dto.setCompanyName((String) row[3]);
-        dto.setDepartmentName((String) row[4]);
-        dto.setStaffId((String) row[5]);
+        dto.setName((String) row[0]);
+        dto.setEmail((String) row[1]);
+        dto.setAddress((String) row[2]);
+        dto.setDob((Date) row[3]);
+        dto.setGender((Gender) row[4]);
+        dto.setNrc((String) row[5]);
+        dto.setPassword((String) row[6]);
+        dto.setRole((EmployeeRole) row[7]);
+        dto.setStatus((EmployeeStatus) row[8]);
+        dto.setStaffId((String) row[9]);
+        dto.setTelegramUsername((String) row[10]);
+        dto.setPhotoLink((byte[]) row[11]);
+        dto.setCompanyName((String) row[12]);
+        dto.setDepartmentName((String) row[13]);
+        dto.setId((Long) row[14]);
+        dto.setNotedCount((int) row[15]);
         return dto;
     }
 

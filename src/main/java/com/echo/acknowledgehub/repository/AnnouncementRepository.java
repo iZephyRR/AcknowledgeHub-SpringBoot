@@ -162,5 +162,9 @@ public interface AnnouncementRepository extends JpaRepository<Announcement, Long
     @Query("SELECT t FROM Target t WHERE t.announcement.id = :announcementId")
     List<Target> targetsByAnnouncementId(@Param("announcementId") Long announcementId);
 
+    @Query("SELECT new com.echo.acknowledgehub.dto.NotedDTO(t.receiverType, t.sendTo) FROM Target t WHERE t.announcement.id=:announcementId")
+    List<NotedDTO> getReceiver(@Param("announcementId") Long announcementId);
 
+    @Query("SELECT count(a) FROM Announcement a WHERE a.employee.company.id=:companyId")
+    Long countByCompany (@Param("companyId") Long companyId);
 }

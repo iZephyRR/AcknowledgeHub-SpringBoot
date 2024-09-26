@@ -57,7 +57,7 @@ public class EmailSender {
         Session session = Session.getInstance(props,
                 new jakarta.mail.Authenticator() {
                     protected PasswordAuthentication getPasswordAuthentication() {
-                        return new PasswordAuthentication("xxeno245@gmail.com", "ijdv bvib hwxl kbfo");
+                        return new PasswordAuthentication("teamechofive@gmail.com", "biet jari yqar hagq");
                     }
                 });
 

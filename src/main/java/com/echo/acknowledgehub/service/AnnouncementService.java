@@ -5,8 +5,13 @@ import com.echo.acknowledgehub.constant.*;
 import com.echo.acknowledgehub.dto.*;
 import com.echo.acknowledgehub.entity.*;
 import com.echo.acknowledgehub.exception_handler.DataNotFoundException;
-import com.echo.acknowledgehub.repository.AnnouncementCategoryRepository;
-import com.echo.acknowledgehub.repository.AnnouncementRepository;
+import com.echo.acknowledgehub.repository.*;
+import com.google.api.core.ApiFuture;
+import com.google.cloud.firestore.Firestore;
+import com.google.cloud.firestore.QueryDocumentSnapshot;
+import com.google.cloud.firestore.QuerySnapshot;
+import com.google.common.util.concurrent.AtomicDouble;
+import com.google.firebase.cloud.FirestoreClient;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
@@ -16,11 +21,14 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.text.DecimalFormat;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.io.IOException;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -35,6 +43,12 @@ public class AnnouncementService {
     private final CompanyService COMPANY_SERVICE;
     private final DepartmentService DEPARTMENT_SERVICE;
     private final EmployeeService EMPLOYEE_SERVICE;
+    private final CompanyRepository COMPANY_REPOSITORY;
+    private final DepartmentRepository DEPARTMENT_REPOSITORY;
+    private final EmployeeRepository EMPLOYEE_REPOSITORY;
+    private final CustomTargetGroupRepository CUSTOM_TARGET_GROUP_REPOSITORY;
+    private final CustomTargetGroupEntityRepository CUSTOM_TARGET_GROUP_ENTITY_REPOSITORY;
+
 
     @Async
     public CompletableFuture<Optional<Announcement>> findById(Long id) {
@@ -71,11 +85,11 @@ public class AnnouncementService {
     public List<AnnouncementsShowInDashboard> getAllAnnouncementsForDashboard() {
         List<EmployeeRole> roles = Arrays.asList(EmployeeRole.MAIN_HR, EmployeeRole.MAIN_HR_ASSISTANCE,
                 EmployeeRole.HR, EmployeeRole.HR_ASSISTANCE);
-        List<Long> employeeIds =  ANNOUNCEMENT_REPOSITORY.findEmployeeIdsByRolesAndCompanyId(roles, CHECKING_BEAN.getCompanyId());
+        List<Long> employeeIds = ANNOUNCEMENT_REPOSITORY.findEmployeeIdsByRolesAndCompanyId(roles, CHECKING_BEAN.getCompanyId());
         if (CHECKING_BEAN.getRole() == EmployeeRole.MAIN_HR) {
             return ANNOUNCEMENT_REPOSITORY.getAllAnnouncementsForDashboard(AnnouncementStatus.UPLOADED);
         }
-        return ANNOUNCEMENT_REPOSITORY.getAllAnnouncementsForDashboardByCompany(AnnouncementStatus.UPLOADED,employeeIds);
+        return ANNOUNCEMENT_REPOSITORY.getAllAnnouncementsForDashboardByCompany(AnnouncementStatus.UPLOADED, employeeIds);
     }
 
     public AnnouncementsForShowing getAnnouncementById(Long id) {
@@ -86,12 +100,13 @@ public class AnnouncementService {
 
     private AnnouncementResponseCondition getResponseCondition(Long announcementId) {
         if (ANNOUNCEMENT_REPOSITORY.existsById(announcementId)) {
-            if (Objects.equals(ANNOUNCEMENT_REPOSITORY.getCreator(announcementId), CHECKING_BEAN.getId())) {
+            Long creatorId = ANNOUNCEMENT_REPOSITORY.getCreator(announcementId);
+            if (Objects.equals(creatorId, CHECKING_BEAN.getId()) || ((CHECKING_BEAN.getRole() == EmployeeRole.HR || CHECKING_BEAN.getRole() == EmployeeRole.HR_ASSISTANCE) && Objects.equals(CHECKING_BEAN.getCompanyId(), COMPANY_REPOSITORY.findByEmployeeId(creatorId).getId()))) {
                 return AnnouncementResponseCondition.CREATOR;
-            } else if (CHECKING_BEAN.getRole() == EmployeeRole.MAIN_HR) {
+            } else if (CHECKING_BEAN.getRole() == EmployeeRole.MAIN_HR || CHECKING_BEAN.getRole() == EmployeeRole.MAIN_HR_ASSISTANCE) {
                 return AnnouncementResponseCondition.VIEWER;
             } else {
-                List<Long> ids=ANNOUNCEMENT_REPOSITORY.canAccess(CHECKING_BEAN.getCompanyId(), CHECKING_BEAN.getDepartmentId(), CHECKING_BEAN.getId());
+                List<Long> ids = ANNOUNCEMENT_REPOSITORY.canAccess(CHECKING_BEAN.getCompanyId(), CHECKING_BEAN.getDepartmentId(), CHECKING_BEAN.getId());
                 if (ids.contains(announcementId)) {
                     return AnnouncementResponseCondition.RECEIVER;
                 } else {
@@ -106,13 +121,18 @@ public class AnnouncementService {
     public CompletableFuture<List<AnnouncementDTO>> getByCompany() {
         if (CHECKING_BEAN.getRole() == EmployeeRole.MAIN_HR) {
             return CompletableFuture.completedFuture(ANNOUNCEMENT_REPOSITORY.getAllAnnouncementsForMainHR(AnnouncementStatus.UPLOADED));
-        }else {
-            return CompletableFuture.completedFuture(ANNOUNCEMENT_REPOSITORY.getByCompany(CHECKING_BEAN.getCompanyId(),AnnouncementStatus.UPLOADED));
+        } else {
+            return CompletableFuture.completedFuture(ANNOUNCEMENT_REPOSITORY.getByCompany(CHECKING_BEAN.getCompanyId(), AnnouncementStatus.UPLOADED));
         }
     }
 
     public long countAnnouncements() {
-        return ANNOUNCEMENT_REPOSITORY.count();
+        if(CHECKING_BEAN.getRole()==EmployeeRole.MAIN_HR||CHECKING_BEAN.getRole()==EmployeeRole.MAIN_HR_ASSISTANCE){
+            return ANNOUNCEMENT_REPOSITORY.count();
+        }else {
+            return ANNOUNCEMENT_REPOSITORY.countByCompany(CHECKING_BEAN.getCompanyId());
+        }
+
     }
 
     public List<Announcement> findPendingAnnouncementsScheduledForNow(LocalDateTime now) {
@@ -202,14 +222,14 @@ public class AnnouncementService {
         return dto;
     }
 
-@Async
-public CompletableFuture<Page<List<DataPreviewDTO>>> getMainPreviews(int page, int size) {
-    return CompletableFuture.completedFuture(ANNOUNCEMENT_REPOSITORY.getMainPreviews(CHECKING_BEAN.getCompanyId()
-            , CHECKING_BEAN.getDepartmentId()
-            , CHECKING_BEAN.getId()
-            , PageRequest.of(page, size)
-    ));
-}
+    @Async
+    public CompletableFuture<Page<List<DataPreviewDTO>>> getMainPreviews(int page, int size) {
+        return CompletableFuture.completedFuture(ANNOUNCEMENT_REPOSITORY.getMainPreviews(CHECKING_BEAN.getCompanyId()
+                , CHECKING_BEAN.getDepartmentId()
+                , CHECKING_BEAN.getId()
+                , PageRequest.of(page, size)
+        ));
+    }
 
     @Async
     public CompletableFuture<Page<List<DataPreviewDTO>>> getSubPreviews(int page, int size) {
@@ -221,10 +241,10 @@ public CompletableFuture<Page<List<DataPreviewDTO>>> getMainPreviews(int page, i
     }
 
     @Transactional
-    public List<ScheduleList> getScheduleList () {
+    public List<ScheduleList> getScheduleList() {
         List<EmployeeRole> roles = Arrays.asList(EmployeeRole.MAIN_HR, EmployeeRole.MAIN_HR_ASSISTANCE,
                 EmployeeRole.HR, EmployeeRole.HR_ASSISTANCE);
-        List<Long> employeeIds =  ANNOUNCEMENT_REPOSITORY.findEmployeeIdsByRolesAndCompanyId(roles, CHECKING_BEAN.getCompanyId());
+        List<Long> employeeIds = ANNOUNCEMENT_REPOSITORY.findEmployeeIdsByRolesAndCompanyId(roles, CHECKING_BEAN.getCompanyId());
         return ANNOUNCEMENT_REPOSITORY.getScheduleListByEmployeeIds(AnnouncementStatus.PENDING, employeeIds);
     }
 
@@ -244,19 +264,19 @@ public CompletableFuture<Page<List<DataPreviewDTO>>> getMainPreviews(int page, i
     public List<AnnouncementDTOForReport> announcementDTOForReport() {
         List<EmployeeRole> roles = Arrays.asList(EmployeeRole.MAIN_HR, EmployeeRole.MAIN_HR_ASSISTANCE,
                 EmployeeRole.HR, EmployeeRole.HR_ASSISTANCE);
-        List<Long> employeeIds =  ANNOUNCEMENT_REPOSITORY.findEmployeeIdsByRolesAndCompanyId(roles, CHECKING_BEAN.getCompanyId());
+        List<Long> employeeIds = ANNOUNCEMENT_REPOSITORY.findEmployeeIdsByRolesAndCompanyId(roles, CHECKING_BEAN.getCompanyId());
         if (CHECKING_BEAN.getRole() == EmployeeRole.MAIN_HR) {
             return ANNOUNCEMENT_REPOSITORY.announcementDTOForReport(AnnouncementStatus.UPLOADED);
         }
-        return ANNOUNCEMENT_REPOSITORY.announcementDTOForReportByCompany(AnnouncementStatus.UPLOADED,employeeIds);
+        return ANNOUNCEMENT_REPOSITORY.announcementDTOForReportByCompany(AnnouncementStatus.UPLOADED, employeeIds);
     }
 
-    public List<TargetCompany> targetsByAnnouncementId (Long announcementId) {
+    public List<TargetCompany> targetsByAnnouncementId(Long announcementId) {
         List<Target> targets = ANNOUNCEMENT_REPOSITORY.targetsByAnnouncementId(announcementId);
         Map<Long, TargetCompany> companyMap = new HashMap<>();
         for (Target target : targets) {
             Long receiverId = target.getSendTo();
-            if(target.getReceiverType() == ReceiverType.COMPANY){
+            if (target.getReceiverType() == ReceiverType.COMPANY) {
                 Company company = COMPANY_SERVICE.getCompanyById(receiverId)
                         .orElseThrow(() -> new EntityNotFoundException("Company not found"));
                 if (company != null) {
@@ -294,6 +314,285 @@ public CompletableFuture<Page<List<DataPreviewDTO>>> getMainPreviews(int page, i
         return new ArrayList<>(companyMap.values());
     }
 
+    public NotedDTO getNotedList(Long announcementId, long beforeSec) throws ExecutionException, InterruptedException {
+        List<NotedDTO> notedDTOS = ANNOUNCEMENT_REPOSITORY.getReceiver(announcementId);
+        Map<Long, Long> longMap = getNotedEmployeeAndDuration(announcementId);
+        // NotedDTO responseDTO = configReceiverForNoted(notedDTOS);
+        NotedDTO responseDTO = new NotedDTO();
+        AtomicDouble allEmployeeCount = new AtomicDouble();
+        AtomicDouble allNotedCount = new AtomicDouble();
+        responseDTO.setChildPreviews(notedDTOS.parallelStream().peek((notedDTO -> {
+            switch (notedDTO.getReceiverType()) {
+                case COMPANY -> {
+                    notedDTO.setReceiverName(COMPANY_REPOSITORY.findCompanyNameById(notedDTO.getReceiverId()));
+                    List<NotedDTO> departmentNotedDTOList = new LinkedList<>();
+                    List<Department> departments = DEPARTMENT_REPOSITORY.findByCompanyId(notedDTO.getReceiverId());
+                    departments.parallelStream().forEach((department -> {
+                        NotedDTO departmentNotedDTO = new NotedDTO();
+                        departmentNotedDTO.setReceiverName(department.getName());
+                        departmentNotedDTO.setReceiverType(ReceiverType.DEPARTMENT);
+                        departmentNotedDTO.setReceiverId(department.getId());
+                        AtomicDouble notedCount = new AtomicDouble();
+                        longMap.forEach((userId, duration) -> {
+                            if ((duration > 0 && (duration < beforeSec || beforeSec == 0)) && Objects.equals(DEPARTMENT_REPOSITORY.findByEmployeeId(userId).getId(), department.getId())) {
+                                notedCount.getAndAdd(1);
+                            }
+                        });
+                        departmentNotedDTO.setNotedProgress(Double.parseDouble(new DecimalFormat("#.##").format((notedCount.get() / EMPLOYEE_REPOSITORY.getEmployeeCountByDepartmentId(department.getId())) * 100)));
+                        List<NotedDTO> employeeNotedDTOList = new LinkedList<>();
+                        List<Employee> employees = EMPLOYEE_REPOSITORY.getByDepartmentId(department.getId());
+                        employees.parallelStream().forEach((employee -> {
+                            allEmployeeCount.getAndAdd(1);
+                            NotedDTO employeeNotedDTO = new NotedDTO();
+                            employeeNotedDTO.setReceiverName(employee.getName());
+                            employeeNotedDTO.setReceiverType(ReceiverType.EMPLOYEE);
+                            employeeNotedDTO.setReceiverId(employee.getId());
+                            longMap.forEach((userId, duration) -> {
+                                if ((duration > 0 && (duration < beforeSec || beforeSec == 0)) && Objects.equals(userId, employee.getId())) {
+                                    allNotedCount.getAndAdd(1);
+                                    employeeNotedDTO.setNotedProgress(100);
+                                }
+                            });
+
+                            employeeNotedDTOList.add(employeeNotedDTO);
+                        }));
+                        departmentNotedDTO.setChildPreviews(employeeNotedDTOList);
+                        departmentNotedDTOList.add(departmentNotedDTO);
+                    }));
+                    notedDTO.setChildPreviews(departmentNotedDTOList);
+                    AtomicDouble notedCount = new AtomicDouble();
+                    longMap.forEach((userId, duration) -> {
+                        if ((duration > 0 && (duration < beforeSec || beforeSec == 0)) && Objects.equals(COMPANY_REPOSITORY.findByEmployeeId(userId).getId(), notedDTO.getReceiverId())) {
+                            notedCount.getAndAdd(1);
+                        }
+                    });
+                    notedDTO.setNotedProgress(Double.parseDouble(new DecimalFormat("#.##").format((notedCount.get() / EMPLOYEE_REPOSITORY.getEmployeeCountByCompanyId(notedDTO.getReceiverId())) * 100)));
+                    COMPANY_REPOSITORY.findById(notedDTO.getReceiverId()).ifPresent(company -> notedDTO.setReceiverName(company.getName()));
+                }
+                case DEPARTMENT -> {
+                    List<NotedDTO> employeeNotedDTOList = new LinkedList<>();
+                    List<Employee> employees = EMPLOYEE_REPOSITORY.getByDepartmentId(notedDTO.getReceiverId());
+                    employees.parallelStream().forEach((employee -> {
+                        allEmployeeCount.getAndAdd(1);
+                        NotedDTO employeeNotedDTO = new NotedDTO();
+                        employeeNotedDTO.setReceiverName(employee.getName());
+                        employeeNotedDTO.setReceiverType(ReceiverType.EMPLOYEE);
+                        employeeNotedDTO.setReceiverId(employee.getId());
+                        longMap.forEach((userId, duration) -> {
+                            if ((duration > 0 && (duration < beforeSec || beforeSec == 0)) && Objects.equals(userId, employee.getId())) {
+                                allNotedCount.getAndAdd(1);
+                                employeeNotedDTO.setNotedProgress(100);
+                            }
+                        });
+                        employeeNotedDTOList.add(employeeNotedDTO);
+                    }));
+                    notedDTO.setChildPreviews(employeeNotedDTOList);
+                    AtomicDouble notedCount = new AtomicDouble();
+                    longMap.forEach((userId, duration) -> {
+                        if ((duration > 0 && (duration < beforeSec || beforeSec == 0)) && Objects.equals(DEPARTMENT_REPOSITORY.findByEmployeeId(userId).getId(), notedDTO.getReceiverId())) {
+                            notedCount.getAndAdd(1);
+                        }
+                    });
+                    notedDTO.setNotedProgress(Double.parseDouble(new DecimalFormat("#.##").format((notedCount.get() / EMPLOYEE_REPOSITORY.getEmployeeCountByDepartmentId(notedDTO.getReceiverId())) * 100)));
+                    DEPARTMENT_REPOSITORY.findById(notedDTO.getReceiverId()).ifPresent(department -> notedDTO.setReceiverName(department.getName()));
+                }
+                case EMPLOYEE -> {
+                    allEmployeeCount.getAndAdd(1);
+                    longMap.forEach((userId, duration) -> {
+                        if ((duration > 0 && (duration < beforeSec || beforeSec == 0)) && Objects.equals(userId, notedDTO.getReceiverId())) {
+                            allNotedCount.getAndAdd(1);
+                            notedDTO.setNotedProgress(100);
+                        }
+                    });
+                    EMPLOYEE_REPOSITORY.findById(notedDTO.getReceiverId()).ifPresent(employee -> notedDTO.setReceiverName(employee.getName()));
+                }
+                case CUSTOM ->
+                        CUSTOM_TARGET_GROUP_REPOSITORY.findById(notedDTO.getReceiverId()).ifPresent(customTargetGroup ->
+                                CUSTOM_TARGET_GROUP_ENTITY_REPOSITORY.findByCustomTargetGroup(customTargetGroup).parallelStream().forEach((customTargetGroupEntity -> {
+                                    switch (customTargetGroupEntity.getReceiverType()) {
+                                        case COMPANY -> {
+                                            notedDTO.setReceiverName(COMPANY_REPOSITORY.findCompanyNameById(notedDTO.getReceiverId()));
+                                            List<NotedDTO> departmentNotedDTOList = new LinkedList<>();
+                                            List<Department> departments = DEPARTMENT_REPOSITORY.findByCompanyId(notedDTO.getReceiverId());
+                                            departments.parallelStream().forEach((department -> {
+                                                NotedDTO departmentNotedDTO = new NotedDTO();
+                                                departmentNotedDTO.setReceiverName(department.getName());
+                                                departmentNotedDTO.setReceiverType(ReceiverType.DEPARTMENT);
+                                                departmentNotedDTO.setReceiverId(department.getId());
+                                                AtomicDouble notedCount = new AtomicDouble();
+                                                longMap.forEach((userId, duration) -> {
+                                                    if ((duration > 0 && (duration < beforeSec || beforeSec == 0)) && Objects.equals(DEPARTMENT_REPOSITORY.findByEmployeeId(userId).getId(), department.getId())) {
+                                                        notedCount.getAndAdd(1);
+                                                    }
+                                                });
+                                                departmentNotedDTO.setNotedProgress(Double.parseDouble(new DecimalFormat("#.##").format((notedCount.get() / EMPLOYEE_REPOSITORY.getEmployeeCountByDepartmentId(department.getId())) * 100)));
+                                                List<NotedDTO> employeeNotedDTOList = new LinkedList<>();
+                                                List<Employee> employees = EMPLOYEE_REPOSITORY.getByDepartmentId(department.getId());
+                                                employees.parallelStream().forEach((employee -> {
+                                                    allEmployeeCount.getAndAdd(1);
+                                                    NotedDTO employeeNotedDTO = new NotedDTO();
+                                                    employeeNotedDTO.setReceiverName(employee.getName());
+                                                    employeeNotedDTO.setReceiverType(ReceiverType.EMPLOYEE);
+                                                    employeeNotedDTO.setReceiverId(employee.getId());
+                                                    longMap.forEach((userId, duration) -> {
+                                                        if ((duration > 0 && (duration < beforeSec || beforeSec == 0)) && Objects.equals(userId, employee.getId())) {
+                                                            allNotedCount.getAndAdd(1);
+                                                            employeeNotedDTO.setNotedProgress(100);
+                                                        }
+                                                    });
+                                                    employeeNotedDTOList.add(employeeNotedDTO);
+                                                }));
+                                                departmentNotedDTO.setChildPreviews(employeeNotedDTOList);
+                                                departmentNotedDTOList.add(departmentNotedDTO);
+                                            }));
+                                            notedDTO.setChildPreviews(departmentNotedDTOList);
+                                            AtomicDouble notedCount = new AtomicDouble();
+                                            longMap.forEach((userId, duration) -> {
+                                                if ((duration > 0 && (duration < beforeSec || beforeSec == 0)) && Objects.equals(COMPANY_REPOSITORY.findByEmployeeId(userId).getId(), notedDTO.getReceiverId())) {
+                                                    notedCount.getAndAdd(1);
+                                                }
+                                            });
+                                            notedDTO.setNotedProgress(Double.parseDouble(new DecimalFormat("#.##").format((notedCount.get() / EMPLOYEE_REPOSITORY.getEmployeeCountByCompanyId(notedDTO.getReceiverId())) * 100)));
+                                            COMPANY_REPOSITORY.findById(notedDTO.getReceiverId()).ifPresent(company -> notedDTO.setReceiverName(company.getName()));
+                                        }
+                                        case DEPARTMENT -> {
+                                            List<NotedDTO> employeeNotedDTOList = new LinkedList<>();
+                                            List<Employee> employees = EMPLOYEE_REPOSITORY.getByDepartmentId(notedDTO.getReceiverId());
+                                            employees.parallelStream().forEach((employee -> {
+                                                allEmployeeCount.getAndAdd(1);
+                                                NotedDTO employeeNotedDTO = new NotedDTO();
+                                                employeeNotedDTO.setReceiverName(employee.getName());
+                                                employeeNotedDTO.setReceiverType(ReceiverType.EMPLOYEE);
+                                                employeeNotedDTO.setReceiverId(employee.getId());
+                                                longMap.forEach((userId, duration) -> {
+                                                    if ((duration > 0 && (duration < beforeSec || beforeSec == 0)) && Objects.equals(userId, employee.getId())) {
+                                                        allNotedCount.getAndAdd(1);
+                                                        employeeNotedDTO.setNotedProgress(100);
+                                                    }
+                                                });
+                                                employeeNotedDTOList.add(employeeNotedDTO);
+                                            }));
+                                            notedDTO.setChildPreviews(employeeNotedDTOList);
+                                            AtomicDouble notedCount = new AtomicDouble();
+                                            longMap.forEach((userId, duration) -> {
+                                                if ((duration > 0 && (duration < beforeSec || beforeSec == 0)) && Objects.equals(DEPARTMENT_REPOSITORY.findByEmployeeId(userId).getId(), notedDTO.getReceiverId())) {
+                                                    notedCount.getAndAdd(1);
+                                                }
+                                            });
+                                            notedDTO.setNotedProgress(Double.parseDouble(new DecimalFormat("#.##").format((notedCount.get() / EMPLOYEE_REPOSITORY.getEmployeeCountByDepartmentId(notedDTO.getReceiverId())) * 100)));
+                                            DEPARTMENT_REPOSITORY.findById(notedDTO.getReceiverId()).ifPresent(department -> notedDTO.setReceiverName(department.getName()));
+                                        }
+                                        case EMPLOYEE -> {
+                                            allEmployeeCount.getAndAdd(1);
+                                            longMap.forEach((userId, duration) -> {
+                                                if ((duration > 0 && (duration < beforeSec || beforeSec == 0)) && Objects.equals(userId, notedDTO.getReceiverId())) {
+                                                    allNotedCount.getAndAdd(1);
+                                                    notedDTO.setNotedProgress(100);
+                                                }
+                                            });
+                                            EMPLOYEE_REPOSITORY.findById(customTargetGroupEntity.getSendTo()).ifPresent(employee -> {
+                                                notedDTO.setReceiverName(employee.getName());
+                                                notedDTO.setReceiverType(ReceiverType.EMPLOYEE);
+                                            });
+                                        }
+                                    }
+                                })));
+            }
+        })).toList());
+        responseDTO.setNotedProgress(Double.parseDouble(new DecimalFormat("#.##").format((allNotedCount.get() / allEmployeeCount.get()) * 100)));
+        if (responseDTO.getChildPreviews().size() == 1) {
+            responseDTO = responseDTO.getChildPreviews().get(0);
+        } else {
+            responseDTO.setReceiverName("All Company");
+        }
+        return responseDTO;
+    }
+
+    private Map<Long, Long> getNotedEmployeeAndDuration(Long announcementId) throws ExecutionException, InterruptedException {
+        Firestore dbFirestore = FirestoreClient.getFirestore();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        Map<Long, Long> longMap = new HashMap<>();
+        ApiFuture<QuerySnapshot> future = dbFirestore.collection("notifications")
+                .whereEqualTo("announcementId", String.valueOf(announcementId))
+                .get();
+        List<QueryDocumentSnapshot> documents = future.get().getDocuments();
+        documents.parallelStream().forEach((document) -> {
+            Long userId = document.getLong("userId");
+            LocalDateTime noticeAt = LocalDateTime.parse(
+                    Objects.requireNonNull(document.getString("noticeAt")), formatter);
+            LocalDateTime timestamp = LocalDateTime.parse(
+                    Objects.requireNonNull(document.getString("timestamp")), formatter);
+            longMap.put(userId, Duration.between(timestamp, noticeAt).getSeconds());
+        });
+        return longMap;
+    }
+
+//    private NotedDTO configReceiverForNoted(List<NotedDTO> notedDTOS) {
+//        AtomicLong companyCount = new AtomicLong();
+//        NotedDTO responseNotedDTO = new NotedDTO();
+//        List<Long> companyIds = new LinkedList<>();
+//        notedDTOS.parallelStream().forEach(notedDTO -> {
+//            switch (notedDTO.getReceiverType()) {
+//                case COMPANY -> {
+//                    if (!companyIds.contains(notedDTO.getReceiverId())) {
+//                        companyIds.add(notedDTO.getReceiverId());
+//                        companyCount.getAndIncrement();
+//                    }
+//                }
+//                case DEPARTMENT -> {
+//                    Long companyId = COMPANY_REPOSITORY.getByDepartmentId(notedDTO.getReceiverId()).getId();
+//                    if (!companyIds.contains(companyId)) {
+//                        companyIds.add(companyId);
+//                        companyCount.getAndIncrement();
+//                    }
+//                }
+//                case EMPLOYEE -> {
+//                    Long companyId = COMPANY_REPOSITORY.findByEmployeeId(notedDTO.getReceiverId()).getId();
+//                    if (!companyIds.contains(companyId)) {
+//                        companyIds.add(companyId);
+//                        companyCount.getAndIncrement();
+//                    }
+//                }
+//                case CUSTOM ->
+//                        CUSTOM_TARGET_GROUP_REPOSITORY.findById(notedDTO.getReceiverId()).ifPresent(customTargetGroup ->
+//                                CUSTOM_TARGET_GROUP_ENTITY_REPOSITORY.findByCustomTargetGroup(customTargetGroup).parallelStream().forEach(customTargetGroupEntity -> {
+//                                            switch (customTargetGroupEntity.getReceiverType()) {
+//                                                case COMPANY -> {
+//                                                    if (!companyIds.contains(notedDTO.getReceiverId())) {
+//                                                        companyIds.add(notedDTO.getReceiverId());
+//                                                        companyCount.getAndIncrement();
+//                                                    }
+//                                                }
+//                                                case DEPARTMENT -> {
+//                                                    Long companyId = COMPANY_REPOSITORY.getByDepartmentId(notedDTO.getReceiverId()).getId();
+//                                                    if (!companyIds.contains(companyId)) {
+//                                                        companyIds.add(companyId);
+//                                                        companyCount.getAndIncrement();
+//                                                    }
+//                                                }
+//                                                case EMPLOYEE -> {
+//                                                    Long companyId = COMPANY_REPOSITORY.findByEmployeeId(notedDTO.getReceiverId()).getId();
+//                                                    if (!companyIds.contains(companyId)) {
+//                                                        companyIds.add(companyId);
+//                                                        companyCount.getAndIncrement();
+//                                                    }
+//                                                }
+//                                            }
+//                                        }
+//                                )
+//                        );
+//            }
+//        });
+//
+//        if (companyCount.get() > 1) {
+//           // responseNotedDTO.setReceiverType(ReceiverType.COMPANY);
+//            responseNotedDTO.setReceiverName("All Company");
+//        }else{
+//            responseNotedDTO.setReceiverType(ReceiverType.COMPANY);
+//            responseNotedDTO.setReceiverName(COMPANY_REPOSITORY.findCompanyNameById(companyIds.get(0)));
+//        }
+//        return responseNotedDTO;
+//    }
 }
 
 

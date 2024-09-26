@@ -95,6 +95,12 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
     @Query("SELECT e.name, e.email, e.address, e.dob, e.gender, e.nrc, e.password, e.role, e.status, e.staffId, e.telegramUsername, e.photoLink, c.name AS companyName, d.name AS departmentName ,e.id " +
             "FROM Employee e " +
             "JOIN e.company c " +
+            "JOIN e.department d WHERE c.id= :id")
+    List<Object[]> getAllUsersByCompany(@Param("id") Long id);
+
+    @Query("SELECT e.name, e.email, e.address, e.dob, e.gender, e.nrc, e.password, e.role, e.status, e.staffId, e.telegramUsername, e.photoLink, c.name AS companyName, d.name AS departmentName ,e.id " +
+            "FROM Employee e " +
+            "JOIN e.company c " +
             "JOIN e.department d where e.company.id=:companyId")
     List<Object[]> getUserByCompanyId(@Param("companyId") Long companyId);
 
@@ -152,8 +158,16 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
     @Query("SELECT e.photoLink FROM Employee e WHERE e.id=:id")
     byte[] getPhotoById(@Param("id")Long id);
 
-    @Query("SELECT e.id, e.name, e.notedCount,e.company.name,e.department.name,e.staffId FROM Employee e ORDER BY e.notedCount DESC LIMIT 10")
-    List<Object[]> getAscNotedCount();
+//    @Query("SELECT e.id, e.name, e.notedCount,e.company.name,e.department.name,e.staffId FROM Employee e " +
+//            "ORDER BY e.notedCount DESC LIMIT 10")
+//    List<Object[]> getDescNotedCount();
+
+    @Query("SELECT e.name, e.email, e.address, e.dob, e.gender, e.nrc, e.password, e.role, e.status, e.staffId, " +
+            "e.telegramUsername, e.photoLink, c.name AS companyName, d.name AS departmentName ,e.id,e.notedCount " +
+            "FROM Employee e " +
+            "JOIN e.company c " +
+            "JOIN e.department d ORDER BY e.notedCount DESC LIMIT 10")
+    List<Object[]> getDescNotedCount();
 
 }
 
