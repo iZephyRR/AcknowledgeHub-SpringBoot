@@ -113,13 +113,16 @@ public class TelegramService extends TelegramLongPollingBot {
         EditMessageCaption editMessage = new EditMessageCaption();
         editMessage.setChatId(callbackQuery.getMessage().getChatId().toString());
         editMessage.setMessageId(callbackQuery.getMessage().getMessageId());
-        LOGGER.info("Original Caption: " + callbackQuery.getMessage().getCaption());
-
-        String newCaption = "Hello! You’ve received a new announcement from - <b>" + creator + "</b> regarding - <b>" + title + "</b>.\n\n" +
-                "🔗 <a href='http://127.0.0.1:4200/announcement-page/" + announcementId + "'>[View the full announcement here]</a>\n\n" +
-                "You have successfully noted this announcement.\n\n" +
+        String originalCaption = callbackQuery.getMessage().getCaption() + "You have successfully noted this announcement.\n\n" +
                 "Thank you for acknowledging the announcement";
-        editMessage.setCaption(newCaption);
+        editMessage.setCaption(originalCaption);
+
+//        String newCaption = "Hello! You’ve received a new announcement from - <b>" + creator + "</b> regarding - <b>" + title + "</b>.\n\n" +
+//                "🔗 <a href='http://127.0.0.1:4200/announcement-page/" + announcementId + "'>[View the full announcement here]</a>\n\n" +
+//                "You have successfully noted this announcement.\n\n" +
+//                "Thank you for acknowledging the announcement";
+//        editMessage.setCaption(newCaption);
+
         editMessage.setParseMode("HTML");
         editMessage.setReplyMarkup(null);
         try {
@@ -162,9 +165,14 @@ public class TelegramService extends TelegramLongPollingBot {
                 }
             } else if (message.getChat().isUserChat()) {
                 String username = message.getChat().getUserName();
+                LOGGER.info("telegram username : " + username);
                 Employee telegramUser = EMPLOYEE_SERVICE.findByTelegramUsername(username);
                 if (telegramUser != null && telegramUser.getId() != null) {
-                    if (telegramUser.getTelegramUsername().equals(username) && telegramUser.getTelegramUserId() == null) {
+                    String telegramUserName = telegramUser.getTelegramUsername();
+                    String normalizedTelegramUsername = telegramUserName.startsWith("@")
+                            ? telegramUserName.substring(1)
+                            : telegramUserName;
+                    if (normalizedTelegramUsername.equals(username) && telegramUser.getTelegramUserId() == null) {
                         EMPLOYEE_SERVICE.updateTelegramUserId(chatId, username);
                         String text = "Hello [" + username + "]! \uD83D\uDC4B\n" +
                                 "\n" +
@@ -571,7 +579,7 @@ public class TelegramService extends TelegramLongPollingBot {
                 "Please confirm you’ve seen this by clicking the button below.";
 
         //return caption;
-        return "Hello! You’ve received a new announcement from - <b>" + creator + "</b> regarding - <b>" + title + "</b>.";
+        return "Hello! You’ve received a new announcement from - <b>" + creator + "</b> regarding - <b>" + title + "</b>. Please confirm you’ve seen this by clicking the button below.";
     }
 
 }

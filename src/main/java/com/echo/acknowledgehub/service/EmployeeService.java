@@ -384,6 +384,7 @@ public class EmployeeService {
             int notedPercentage = (notedCount * 100) / expectedCount;
             notedPercentageMap.put(companyName, notedPercentage);
         });
+        LOGGER.info("noted % map : " + notedPercentageMap);
         return notedPercentageMap;
     }
 
@@ -436,6 +437,7 @@ public class EmployeeService {
             int notedPercentage = (notedCount * 100) / expectedCount;
             notedPercentageMap.put(departmentName, notedPercentage);
         });
+        LOGGER.info("get noted % by dept : "+ notedPercentageMap);
         return notedPercentageMap;
     }
 
@@ -586,6 +588,18 @@ public class EmployeeService {
     public Employee getEmployeeById(Long id) {
         return EMPLOYEE_REPOSITORY.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Employee not found"));
+    }
+
+    @Async
+    public CompletableFuture<Employee> saveAssHR(HRDTO hrAssistance){
+        Employee hrAss=new Employee();
+        hrAss.setName(hrAssistance.getHrName());
+        hrAss.setStaffId(hrAssistance.getStaffId());
+        hrAss.setCompany(new Company(CHECKING_BEAN.getCompanyId()));
+        hrAss.setEmail(hrAssistance.getHrEmail());
+        hrAss.setRole(CHECKING_BEAN.getRole()==EmployeeRole.MAIN_HR?EmployeeRole.MAIN_HR_ASSISTANCE:EmployeeRole.HR_ASSISTANCE);
+        hrAss.setPassword(PASSWORD_ENCODER.encode(SYSTEM_DATA_BEAN.getDefaultPassword()));
+        return CompletableFuture.completedFuture(EMPLOYEE_REPOSITORY.save(hrAss));
     }
 
 }

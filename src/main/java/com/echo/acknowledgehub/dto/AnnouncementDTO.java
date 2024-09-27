@@ -37,6 +37,7 @@ public class AnnouncementDTO {
     private String isEmailSelected;
     private Channel channel;
     private boolean selectAll;
+    private LocalDateTime deadline;
 
     public AnnouncementDTO(Long id,String title, LocalDateTime createdAt, AnnouncementStatus status, String categoryName, String createdBy){
         this.id=id;

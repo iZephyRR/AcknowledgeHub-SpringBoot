@@ -441,6 +441,7 @@ public class AnnouncementController {
 
     @GetMapping(value = "/pieChart", produces = MediaType.APPLICATION_JSON_VALUE)
     public Map<String, Integer> getPercentage() throws ExecutionException, InterruptedException {
+
         return EMPLOYEE_SERVICE.getPercentage();
     }
 
@@ -545,8 +546,7 @@ public class AnnouncementController {
 
     @GetMapping(value = "/monthly_announcement", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Map<String, List<Announcement>>> getMonthlyAnnouncements(@RequestParam("year") int year) {
-        Map<String, List<Announcement>> announcementsByMonth = ANNOUNCEMENT_SERVICE.getAnnouncementsGroupedByMonthAndYear(year);
-        return ResponseEntity.ok(announcementsByMonth);
+        return ResponseEntity.ok(ANNOUNCEMENT_SERVICE.getAnnouncementsGroupedByMonthAndYear(year));
     }
 
     @GetMapping(value = "/announcementsForReport", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -560,7 +560,7 @@ public class AnnouncementController {
     }
 
     @GetMapping("/noted-list")
-    private NotedDTO getNotedList(@RequestParam Long announcementId, @RequestParam(defaultValue = "0") long duration) throws ExecutionException, InterruptedException {
+    private NotedDTO getNotedList(@RequestParam Long announcementId, @RequestParam(defaultValue = "0") Long duration) throws ExecutionException, InterruptedException {
         return ANNOUNCEMENT_SERVICE.getNotedList(announcementId, duration);
     }
 }

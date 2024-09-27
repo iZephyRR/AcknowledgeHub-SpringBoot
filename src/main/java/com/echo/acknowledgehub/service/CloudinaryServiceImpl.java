@@ -9,10 +9,12 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.logging.Logger;
 
 @Service
 public class CloudinaryServiceImpl implements CloudinaryService {
 
+    private static final Logger LOGGER = Logger.getLogger(CloudinaryService.class.getName());
     private final Cloudinary CLOUDINARY;
 
     public CloudinaryServiceImpl() {

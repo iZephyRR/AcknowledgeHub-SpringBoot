@@ -106,7 +106,7 @@ public class EmployeeController {
     }
 
     @GetMapping(value = "/hrs/employee-count", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Long> countCompany() {
+    public ResponseEntity<Long> countEmployee() {
         long count = EMPLOYEE_SERVICE.count();
         return ResponseEntity.ok(count);
     }
@@ -114,6 +114,11 @@ public class EmployeeController {
     @GetMapping(value = "/getNotedCount" , produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<List<UserDTO>> getNotedCount() {
         return ResponseEntity.ok(EMPLOYEE_SERVICE.getDescNotedCount());
+    }
+
+    @PostMapping("/mhr/ass-hr")
+    private Employee saveAss(@RequestBody HRDTO assHR){
+        return EMPLOYEE_SERVICE.saveAssHR(assHR).join();
     }
 
 }

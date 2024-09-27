@@ -36,6 +36,8 @@ public class Announcement {
     @Enumerated(EnumType.STRING)
     @Column(name ="channel", nullable = false , columnDefinition = "ENUM('TELEGRAM', 'BOTH')")
     private Channel channel;
+    @Column(name = "deadline")
+    private LocalDateTime deadline;
 
     @JsonIgnore
     @ManyToOne(cascade = CascadeType.MERGE)

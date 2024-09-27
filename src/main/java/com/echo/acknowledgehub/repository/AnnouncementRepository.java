@@ -149,6 +149,9 @@ public interface AnnouncementRepository extends JpaRepository<Announcement, Long
     @Query("SELECT a FROM Announcement a ORDER BY a.createdAt DESC")
     List<Announcement> findAllAnnouncements();
 
+    @Query("SELECT a FROM Announcement a WHERE a.employee.company.id=:id ORDER BY a.createdAt DESC")
+    List<Announcement> findAllAnnouncementsByCompany(@Param("id") Long id);
+
     @Query("SELECT new com.echo.acknowledgehub.dto.AnnouncementDTOForReport(a.id,a.title,a.category.name," +
             "a.contentType,a.createdAt,a.channel,e.name,e.role,e.company.name, a.selectAll,a.status)" +
             "FROM Announcement a JOIN a.employee e WHERE a.status = :status")
@@ -167,4 +170,8 @@ public interface AnnouncementRepository extends JpaRepository<Announcement, Long
 
     @Query("SELECT count(a) FROM Announcement a WHERE a.employee.company.id=:companyId")
     Long countByCompany (@Param("companyId") Long companyId);
+
+    @Query("SELECT a.deadline FROM Announcement a WHERE a.id=:announcementId")
+    LocalDateTime getDeadline(@Param("announcementId")Long id);
+
 }

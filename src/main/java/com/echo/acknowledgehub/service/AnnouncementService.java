@@ -132,7 +132,6 @@ public class AnnouncementService {
         }else {
             return ANNOUNCEMENT_REPOSITORY.countByCompany(CHECKING_BEAN.getCompanyId());
         }
-
     }
 
     public List<Announcement> findPendingAnnouncementsScheduledForNow(LocalDateTime now) {
@@ -161,7 +160,11 @@ public class AnnouncementService {
 
     public List<Announcement> getAllAnnouncements() {
         System.out.println("Fetching all announcements");
-        return ANNOUNCEMENT_REPOSITORY.findAllAnnouncements();
+        if(CHECKING_BEAN.getRole() == EmployeeRole.MAIN_HR || CHECKING_BEAN.getRole() == EmployeeRole.MAIN_HR_ASSISTANCE) {
+            return ANNOUNCEMENT_REPOSITORY.findAllAnnouncements();
+        }
+
+        return ANNOUNCEMENT_REPOSITORY.findAllAnnouncementsByCompany(CHECKING_BEAN.getCompanyId());
     }
 
 
@@ -314,7 +317,9 @@ public class AnnouncementService {
         return new ArrayList<>(companyMap.values());
     }
 
-    public NotedDTO getNotedList(Long announcementId, long beforeSec) throws ExecutionException, InterruptedException {
+
+
+    public NotedDTO getNotedList(Long announcementId, Long beforeSec) throws ExecutionException, InterruptedException {
         List<NotedDTO> notedDTOS = ANNOUNCEMENT_REPOSITORY.getReceiver(announcementId);
         Map<Long, Long> longMap = getNotedEmployeeAndDuration(announcementId);
         // NotedDTO responseDTO = configReceiverForNoted(notedDTOS);
@@ -334,8 +339,10 @@ public class AnnouncementService {
                         departmentNotedDTO.setReceiverId(department.getId());
                         AtomicDouble notedCount = new AtomicDouble();
                         longMap.forEach((userId, duration) -> {
-                            if ((duration > 0 && (duration < beforeSec || beforeSec == 0)) && Objects.equals(DEPARTMENT_REPOSITORY.findByEmployeeId(userId).getId(), department.getId())) {
-                                notedCount.getAndAdd(1);
+                            if(duration!=null){
+                                if ((duration > 0 && (duration < beforeSec || beforeSec == 0)) && Objects.equals(DEPARTMENT_REPOSITORY.findByEmployeeId(userId).getId(), department.getId())) {
+                                    notedCount.getAndAdd(1);
+                                }
                             }
                         });
                         departmentNotedDTO.setNotedProgress(Double.parseDouble(new DecimalFormat("#.##").format((notedCount.get() / EMPLOYEE_REPOSITORY.getEmployeeCountByDepartmentId(department.getId())) * 100)));
@@ -348,9 +355,15 @@ public class AnnouncementService {
                             employeeNotedDTO.setReceiverType(ReceiverType.EMPLOYEE);
                             employeeNotedDTO.setReceiverId(employee.getId());
                             longMap.forEach((userId, duration) -> {
-                                if ((duration > 0 && (duration < beforeSec || beforeSec == 0)) && Objects.equals(userId, employee.getId())) {
-                                    allNotedCount.getAndAdd(1);
-                                    employeeNotedDTO.setNotedProgress(100);
+                                if(duration!=null){
+                                    if ((duration > 0 && (duration < beforeSec || beforeSec == 0)) && Objects.equals(userId, employee.getId())) {
+                                        allNotedCount.getAndAdd(1);
+                                        employeeNotedDTO.setNotedProgress(100);
+                                    }
+                                }else{
+                                    if (Objects.equals(userId, employee.getId())) {
+                                        employeeNotedDTO.setNotedProgress(-1);
+                                    }
                                 }
                             });
 
@@ -362,9 +375,12 @@ public class AnnouncementService {
                     notedDTO.setChildPreviews(departmentNotedDTOList);
                     AtomicDouble notedCount = new AtomicDouble();
                     longMap.forEach((userId, duration) -> {
-                        if ((duration > 0 && (duration < beforeSec || beforeSec == 0)) && Objects.equals(COMPANY_REPOSITORY.findByEmployeeId(userId).getId(), notedDTO.getReceiverId())) {
-                            notedCount.getAndAdd(1);
+                        if(duration!=null && beforeSec!=null){
+                            if ((duration > 0 && (duration < beforeSec || beforeSec == 0)) && Objects.equals(COMPANY_REPOSITORY.findByEmployeeId(userId).getId(), notedDTO.getReceiverId())) {
+                                notedCount.getAndAdd(1);
+                            }
                         }
+
                     });
                     notedDTO.setNotedProgress(Double.parseDouble(new DecimalFormat("#.##").format((notedCount.get() / EMPLOYEE_REPOSITORY.getEmployeeCountByCompanyId(notedDTO.getReceiverId())) * 100)));
                     COMPANY_REPOSITORY.findById(notedDTO.getReceiverId()).ifPresent(company -> notedDTO.setReceiverName(company.getName()));
@@ -379,9 +395,15 @@ public class AnnouncementService {
                         employeeNotedDTO.setReceiverType(ReceiverType.EMPLOYEE);
                         employeeNotedDTO.setReceiverId(employee.getId());
                         longMap.forEach((userId, duration) -> {
-                            if ((duration > 0 && (duration < beforeSec || beforeSec == 0)) && Objects.equals(userId, employee.getId())) {
-                                allNotedCount.getAndAdd(1);
-                                employeeNotedDTO.setNotedProgress(100);
+                            if(duration!=null){
+                                if ((duration > 0 && (duration < beforeSec || beforeSec == 0)) && Objects.equals(userId, employee.getId())) {
+                                    allNotedCount.getAndAdd(1);
+                                    employeeNotedDTO.setNotedProgress(100);
+                                }
+                            }else{
+                                if (Objects.equals(userId, employee.getId())) {
+                                    employeeNotedDTO.setNotedProgress(-1);
+                                }
                             }
                         });
                         employeeNotedDTOList.add(employeeNotedDTO);
@@ -389,8 +411,10 @@ public class AnnouncementService {
                     notedDTO.setChildPreviews(employeeNotedDTOList);
                     AtomicDouble notedCount = new AtomicDouble();
                     longMap.forEach((userId, duration) -> {
-                        if ((duration > 0 && (duration < beforeSec || beforeSec == 0)) && Objects.equals(DEPARTMENT_REPOSITORY.findByEmployeeId(userId).getId(), notedDTO.getReceiverId())) {
-                            notedCount.getAndAdd(1);
+                        if(duration != null){
+                            if ((duration > 0 && (duration < beforeSec || beforeSec == 0)) && Objects.equals(DEPARTMENT_REPOSITORY.findByEmployeeId(userId).getId(), notedDTO.getReceiverId())) {
+                                notedCount.getAndAdd(1);
+                            }
                         }
                     });
                     notedDTO.setNotedProgress(Double.parseDouble(new DecimalFormat("#.##").format((notedCount.get() / EMPLOYEE_REPOSITORY.getEmployeeCountByDepartmentId(notedDTO.getReceiverId())) * 100)));
@@ -399,9 +423,15 @@ public class AnnouncementService {
                 case EMPLOYEE -> {
                     allEmployeeCount.getAndAdd(1);
                     longMap.forEach((userId, duration) -> {
-                        if ((duration > 0 && (duration < beforeSec || beforeSec == 0)) && Objects.equals(userId, notedDTO.getReceiverId())) {
-                            allNotedCount.getAndAdd(1);
-                            notedDTO.setNotedProgress(100);
+                        if(duration!=null){
+                            if ((duration > 0 && (duration < beforeSec || beforeSec == 0)) && Objects.equals(userId, notedDTO.getReceiverId())) {
+                                allNotedCount.getAndAdd(1);
+                                notedDTO.setNotedProgress(100);
+                            }
+                        }else{
+                            if (Objects.equals(userId, notedDTO.getReceiverId())) {
+                                notedDTO.setNotedProgress(-1);
+                            }
                         }
                     });
                     EMPLOYEE_REPOSITORY.findById(notedDTO.getReceiverId()).ifPresent(employee -> notedDTO.setReceiverName(employee.getName()));
@@ -421,8 +451,10 @@ public class AnnouncementService {
                                                 departmentNotedDTO.setReceiverId(department.getId());
                                                 AtomicDouble notedCount = new AtomicDouble();
                                                 longMap.forEach((userId, duration) -> {
-                                                    if ((duration > 0 && (duration < beforeSec || beforeSec == 0)) && Objects.equals(DEPARTMENT_REPOSITORY.findByEmployeeId(userId).getId(), department.getId())) {
-                                                        notedCount.getAndAdd(1);
+                                                    if(duration != null){
+                                                        if ((duration > 0 && (duration < beforeSec || beforeSec == 0)) && Objects.equals(DEPARTMENT_REPOSITORY.findByEmployeeId(userId).getId(), department.getId())) {
+                                                            notedCount.getAndAdd(1);
+                                                        }
                                                     }
                                                 });
                                                 departmentNotedDTO.setNotedProgress(Double.parseDouble(new DecimalFormat("#.##").format((notedCount.get() / EMPLOYEE_REPOSITORY.getEmployeeCountByDepartmentId(department.getId())) * 100)));
@@ -435,9 +467,15 @@ public class AnnouncementService {
                                                     employeeNotedDTO.setReceiverType(ReceiverType.EMPLOYEE);
                                                     employeeNotedDTO.setReceiverId(employee.getId());
                                                     longMap.forEach((userId, duration) -> {
-                                                        if ((duration > 0 && (duration < beforeSec || beforeSec == 0)) && Objects.equals(userId, employee.getId())) {
-                                                            allNotedCount.getAndAdd(1);
-                                                            employeeNotedDTO.setNotedProgress(100);
+                                                        if(duration!=null){
+                                                            if ((duration > 0 && (duration < beforeSec || beforeSec == 0)) && Objects.equals(userId, employee.getId())) {
+                                                                allNotedCount.getAndAdd(1);
+                                                                employeeNotedDTO.setNotedProgress(100);
+                                                            }
+                                                        }else{
+                                                            if (Objects.equals(userId, employee.getId())) {
+                                                                employeeNotedDTO.setNotedProgress(-1);
+                                                            }
                                                         }
                                                     });
                                                     employeeNotedDTOList.add(employeeNotedDTO);
@@ -448,8 +486,10 @@ public class AnnouncementService {
                                             notedDTO.setChildPreviews(departmentNotedDTOList);
                                             AtomicDouble notedCount = new AtomicDouble();
                                             longMap.forEach((userId, duration) -> {
-                                                if ((duration > 0 && (duration < beforeSec || beforeSec == 0)) && Objects.equals(COMPANY_REPOSITORY.findByEmployeeId(userId).getId(), notedDTO.getReceiverId())) {
-                                                    notedCount.getAndAdd(1);
+                                                if(duration!=null){
+                                                    if ((duration > 0 && (duration < beforeSec || beforeSec == 0)) && Objects.equals(COMPANY_REPOSITORY.findByEmployeeId(userId).getId(), notedDTO.getReceiverId())) {
+                                                        notedCount.getAndAdd(1);
+                                                    }
                                                 }
                                             });
                                             notedDTO.setNotedProgress(Double.parseDouble(new DecimalFormat("#.##").format((notedCount.get() / EMPLOYEE_REPOSITORY.getEmployeeCountByCompanyId(notedDTO.getReceiverId())) * 100)));
@@ -465,9 +505,15 @@ public class AnnouncementService {
                                                 employeeNotedDTO.setReceiverType(ReceiverType.EMPLOYEE);
                                                 employeeNotedDTO.setReceiverId(employee.getId());
                                                 longMap.forEach((userId, duration) -> {
-                                                    if ((duration > 0 && (duration < beforeSec || beforeSec == 0)) && Objects.equals(userId, employee.getId())) {
-                                                        allNotedCount.getAndAdd(1);
-                                                        employeeNotedDTO.setNotedProgress(100);
+                                                    if(duration!=null){
+                                                        if ((duration > 0 && (duration < beforeSec || beforeSec == 0)) && Objects.equals(userId, employee.getId())) {
+                                                            allNotedCount.getAndAdd(1);
+                                                            employeeNotedDTO.setNotedProgress(100);
+                                                        }
+                                                    }else{
+                                                        if (Objects.equals(userId, employee.getId())) {
+                                                            employeeNotedDTO.setNotedProgress(-1);
+                                                        }
                                                     }
                                                 });
                                                 employeeNotedDTOList.add(employeeNotedDTO);
@@ -475,8 +521,10 @@ public class AnnouncementService {
                                             notedDTO.setChildPreviews(employeeNotedDTOList);
                                             AtomicDouble notedCount = new AtomicDouble();
                                             longMap.forEach((userId, duration) -> {
-                                                if ((duration > 0 && (duration < beforeSec || beforeSec == 0)) && Objects.equals(DEPARTMENT_REPOSITORY.findByEmployeeId(userId).getId(), notedDTO.getReceiverId())) {
-                                                    notedCount.getAndAdd(1);
+                                                if(duration!=null){
+                                                    if ((duration > 0 && (duration < beforeSec || beforeSec == 0)) && Objects.equals(DEPARTMENT_REPOSITORY.findByEmployeeId(userId).getId(), notedDTO.getReceiverId())) {
+                                                        notedCount.getAndAdd(1);
+                                                    }
                                                 }
                                             });
                                             notedDTO.setNotedProgress(Double.parseDouble(new DecimalFormat("#.##").format((notedCount.get() / EMPLOYEE_REPOSITORY.getEmployeeCountByDepartmentId(notedDTO.getReceiverId())) * 100)));
@@ -485,9 +533,15 @@ public class AnnouncementService {
                                         case EMPLOYEE -> {
                                             allEmployeeCount.getAndAdd(1);
                                             longMap.forEach((userId, duration) -> {
-                                                if ((duration > 0 && (duration < beforeSec || beforeSec == 0)) && Objects.equals(userId, notedDTO.getReceiverId())) {
-                                                    allNotedCount.getAndAdd(1);
-                                                    notedDTO.setNotedProgress(100);
+                                                if(duration!=null && beforeSec!=null){
+                                                    if ((duration > 0 && (duration < beforeSec || beforeSec == 0)) && Objects.equals(userId, notedDTO.getReceiverId())) {
+                                                        allNotedCount.getAndAdd(1);
+                                                        notedDTO.setNotedProgress(100);
+                                                    }
+                                                }else{
+                                                    if (Objects.equals(userId, notedDTO.getReceiverId())) {
+                                                        notedDTO.setNotedProgress(-1);
+                                                    }
                                                 }
                                             });
                                             EMPLOYEE_REPOSITORY.findById(customTargetGroupEntity.getSendTo()).ifPresent(employee -> {
@@ -522,8 +576,19 @@ public class AnnouncementService {
                     Objects.requireNonNull(document.getString("noticeAt")), formatter);
             LocalDateTime timestamp = LocalDateTime.parse(
                     Objects.requireNonNull(document.getString("timestamp")), formatter);
-            longMap.put(userId, Duration.between(timestamp, noticeAt).getSeconds());
+            LocalDateTime deadline = ANNOUNCEMENT_REPOSITORY.getDeadline(announcementId);
+            if(deadline!=null){
+                if(Duration.between(deadline, noticeAt).getSeconds()>0){
+                    longMap.put(userId, null);
+                }else{
+                    longMap.put(userId, Duration.between(timestamp, noticeAt).getSeconds());
+                }
+            }else{
+                longMap.put(userId, Duration.between(timestamp, noticeAt).getSeconds());
+            }
+
         });
+        LOGGER.info(longMap.toString());
         return longMap;
     }
 
