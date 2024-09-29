@@ -64,8 +64,8 @@ public class CustomTargetGroupService {
         CUSTOM_TARGET_GROUP_REPOSITORY.deleteById(id);
     }
 
-//    public boolean existById(Long id) {
-//        return CUSTOM_TARGET_GROUP_REPOSITORY
-//    }
+    public boolean existById(Long id) {
+        return CUSTOM_TARGET_GROUP_REPOSITORY.existsById(id);
+    }
 
 }

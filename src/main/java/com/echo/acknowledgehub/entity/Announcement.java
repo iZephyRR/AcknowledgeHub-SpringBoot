@@ -38,6 +38,8 @@ public class Announcement {
     private Channel channel;
     @Column(name = "deadline")
     private LocalDateTime deadline;
+    @Column(name ="version_related")
+    private Long versionRelatedTo = 1L;
 
     @JsonIgnore
     @ManyToOne(cascade = CascadeType.MERGE)

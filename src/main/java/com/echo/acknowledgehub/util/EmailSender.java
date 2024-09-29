@@ -82,6 +82,8 @@ public class EmailSender {
                         "</body>" +
                         "</html>";
 
+
+
                 // Create the HTML part
                 MimeBodyPart htmlPart = new MimeBodyPart();
                 htmlPart.setContent(htmlContent, "text/html; charset=UTF-8");

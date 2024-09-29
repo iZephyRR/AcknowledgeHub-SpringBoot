@@ -52,7 +52,6 @@ public class CompanyController {
     }
 
     @GetMapping(value = "/get-departments", produces = MediaType.APPLICATION_JSON_VALUE)
-
     public List<Department> getDepartments() {
         return DEPARTMENT_SERVICE.getAll();
     }
@@ -87,6 +86,11 @@ public class CompanyController {
     @GetMapping("/hrs/company/by-department/{departmentId}")
     private Company getByDepartmentId(@PathVariable("departmentId") Long departmentId){
         return COMPANY_SERVICE.getByDepartmentId(departmentId).join();
+    }
+
+    @PutMapping("/mhr/company")
+    private Company save(@RequestBody Company company){
+        return COMPANY_SERVICE.save(company).join();
     }
 }
 

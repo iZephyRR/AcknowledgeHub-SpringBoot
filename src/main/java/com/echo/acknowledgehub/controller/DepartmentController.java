@@ -23,8 +23,9 @@ public class DepartmentController {
     private final DepartmentService DEPARTMENT_SERVICE;
     private final CheckingBean CHECKING_BEAN;
 
-    @PostMapping
-    private Department save(Department department){
+    @PutMapping
+    private Department save(@RequestBody Department department){
+        LOGGER.info(department.toString());
         return DEPARTMENT_SERVICE.save(department).join();
     }
 
@@ -42,4 +43,7 @@ public class DepartmentController {
     private void delete(@PathVariable("id") Long id){
         DEPARTMENT_SERVICE.delete(id);
     }
+
+
+
 }

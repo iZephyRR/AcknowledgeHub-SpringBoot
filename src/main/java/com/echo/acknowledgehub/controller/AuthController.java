@@ -7,6 +7,7 @@ import com.echo.acknowledgehub.dto.*;
 import com.echo.acknowledgehub.entity.Employee;
 import com.echo.acknowledgehub.exception_handler.RestingSystemException;
 import com.echo.acknowledgehub.service.EmployeeService;
+import com.echo.acknowledgehub.service.TelegramService;
 import com.echo.acknowledgehub.util.EmailSender;
 import com.echo.acknowledgehub.util.JWTService;
 import jakarta.mail.MessagingException;
@@ -125,4 +126,10 @@ public class AuthController {
     private StringResponseDTO severConnectionTest() {
         return new StringResponseDTO("Test success");
     }
+
+    @PostMapping("/auth/is-registered-telegram")
+    private BooleanResponseDTO hasRegisteredTelegram(@RequestBody String email) {
+        return new BooleanResponseDTO(EMPLOYEE_SERVICE.hasTelegramUserId(email));
+    }
+
 }

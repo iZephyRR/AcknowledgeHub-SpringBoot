@@ -34,8 +34,9 @@ public class EmployeeController {
     }
 
     @GetMapping("/user/{id}")
-    private Optional<Employee> getById(@PathVariable Long id){
-        return EMPLOYEE_SERVICE.findById(id).join();
+    private Employee getById(@PathVariable Long id){
+        Optional<Employee> employee=EMPLOYEE_SERVICE.findById(id).join();
+        return employee.orElse(null);
     }
 
     @GetMapping("/mr/find-all")
@@ -119,6 +120,11 @@ public class EmployeeController {
     @PostMapping("/mhr/ass-hr")
     private Employee saveAss(@RequestBody HRDTO assHR){
         return EMPLOYEE_SERVICE.saveAssHR(assHR).join();
+    }
+
+    @PutMapping("/user/edit")
+    private Employee update(@RequestBody UserExcelUpdateDTO user){
+        return EMPLOYEE_SERVICE.update(user).join();
     }
 
 }

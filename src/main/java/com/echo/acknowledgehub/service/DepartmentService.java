@@ -7,6 +7,7 @@ import com.echo.acknowledgehub.dto.UserDTO;
 import com.echo.acknowledgehub.entity.Department;
 import com.echo.acknowledgehub.entity.Employee;
 import com.echo.acknowledgehub.exception_handler.DataNotFoundException;
+import com.echo.acknowledgehub.repository.CompanyRepository;
 import com.echo.acknowledgehub.repository.DepartmentRepository;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.persistence.criteria.From;
@@ -24,6 +25,7 @@ import java.util.logging.Logger;
 public class DepartmentService {
     private static final Logger LOGGER = Logger.getLogger(DepartmentService.class.getName());
     private final DepartmentRepository DEPARTMENT_REPOSITORY;
+    private final CompanyRepository COMPANY_REPOSITORY;
 
     @Async
     public CompletableFuture<Optional<Department>> findById(Long id){
@@ -42,6 +44,9 @@ public class DepartmentService {
 
     @Async
     public CompletableFuture<Department> save(Department department){
+        if(department.getCompany()==null){
+            department.setCompany(COMPANY_REPOSITORY.getByDepartmentId(department.getId()));
+        }
         return CompletableFuture.completedFuture(DEPARTMENT_REPOSITORY.save(department));
     }
 

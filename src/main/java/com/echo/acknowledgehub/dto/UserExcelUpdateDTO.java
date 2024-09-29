@@ -21,4 +21,6 @@ public class UserExcelUpdateDTO {
     private EmployeeStatus status;
     private String address;
     private Long departmentId;
+    private Long telegramUserId;
+    private int notedCount;
 }

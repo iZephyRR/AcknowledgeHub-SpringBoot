@@ -48,7 +48,7 @@ public class AnnouncementService {
     private final EmployeeRepository EMPLOYEE_REPOSITORY;
     private final CustomTargetGroupRepository CUSTOM_TARGET_GROUP_REPOSITORY;
     private final CustomTargetGroupEntityRepository CUSTOM_TARGET_GROUP_ENTITY_REPOSITORY;
-
+    private final CustomTargetGroupEntityService CUSTOM_TARGET_GROUP_ENTITY_SERVICE;
 
     @Async
     public CompletableFuture<Optional<Announcement>> findById(Long id) {
@@ -92,10 +92,27 @@ public class AnnouncementService {
         return ANNOUNCEMENT_REPOSITORY.getAllAnnouncementsForDashboardByCompany(AnnouncementStatus.UPLOADED, employeeIds);
     }
 
-    public AnnouncementsForShowing getAnnouncementById(Long id) {
+    public AnnouncementsForShowing getAnnouncementById(Long id) throws ExecutionException, InterruptedException {
         AnnouncementsForShowing announcementsForShowing = ANNOUNCEMENT_REPOSITORY.getAnnouncementById(id);
+        announcementsForShowing.setToOwnCompany(getToOwnCompany(announcementsForShowing));
         announcementsForShowing.setAnnouncementResponseCondition(getResponseCondition(id));
         return announcementsForShowing;
+    }
+
+    private ToOwnCompany getToOwnCompany(AnnouncementsForShowing announcementsForShowing) throws ExecutionException, InterruptedException {
+        if (ANNOUNCEMENT_REPOSITORY.existsById(announcementsForShowing.getId())) {
+            CompletableFuture<Employee> conFuEmployee = EMPLOYEE_SERVICE.findById(announcementsForShowing.getAnnouncer())
+                    .thenApply(optionalEmployee -> optionalEmployee.orElseThrow(() -> new NoSuchElementException("Employee not found")));
+            Long companyId = conFuEmployee.get().getCompany().getId();
+            LOGGER.info("companyId : " + companyId);
+            Optional<Target> target = ANNOUNCEMENT_REPOSITORY.toOwnCompany(companyId, announcementsForShowing.getId());
+            if (target.isPresent()) {
+                return ToOwnCompany.TRUE;
+            } else {
+                return ToOwnCompany.FALSE;
+            }
+        }
+        return ToOwnCompany.FALSE;
     }
 
     private AnnouncementResponseCondition getResponseCondition(Long announcementId) {
@@ -127,9 +144,9 @@ public class AnnouncementService {
     }
 
     public long countAnnouncements() {
-        if(CHECKING_BEAN.getRole()==EmployeeRole.MAIN_HR||CHECKING_BEAN.getRole()==EmployeeRole.MAIN_HR_ASSISTANCE){
+        if (CHECKING_BEAN.getRole() == EmployeeRole.MAIN_HR || CHECKING_BEAN.getRole() == EmployeeRole.MAIN_HR_ASSISTANCE) {
             return ANNOUNCEMENT_REPOSITORY.count();
-        }else {
+        } else {
             return ANNOUNCEMENT_REPOSITORY.countByCompany(CHECKING_BEAN.getCompanyId());
         }
     }
@@ -160,13 +177,12 @@ public class AnnouncementService {
 
     public List<Announcement> getAllAnnouncements() {
         System.out.println("Fetching all announcements");
-        if(CHECKING_BEAN.getRole() == EmployeeRole.MAIN_HR || CHECKING_BEAN.getRole() == EmployeeRole.MAIN_HR_ASSISTANCE) {
+        if (CHECKING_BEAN.getRole() == EmployeeRole.MAIN_HR || CHECKING_BEAN.getRole() == EmployeeRole.MAIN_HR_ASSISTANCE) {
             return ANNOUNCEMENT_REPOSITORY.findAllAnnouncements();
         }
 
         return ANNOUNCEMENT_REPOSITORY.findAllAnnouncementsByCompany(CHECKING_BEAN.getCompanyId());
     }
-
 
     public Map<String, List<Announcement>> getAnnouncementsGroupedByMonthAndYear(int year) {
         Map<String, List<Announcement>> announcementsByMonth = new LinkedHashMap<>();
@@ -183,7 +199,6 @@ public class AnnouncementService {
                         .add(announcement);
             }
         }
-
         return announcementsByMonth;
     }
 
@@ -312,14 +327,56 @@ public class AnnouncementService {
                         targetDepartment.getEmployees().add(new TargetEmployee(employee.getName()));
                     }
                 }
+            } else if (target.getReceiverType() == ReceiverType.CUSTOM) {
+                handleCustomTargets(receiverId, companyMap);
             }
         }
         return new ArrayList<>(companyMap.values());
     }
 
+    private void handleCustomTargets(Long receiver, Map<Long, TargetCompany> companyMap) {
+        List<CustomTargetGroupEntity> groupEntities = CUSTOM_TARGET_GROUP_ENTITY_SERVICE.getAllGroupEntity(receiver);
+        for (CustomTargetGroupEntity target : groupEntities) {
+            Long receiverId = target.getSendTo();
+            if (target.getReceiverType() == ReceiverType.COMPANY) {
+                Company company = COMPANY_SERVICE.getCompanyById(receiverId)
+                        .orElseThrow(() -> new EntityNotFoundException("Company not found"));
+                if (company != null) {
+                    companyMap.putIfAbsent(company.getId(), new TargetCompany(company.getName(), new ArrayList<>()));
+                }
+            } else if (target.getReceiverType() == ReceiverType.DEPARTMENT) {
+                Department department = DEPARTMENT_SERVICE.getDepartmentById(receiverId);
+                if (department != null) {
+                    TargetCompany targetCompany = companyMap.computeIfAbsent(department.getCompany().getId(),
+                            id -> new TargetCompany(department.getCompany().getName(), new ArrayList<>()));
+                    List<TargetDepartment> departments = targetCompany.getDepartments();
+                    TargetDepartment targetDepartment = new TargetDepartment(department.getName(), new ArrayList<>());
+                    departments.add(targetDepartment);
+                }
+            } else if (target.getReceiverType() == ReceiverType.EMPLOYEE) {
+                Employee employee = EMPLOYEE_SERVICE.getEmployeeById(receiverId);
+                if (employee != null) {
+                    Department department = DEPARTMENT_SERVICE.getDepartmentById(employee.getDepartment().getId());
+                    if (department != null) {
+                        TargetCompany targetCompany = companyMap.computeIfAbsent(department.getCompany().getId(),
+                                id -> new TargetCompany(department.getCompany().getName(), new ArrayList<>()));
+                        List<TargetDepartment> departments = targetCompany.getDepartments();
+                        TargetDepartment targetDepartment = departments.stream()
+                                .filter(d -> d.getDepartmentName().equals(department.getName()))
+                                .findFirst().orElseGet(() -> {
+                                    TargetDepartment newDept = new TargetDepartment(department.getName(), new ArrayList<>());
+                                    departments.add(newDept);
+                                    return newDept;
+                                });
+                        targetDepartment.getEmployees().add(new TargetEmployee(employee.getName()));
+                    }
+                }
+            }
+        }
+    }
 
-
-    public NotedDTO getNotedList(Long announcementId, Long beforeSec) throws ExecutionException, InterruptedException {
+    public NotedDTO getNotedList(Long announcementId, Long beforeSec) throws
+            ExecutionException, InterruptedException {
         List<NotedDTO> notedDTOS = ANNOUNCEMENT_REPOSITORY.getReceiver(announcementId);
         Map<Long, Long> longMap = getNotedEmployeeAndDuration(announcementId);
         // NotedDTO responseDTO = configReceiverForNoted(notedDTOS);
@@ -339,7 +396,7 @@ public class AnnouncementService {
                         departmentNotedDTO.setReceiverId(department.getId());
                         AtomicDouble notedCount = new AtomicDouble();
                         longMap.forEach((userId, duration) -> {
-                            if(duration!=null){
+                            if (duration != null) {
                                 if ((duration > 0 && (duration < beforeSec || beforeSec == 0)) && Objects.equals(DEPARTMENT_REPOSITORY.findByEmployeeId(userId).getId(), department.getId())) {
                                     notedCount.getAndAdd(1);
                                 }
@@ -355,12 +412,12 @@ public class AnnouncementService {
                             employeeNotedDTO.setReceiverType(ReceiverType.EMPLOYEE);
                             employeeNotedDTO.setReceiverId(employee.getId());
                             longMap.forEach((userId, duration) -> {
-                                if(duration!=null){
+                                if (duration != null) {
                                     if ((duration > 0 && (duration < beforeSec || beforeSec == 0)) && Objects.equals(userId, employee.getId())) {
                                         allNotedCount.getAndAdd(1);
                                         employeeNotedDTO.setNotedProgress(100);
                                     }
-                                }else{
+                                } else {
                                     if (Objects.equals(userId, employee.getId())) {
                                         employeeNotedDTO.setNotedProgress(-1);
                                     }
@@ -375,7 +432,7 @@ public class AnnouncementService {
                     notedDTO.setChildPreviews(departmentNotedDTOList);
                     AtomicDouble notedCount = new AtomicDouble();
                     longMap.forEach((userId, duration) -> {
-                        if(duration!=null && beforeSec!=null){
+                        if (duration != null && beforeSec != null) {
                             if ((duration > 0 && (duration < beforeSec || beforeSec == 0)) && Objects.equals(COMPANY_REPOSITORY.findByEmployeeId(userId).getId(), notedDTO.getReceiverId())) {
                                 notedCount.getAndAdd(1);
                             }
@@ -395,12 +452,12 @@ public class AnnouncementService {
                         employeeNotedDTO.setReceiverType(ReceiverType.EMPLOYEE);
                         employeeNotedDTO.setReceiverId(employee.getId());
                         longMap.forEach((userId, duration) -> {
-                            if(duration!=null){
+                            if (duration != null) {
                                 if ((duration > 0 && (duration < beforeSec || beforeSec == 0)) && Objects.equals(userId, employee.getId())) {
                                     allNotedCount.getAndAdd(1);
                                     employeeNotedDTO.setNotedProgress(100);
                                 }
-                            }else{
+                            } else {
                                 if (Objects.equals(userId, employee.getId())) {
                                     employeeNotedDTO.setNotedProgress(-1);
                                 }
@@ -411,7 +468,7 @@ public class AnnouncementService {
                     notedDTO.setChildPreviews(employeeNotedDTOList);
                     AtomicDouble notedCount = new AtomicDouble();
                     longMap.forEach((userId, duration) -> {
-                        if(duration != null){
+                        if (duration != null) {
                             if ((duration > 0 && (duration < beforeSec || beforeSec == 0)) && Objects.equals(DEPARTMENT_REPOSITORY.findByEmployeeId(userId).getId(), notedDTO.getReceiverId())) {
                                 notedCount.getAndAdd(1);
                             }
@@ -423,12 +480,12 @@ public class AnnouncementService {
                 case EMPLOYEE -> {
                     allEmployeeCount.getAndAdd(1);
                     longMap.forEach((userId, duration) -> {
-                        if(duration!=null){
+                        if (duration != null) {
                             if ((duration > 0 && (duration < beforeSec || beforeSec == 0)) && Objects.equals(userId, notedDTO.getReceiverId())) {
                                 allNotedCount.getAndAdd(1);
                                 notedDTO.setNotedProgress(100);
                             }
-                        }else{
+                        } else {
                             if (Objects.equals(userId, notedDTO.getReceiverId())) {
                                 notedDTO.setNotedProgress(-1);
                             }
@@ -451,7 +508,7 @@ public class AnnouncementService {
                                                 departmentNotedDTO.setReceiverId(department.getId());
                                                 AtomicDouble notedCount = new AtomicDouble();
                                                 longMap.forEach((userId, duration) -> {
-                                                    if(duration != null){
+                                                    if (duration != null) {
                                                         if ((duration > 0 && (duration < beforeSec || beforeSec == 0)) && Objects.equals(DEPARTMENT_REPOSITORY.findByEmployeeId(userId).getId(), department.getId())) {
                                                             notedCount.getAndAdd(1);
                                                         }
@@ -467,12 +524,12 @@ public class AnnouncementService {
                                                     employeeNotedDTO.setReceiverType(ReceiverType.EMPLOYEE);
                                                     employeeNotedDTO.setReceiverId(employee.getId());
                                                     longMap.forEach((userId, duration) -> {
-                                                        if(duration!=null){
+                                                        if (duration != null) {
                                                             if ((duration > 0 && (duration < beforeSec || beforeSec == 0)) && Objects.equals(userId, employee.getId())) {
                                                                 allNotedCount.getAndAdd(1);
                                                                 employeeNotedDTO.setNotedProgress(100);
                                                             }
-                                                        }else{
+                                                        } else {
                                                             if (Objects.equals(userId, employee.getId())) {
                                                                 employeeNotedDTO.setNotedProgress(-1);
                                                             }
@@ -486,7 +543,7 @@ public class AnnouncementService {
                                             notedDTO.setChildPreviews(departmentNotedDTOList);
                                             AtomicDouble notedCount = new AtomicDouble();
                                             longMap.forEach((userId, duration) -> {
-                                                if(duration!=null){
+                                                if (duration != null) {
                                                     if ((duration > 0 && (duration < beforeSec || beforeSec == 0)) && Objects.equals(COMPANY_REPOSITORY.findByEmployeeId(userId).getId(), notedDTO.getReceiverId())) {
                                                         notedCount.getAndAdd(1);
                                                     }
@@ -505,12 +562,12 @@ public class AnnouncementService {
                                                 employeeNotedDTO.setReceiverType(ReceiverType.EMPLOYEE);
                                                 employeeNotedDTO.setReceiverId(employee.getId());
                                                 longMap.forEach((userId, duration) -> {
-                                                    if(duration!=null){
+                                                    if (duration != null) {
                                                         if ((duration > 0 && (duration < beforeSec || beforeSec == 0)) && Objects.equals(userId, employee.getId())) {
                                                             allNotedCount.getAndAdd(1);
                                                             employeeNotedDTO.setNotedProgress(100);
                                                         }
-                                                    }else{
+                                                    } else {
                                                         if (Objects.equals(userId, employee.getId())) {
                                                             employeeNotedDTO.setNotedProgress(-1);
                                                         }
@@ -521,7 +578,7 @@ public class AnnouncementService {
                                             notedDTO.setChildPreviews(employeeNotedDTOList);
                                             AtomicDouble notedCount = new AtomicDouble();
                                             longMap.forEach((userId, duration) -> {
-                                                if(duration!=null){
+                                                if (duration != null) {
                                                     if ((duration > 0 && (duration < beforeSec || beforeSec == 0)) && Objects.equals(DEPARTMENT_REPOSITORY.findByEmployeeId(userId).getId(), notedDTO.getReceiverId())) {
                                                         notedCount.getAndAdd(1);
                                                     }
@@ -533,12 +590,12 @@ public class AnnouncementService {
                                         case EMPLOYEE -> {
                                             allEmployeeCount.getAndAdd(1);
                                             longMap.forEach((userId, duration) -> {
-                                                if(duration!=null && beforeSec!=null){
+                                                if (duration != null && beforeSec != null) {
                                                     if ((duration > 0 && (duration < beforeSec || beforeSec == 0)) && Objects.equals(userId, notedDTO.getReceiverId())) {
                                                         allNotedCount.getAndAdd(1);
                                                         notedDTO.setNotedProgress(100);
                                                     }
-                                                }else{
+                                                } else {
                                                     if (Objects.equals(userId, notedDTO.getReceiverId())) {
                                                         notedDTO.setNotedProgress(-1);
                                                     }
@@ -562,7 +619,8 @@ public class AnnouncementService {
         return responseDTO;
     }
 
-    private Map<Long, Long> getNotedEmployeeAndDuration(Long announcementId) throws ExecutionException, InterruptedException {
+    private Map<Long, Long> getNotedEmployeeAndDuration(Long announcementId) throws
+            ExecutionException, InterruptedException {
         Firestore dbFirestore = FirestoreClient.getFirestore();
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
         Map<Long, Long> longMap = new HashMap<>();
@@ -577,13 +635,13 @@ public class AnnouncementService {
             LocalDateTime timestamp = LocalDateTime.parse(
                     Objects.requireNonNull(document.getString("timestamp")), formatter);
             LocalDateTime deadline = ANNOUNCEMENT_REPOSITORY.getDeadline(announcementId);
-            if(deadline!=null){
-                if(Duration.between(deadline, noticeAt).getSeconds()>0){
+            if (deadline != null) {
+                if (Duration.between(deadline, noticeAt).getSeconds() > 0) {
                     longMap.put(userId, null);
-                }else{
+                } else {
                     longMap.put(userId, Duration.between(timestamp, noticeAt).getSeconds());
                 }
-            }else{
+            } else {
                 longMap.put(userId, Duration.between(timestamp, noticeAt).getSeconds());
             }
 
@@ -591,6 +649,7 @@ public class AnnouncementService {
         LOGGER.info(longMap.toString());
         return longMap;
     }
+}
 
 //    private NotedDTO configReceiverForNoted(List<NotedDTO> notedDTOS) {
 //        AtomicLong companyCount = new AtomicLong();
@@ -658,7 +717,7 @@ public class AnnouncementService {
 //        }
 //        return responseNotedDTO;
 //    }
-}
+//}
 
 
    

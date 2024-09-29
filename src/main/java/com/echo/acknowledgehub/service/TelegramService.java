@@ -113,15 +113,15 @@ public class TelegramService extends TelegramLongPollingBot {
         EditMessageCaption editMessage = new EditMessageCaption();
         editMessage.setChatId(callbackQuery.getMessage().getChatId().toString());
         editMessage.setMessageId(callbackQuery.getMessage().getMessageId());
-        String originalCaption = callbackQuery.getMessage().getCaption() + "You have successfully noted this announcement.\n\n" +
-                "Thank you for acknowledging the announcement";
-        editMessage.setCaption(originalCaption);
-
-//        String newCaption = "Hello! You’ve received a new announcement from - <b>" + creator + "</b> regarding - <b>" + title + "</b>.\n\n" +
-//                "🔗 <a href='http://127.0.0.1:4200/announcement-page/" + announcementId + "'>[View the full announcement here]</a>\n\n" +
-//                "You have successfully noted this announcement.\n\n" +
+//        String originalCaption = callbackQuery.getMessage().getCaption() + "You have successfully noted this announcement.\n\n" +
 //                "Thank you for acknowledging the announcement";
-//        editMessage.setCaption(newCaption);
+//        editMessage.setCaption(originalCaption);
+
+        String newCaption = "Hello! You’ve received a new announcement from - <b>" + creator + "</b> regarding - <b>" + title + "</b>.\n\n" +
+                "🔗 <a href='http://127.0.0.1:4200/announcement-page/" + announcementId + "'>[View the full announcement here]</a>\n\n" +
+                "You have successfully noted this announcement.\n\n" +
+                "Thank you for acknowledging the announcement";
+        editMessage.setCaption(newCaption);
 
         editMessage.setParseMode("HTML");
         editMessage.setReplyMarkup(null);
@@ -578,8 +578,10 @@ public class TelegramService extends TelegramLongPollingBot {
                 "🔗 <a href='http://127.0.0.1:4200/announcement-page/" + announcementId + "'>[View the full announcement here]</a>\n\n" +
                 "Please confirm you’ve seen this by clicking the button below.";
 
-        //return caption;
-        return "Hello! You’ve received a new announcement from - <b>" + creator + "</b> regarding - <b>" + title + "</b>. Please confirm you’ve seen this by clicking the button below.";
+        return caption;
+        //return "Hello! You’ve received a new announcement from - <b>" + creator + "</b> regarding - <b>" + title + "</b>. Please confirm you’ve seen this by clicking the button below.";
     }
+
+
 
 }

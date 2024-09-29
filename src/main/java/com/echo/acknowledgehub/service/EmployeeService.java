@@ -207,35 +207,58 @@ public class EmployeeService {
 //        return CompletableFuture.completedFuture(EMPLOYEE_REPOSITORY.saveAll(users.getUsers()));
 //    }
 
-    //  @Async
+    @Async
     @Transactional
     public CompletableFuture<List<Employee>> updateAll(List<UserExcelUpdateDTO> users) {
         List<Employee> employees = new ArrayList<>();
-        LOGGER.info(users.toString());
         users.parallelStream().forEach(user -> {
-            Employee employee = new Employee();
-            if (user.getId() != null) {
-                employee.setId(user.getId());
-                employee.setPhotoLink(EMPLOYEE_REPOSITORY.getPhotoById(user.getId()));
-                employee.setPassword(EMPLOYEE_REPOSITORY.findPasswordById(user.getId()));
-                employee.setStatus(user.getStatus());
-            }
-            employee.setNrc(user.getNrc());
-            Optional<Department> optionalDepartment = DEPARTMENT_REPOSITORY.findById(user.getDepartmentId());
-            optionalDepartment.ifPresent(employee::setDepartment);
-            employee.setCompany(COMPANY_SERVICE.getByDepartmentId(user.getDepartmentId()).join());
-            employee.setGender(user.getGender());
-            employee.setName(user.getName());
-            employee.setAddress(user.getAddress());
-            employee.setDob(user.getDob());
-            employee.setRole(user.getRole());
-            employee.setEmail(user.getEmail());
-            employee.setTelegramUsername(user.getTelegramUsername());
-            employee.setStaffId(user.getStaffId());
-            employees.add(EMPLOYEE_REPOSITORY.save(employee));
-
+            employees.add(EMPLOYEE_REPOSITORY.save(mapToEntity(user)));
         });
         return CompletableFuture.completedFuture(employees);
+    }
+
+    public CompletableFuture<Employee> update(UserExcelUpdateDTO user){
+        return CompletableFuture.completedFuture(EMPLOYEE_REPOSITORY.save(mapToEntity(user)));
+    }
+
+    public Employee mapToEntity(UserExcelUpdateDTO user){
+        Employee employee = new Employee();
+        Optional<Department> optionalDepartment;
+        if (user.getId() != null) {
+            employee.setId(user.getId());
+            employee.setPhotoLink(EMPLOYEE_REPOSITORY.getPhotoById(user.getId()));
+            employee.setPassword(EMPLOYEE_REPOSITORY.findPasswordById(user.getId()));
+            employee.setStatus(user.getStatus());
+            Department department=DEPARTMENT_REPOSITORY.findByEmployeeId(user.getId());
+            if(department!=null){
+
+                employee.setDepartment(department);
+                employee.setCompany(COMPANY_REPOSITORY.getByDepartmentId(department.getId()));
+            }else{
+                employee.setCompany(COMPANY_REPOSITORY.findByEmployeeId(user.getId()));
+            }
+
+        }
+        employee.setNrc(user.getNrc());
+        if(user.getDepartmentId()!=null){
+            optionalDepartment = DEPARTMENT_REPOSITORY.findById(user.getDepartmentId());
+            optionalDepartment.ifPresent((department)->{
+                employee.setDepartment(department);
+                employee.setCompany(COMPANY_REPOSITORY.getByDepartmentId(department.getId()));
+            });
+        }
+
+        employee.setGender(user.getGender());
+        employee.setName(user.getName());
+        employee.setAddress(user.getAddress());
+        employee.setDob(user.getDob());
+        employee.setRole(user.getRole());
+        employee.setEmail(user.getEmail());
+        employee.setTelegramUsername(user.getTelegramUsername());
+        employee.setStaffId(user.getStaffId());
+        employee.setNotedCount(user.getNotedCount());
+        employee.setTelegramUserId(user.getTelegramUserId());
+        return employee;
     }
 
     public Long getEmployeeIdByTelegramUsername(String telegramUsername) {
@@ -601,5 +624,13 @@ public class EmployeeService {
         hrAss.setPassword(PASSWORD_ENCODER.encode(SYSTEM_DATA_BEAN.getDefaultPassword()));
         return CompletableFuture.completedFuture(EMPLOYEE_REPOSITORY.save(hrAss));
     }
+
+    public boolean hasTelegramUserId (String email) {
+        return EMPLOYEE_REPOSITORY.hasTelegramUserId (email);
+    }
+
+
+
+
 
 }

@@ -38,13 +38,16 @@ public class AnnouncementDTO {
     private Channel channel;
     private boolean selectAll;
     private LocalDateTime deadline;
+    private String company;
 
-    public AnnouncementDTO(Long id,String title, LocalDateTime createdAt, AnnouncementStatus status, String categoryName, String createdBy){
+    public AnnouncementDTO(Long id,String title, LocalDateTime createdAt, AnnouncementStatus status, String categoryName, String createdBy,EmployeeRole role, String companyName){
         this.id=id;
         this.title=title;
         this.createdAt=createdAt;
         this.status=status;
         this.categoryName=categoryName;
         this.createdBy=createdBy;
+        this.role = role;
+        this.company = companyName;
     }
 }

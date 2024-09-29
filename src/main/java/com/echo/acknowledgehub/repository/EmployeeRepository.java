@@ -15,7 +15,7 @@ import java.util.Optional;
 
 public interface EmployeeRepository extends JpaRepository<Employee, Long> {
 
-    @Query("SELECT new com.echo.acknowledgehub.dto.EmployeeProfileDTO(em.name, em.role, em.email, em.company.name, em.department.name, em.photoLink) FROM Employee em WHERE em.id = :id")
+    @Query("SELECT new com.echo.acknowledgehub.dto.EmployeeProfileDTO(em.name, em.role, em.email, em.gender, em.staffId, em.company.name, em.department.name, em.photoLink) FROM Employee em WHERE em.id = :id")
     EmployeeProfileDTO getProfileInfo(@Param("id") Long id);
 
     Optional<Employee> findByEmail(String email);
@@ -143,7 +143,7 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
             @Param("roles") List<EmployeeRole> roles,
             @Param("announcementId") Long announcementId);
 
-    @Query("SELECT new com.echo.acknowledgehub.dto.EmployeeProfileDTO(em.name, em.role, em.email, em.photoLink) FROM Employee em WHERE em.id = :id")
+    @Query("SELECT new com.echo.acknowledgehub.dto.EmployeeProfileDTO(em.name, em.role, em.email,em.gender, em.staffId, em.photoLink) FROM Employee em WHERE em.id = :id")
     EmployeeProfileDTO getAdminProfileInfo(@Param("id") Long id);
 
     @Query("SELECT COUNT(e) > 0 FROM Employee e WHERE e.role = 'MAIN_HR'")
@@ -169,5 +169,7 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
             "JOIN e.department d ORDER BY e.notedCount DESC LIMIT 10")
     List<Object[]> getDescNotedCount();
 
+    @Query("SELECT COUNT(e) > 0 FROM Employee e WHERE e.email=:email AND e.telegramUserId IS NOT NULL")
+    boolean hasTelegramUserId(@Param("email") String email);
 }
 
