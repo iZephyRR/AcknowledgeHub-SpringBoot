@@ -13,5 +13,4 @@ public class ReplyResponseDTO {
     private String replyContent;
     private LocalDateTime replyCreatedAt;
     private byte[] replierPhotoLink;
-
 }

@@ -29,7 +29,7 @@ public class CustomTargetGroupService {
     @Async
     public CompletableFuture<CustomTargetGroup> save(CustomTargetGroupDTO customTargetGroupDTO){
         LOGGER.info("Service data : "+customTargetGroupDTO);
-        List<CustomTargetGroupEntity> entities = customTargetGroupDTO.getEntities().stream()
+        List<CustomTargetGroupEntity> entities = customTargetGroupDTO.getCustomTargetGroupEntities().stream()
                 .map(data -> MAPPER.map(data, CustomTargetGroupEntity.class))
                 .toList();
         CustomTargetGroup customTargetGroup=new CustomTargetGroup();

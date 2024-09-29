@@ -44,7 +44,7 @@ public class DepartmentService {
 
     @Async
     public CompletableFuture<Department> save(Department department){
-        if(department.getCompany()==null){
+        if(department.getCompany().getId()==null && department.getCompany().getName()==null){
             department.setCompany(COMPANY_REPOSITORY.getByDepartmentId(department.getId()));
         }
         return CompletableFuture.completedFuture(DEPARTMENT_REPOSITORY.save(department));

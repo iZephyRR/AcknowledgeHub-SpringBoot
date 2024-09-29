@@ -1,5 +1,6 @@
 package com.echo.acknowledgehub.repository;
 
+import com.echo.acknowledgehub.dto.EmailAndNameDTO;
 import com.echo.acknowledgehub.dto.EmployeeNotedDTO;
 import com.echo.acknowledgehub.dto.EmployeeProfileDTO;
 import com.echo.acknowledgehub.constant.EmployeeRole;
@@ -40,8 +41,8 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
     @Query("UPDATE Employee em set em.password= :defaultPassword WHERE em.status= 'DEFAULT'")
     int changeDefaultPassword(@Param("defaultPassword") String encodedDefaultPassword);
 
-    @Query("SELECT new com.echo.acknowledgehub.dto.StringResponseDTO(e.email) FROM Employee e WHERE e.status='DEFAULT'")
-    List<StringResponseDTO> getDefaultAccountEmails();
+    @Query("SELECT new com.echo.acknowledgehub.dto.EmailAndNameDTO(e.email, e.name) FROM Employee e WHERE e.status='DEFAULT'")
+    List<EmailAndNameDTO> getDefaultAccountEmailsAndNames();
 
     @Modifying
     @Query("UPDATE Employee em SET em.password= :newPassword, em.status='ACTIVATED' WHERE em.email= :email")
@@ -89,14 +90,17 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
     @Query("SELECT e.name, e.email, e.address, e.dob, e.gender, e.nrc, e.password, e.role, e.status, e.staffId, e.telegramUsername, e.photoLink, c.name AS companyName, d.name AS departmentName ,e.id " +
             "FROM Employee e " +
             "JOIN e.company c " +
-            "JOIN e.department d")
-    List<Object[]> getAllUsers();
+            "JOIN e.department d " +
+            "WHERE e.role NOT IN :excludedRoles")
+    List<Object[]> getAllUsers(@Param("excludedRoles") List<EmployeeRole> excludedRoles);
 
-    @Query("SELECT e.name, e.email, e.address, e.dob, e.gender, e.nrc, e.password, e.role, e.status, e.staffId, e.telegramUsername, e.photoLink, c.name AS companyName, d.name AS departmentName ,e.id " +
+    @Query("SELECT e.name, e.email, e.address, e.dob, e.gender, e.nrc, e.password, e.role, e.status, e.staffId, e.telegramUsername, e.photoLink, c.name AS companyName, d.name AS departmentName, e.id " +
             "FROM Employee e " +
             "JOIN e.company c " +
-            "JOIN e.department d WHERE c.id= :id")
-    List<Object[]> getAllUsersByCompany(@Param("id") Long id);
+            "JOIN e.department d " +
+            "WHERE c.id = :id " +
+            "AND e.role NOT IN :excludedRoles")
+    List<Object[]> getAllUsersByCompany(@Param("id") Long id, @Param("excludedRoles") List<EmployeeRole> excludedRoles);
 
     @Query("SELECT e.name, e.email, e.address, e.dob, e.gender, e.nrc, e.password, e.role, e.status, e.staffId, e.telegramUsername, e.photoLink, c.name AS companyName, d.name AS departmentName ,e.id " +
             "FROM Employee e " +
@@ -171,5 +175,9 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
 
     @Query("SELECT COUNT(e) > 0 FROM Employee e WHERE e.email=:email AND e.telegramUserId IS NOT NULL")
     boolean hasTelegramUserId(@Param("email") String email);
+
+    @Query("SELECT e.name FROM Employee e WHERE e.id=:id")
+    String findNameById(@Param("id") Long receiverId);
+
 }
 

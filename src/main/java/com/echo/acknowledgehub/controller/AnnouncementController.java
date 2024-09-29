@@ -68,9 +68,11 @@ public class AnnouncementController {
         for (Announcement announcement : pendingAnnouncementsScheduled) {
             announcement.setStatus(AnnouncementStatus.UPLOADED);
             ANNOUNCEMENT_SERVICE.save(announcement);
+            ANNOUNCEMENT_SERVICE.updateVersionRelated(announcement);
             SaveTargetsForSchedule saveTargetsForSchedule = targetStorage.get(announcement.getId());
             List<Target> targetList = saveTargetsForSchedule.getTargets();
-            handleTargetsAndNotifications(targetList, announcement);
+            List<Target> targets = TARGET_SERVICE.saveTargets(targetList);
+            handleTargetsAndNotifications(targets, announcement);
             MultipartFile excelFile = null;
             if (announcement.getContentType() == ContentType.EXCEL) {
                 excelFile = convertToMultipartFile(saveTargetsForSchedule.getFilePath(), saveTargetsForSchedule.getFilename());
@@ -112,13 +114,15 @@ public class AnnouncementController {
 
     @PostMapping(value = "/version", produces = MediaType.APPLICATION_JSON_VALUE)
     public void version(@ModelAttribute VersionDTO versionDTO) throws ExecutionException, InterruptedException, IOException {
-        CompletableFuture<Announcement> announcementCompletableFuture = ANNOUNCEMENT_SERVICE.findById(versionDTO.getOldVersion())
+        CompletableFuture<Announcement> oldAnno = ANNOUNCEMENT_SERVICE.findById(versionDTO.getOldVersion())
                 .thenApply(announcement -> announcement.orElseThrow(() -> new NoSuchElementException("Announcement not found")));
         CompletableFuture<Employee> conFuEmployee = EMPLOYEE_SERVICE.findById(CHECKING_BEAN.getId())
                 .thenApply(optionalEmployee -> optionalEmployee.orElseThrow(() -> new NoSuchElementException("Employee not found")));
-        Optional<AnnouncementCategory> optionalAnnouncementCategory = ANNOUNCEMENT_CATEGORY_SERVICE.findById(announcementCompletableFuture.get().getCategory().getId());
+        Optional<AnnouncementCategory> optionalAnnouncementCategory = ANNOUNCEMENT_CATEGORY_SERVICE.findById(oldAnno.get().getCategory().getId());
         AnnouncementCategory category = optionalAnnouncementCategory.orElse(null);
-
+        if(versionDTO.getDeadline().isBefore(LocalDateTime.now())){
+            versionDTO.setDeadline(null);
+        }
         Announcement newVersion = new Announcement();
         newVersion.setTitle(versionDTO.getTitle());
         newVersion.setCategory(category);
@@ -153,16 +157,51 @@ public class AnnouncementController {
         }
         newVersion.setCreatedAt(LocalDateTime.now());
         newVersion.setDeadline(versionDTO.getDeadline());
-        newVersion.setSelectAll((announcementCompletableFuture.get().getSelectAll()));
-        newVersion.setVersionRelatedTo(announcementCompletableFuture.get().getId());
+        newVersion.setSelectAll((oldAnno.get().getSelectAll()));
+        newVersion.setVersionRelatedTo(oldAnno.get().getId()); // set related to
         Announcement createdNewVersion = ANNOUNCEMENT_SERVICE.save(newVersion);
-
+        List<Target> targets = TARGET_SERVICE.findByAnnouncement(oldAnno.get());
+        handleTargetsAndNotifications(targets, newVersion); // target save, send notification
+        Set<Long> chatIdsSet = new HashSet<Long>();
+        Set<String> emails = new HashSet<>();
+        for (Target target : targets) {
+            ReceiverType receiverType = target.getReceiverType();
+            Long sendTo = target.getSendTo();
+            if (receiverType == ReceiverType.COMPANY) {
+                chatIdsSet.addAll(EMPLOYEE_SERVICE.getAllChatIdByCompanyId(sendTo));
+                emails.addAll(EMPLOYEE_SERVICE.getEmailsByCompanyId(sendTo).join());
+            } else if (receiverType == ReceiverType.DEPARTMENT) {
+                chatIdsSet.addAll(EMPLOYEE_SERVICE.getAllChatIdByDepartmentId(sendTo));
+                emails.addAll(EMPLOYEE_SERVICE.getEmailsByDepartmentId(sendTo).join());
+            } else if (receiverType == ReceiverType.EMPLOYEE) {
+                chatIdsSet.add(EMPLOYEE_SERVICE.getChatIdByUserId(sendTo));
+                emails.add(EMPLOYEE_SERVICE.getEmailsByUserId(sendTo).join().get(0));
+            } else if (receiverType == ReceiverType.CUSTOM) {
+                List<CustomTargetGroupEntity> groupEntities = CUSTOM_TARGET_GROUP_ENTITY_SERVICE.getAllGroupEntity(sendTo);
+                chatIdsSet.addAll(handleChatIds(groupEntities));
+                emails.addAll(handleEmails(groupEntities));
+            }
+        }
+        LOGGER.info("final result chat set : " + chatIdsSet);
+        List<Long> chatIdsList = new ArrayList<>(chatIdsSet);
+        LOGGER.info("final result chat list : " + chatIdsList);
+        TELEGRAM_SERVICE.sendToTelegram(chatIdsList, excelFile, newVersion.getContentType().getFirstValue(), newVersion.getId(), newVersion.getPdfLink(), newVersion.getTitle(), newVersion.getEmployee().getCompany().getName());
+        if (newVersion.getChannel() == Channel.BOTH) {
+            String message = "<h2>Hello! You’ve received a new announcement from - <b>" + newVersion.getEmployee().getCompany().getName() + "</b> regarding - <b>" + newVersion.getTitle() + "</b>.</h2>" +
+                    "<p>🔗 <a href='http://127.0.0.1:4200/announcement-page/" + newVersion.getId() + "'>[View the full announcement here]</a></p>";
+            for (String address : emails) {
+                EMAIL_SENDER.sendEmail(new EmailDTO(address, newVersion.getTitle(), message , null));
+            }
+        }
     }
 
     @PostMapping(value = "/create", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public void createAnnouncement(
             @ModelAttribute AnnouncementDTO announcementDTO
     ) throws IOException, ExecutionException, InterruptedException {
+        if(announcementDTO.getDeadline().isBefore(announcementDTO.getCreatedAt())){
+            announcementDTO.setDeadline(null);
+        }
         ObjectMapper objectMapper = new ObjectMapper();
         List<TargetDTO> targetDTOList = objectMapper.readValue(announcementDTO.getTarget(), new TypeReference<List<TargetDTO>>() {
         });
@@ -228,6 +267,7 @@ public class AnnouncementController {
             entity.setContentType(ContentType.ZIP);
         }
         Announcement announcement = ANNOUNCEMENT_SERVICE.save(entity); // save announcement
+        ANNOUNCEMENT_SERVICE.updateVersionRelated(announcement);
         List<Target> targetList = targetDTOList.stream()
                 .map(dto -> {
                     Target target = MODEL_MAPPER.map(dto, Target.class);
@@ -265,7 +305,7 @@ public class AnnouncementController {
             TELEGRAM_SERVICE.sendToTelegram(chatIdsList, excelFile, announcement.getContentType().getFirstValue(), announcement.getId(), announcement.getPdfLink(), announcement.getTitle(), announcement.getEmployee().getCompany().getName());
             if (announcement.getChannel() == Channel.BOTH) {
                 String message = "<h2>Hello! You’ve received a new announcement from - <b>" + announcement.getEmployee().getCompany().getName() + "</b> regarding - <b>" + announcement.getTitle() + "</b>.</h2>" +
-                        "<p>🔗 <a href='http://127.0.0.1:4200/announcement-page/" + announcement.getId() + "'>[View the full announcement here]</a></p>";
+                        "<p>🔗 <a href='http://127.0.0.1:4200/announcement-page/" + announcement.getId() + "'> View the full announcement here </a></p>";
                 for (String address : emails) {
                     EMAIL_SENDER.sendEmail(new EmailDTO(address, announcement.getTitle(), message , null));
                 }
@@ -544,9 +584,11 @@ public class AnnouncementController {
     @GetMapping(value = "/updateNow/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<StringResponseDTO> updateNow(@PathVariable("id") Long announcementId) throws IOException, ExecutionException, InterruptedException {
         Announcement announcement = ANNOUNCEMENT_SERVICE.updateTimeAndStatus(announcementId);
+        ANNOUNCEMENT_SERVICE.updateVersionRelated(announcement);
         SaveTargetsForSchedule saveTargetsForSchedule = targetStorage.get(announcement.getId());
         List<Target> targetList = saveTargetsForSchedule.getTargets();
-        handleTargetsAndNotifications(targetList, announcement);
+        List<Target> targets = TARGET_SERVICE.saveTargets(targetList);
+        handleTargetsAndNotifications(targets, announcement);
         MultipartFile excelFile = null;
         if (announcement.getContentType() == ContentType.EXCEL) {
             excelFile = convertToMultipartFile(saveTargetsForSchedule.getFilePath(), saveTargetsForSchedule.getFilename());
@@ -616,6 +658,17 @@ public class AnnouncementController {
     @GetMapping("/noted-list")
     private NotedDTO getNotedList(@RequestParam Long announcementId, @RequestParam(defaultValue = "0") Long duration) throws ExecutionException, InterruptedException {
         return ANNOUNCEMENT_SERVICE.getNotedList(announcementId, duration);
+    }
+
+    @GetMapping("/get-next-version/{id}")
+    private StringResponseDTO getNextVersion (@PathVariable("id") Long announcementId) {
+        String nextVersion = String.valueOf(ANNOUNCEMENT_SERVICE.nextVersion(announcementId));
+        return new StringResponseDTO(nextVersion);
+    }
+
+    @GetMapping("/by-cus/{id}")
+    private List<AnnouncementDTOForReport> getByCustomGroup(@PathVariable("id") Long id){
+        return ANNOUNCEMENT_SERVICE.getByCustomGroup(id);
     }
 
 

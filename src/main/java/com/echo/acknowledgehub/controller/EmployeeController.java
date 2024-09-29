@@ -44,10 +44,10 @@ public class EmployeeController {
         return EMPLOYEE_SERVICE.getAll().join();
     }
 
-    @GetMapping(value = "/getUsersByCompanyId", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<List<UserDTO>> getUserByCompanyId () {
-        return ResponseEntity.ok(EMPLOYEE_SERVICE.getUsersByCompanyId(CHECKING_BEAN.getCompanyId()));
-    }
+//    @GetMapping(value = "/getUsersByCompanyId", produces = MediaType.APPLICATION_JSON_VALUE)
+//    public ResponseEntity<List<UserDTO>> getUserByCompanyId () {
+//        return ResponseEntity.ok(EMPLOYEE_SERVICE.getUsersByCompanyId(CHECKING_BEAN.getCompanyId()));
+//    }
 
     @GetMapping("/user/profile")
     private EmployeeProfileDTO findById(){

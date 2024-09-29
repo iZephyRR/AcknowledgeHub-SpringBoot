@@ -103,7 +103,6 @@ class AnnouncementControllerTest {
                 .thenReturn(pendingAnnouncements);
 
         SaveTargetsForSchedule saveTargetsForSchedule = new SaveTargetsForSchedule();
-        saveTargetsForSchedule.setIsEmailSelected("emailSelected");
         saveTargetsForSchedule.setTargets(Collections.emptyList());
         announcementController.targetStorage.put(mockAnnouncement.getId(), saveTargetsForSchedule);
 

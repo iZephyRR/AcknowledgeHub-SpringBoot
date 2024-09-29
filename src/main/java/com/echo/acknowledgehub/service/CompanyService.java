@@ -70,6 +70,7 @@ public class CompanyService {
         employee.setCompany(this.save(new Company(hrdto.getCompanyName())).join());
         employee.setPassword(PASSWORD_ENCODER.encode(SYSTEM_DATA_BEAN.getDefaultPassword()));
         employee.setRole(EmployeeRole.HR);
+        employee.setTelegramUsername(hrdto.getTelegramUsername());
         EMPLOYEE_REPOSITORY.save(employee);
         return CompletableFuture.completedFuture(hrdto);
     }

@@ -39,7 +39,7 @@ public class Announcement {
     @Column(name = "deadline")
     private LocalDateTime deadline;
     @Column(name ="version_related")
-    private Long versionRelatedTo = 1L;
+    private Long versionRelatedTo = 0L;
 
     @JsonIgnore
     @ManyToOne(cascade = CascadeType.MERGE)

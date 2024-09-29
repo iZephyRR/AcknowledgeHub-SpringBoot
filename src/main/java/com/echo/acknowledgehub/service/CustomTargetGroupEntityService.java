@@ -1,9 +1,9 @@
 package com.echo.acknowledgehub.service;
 
+import com.echo.acknowledgehub.constant.ReceiverType;
 import com.echo.acknowledgehub.entity.CustomTargetGroup;
 import com.echo.acknowledgehub.entity.CustomTargetGroupEntity;
-import com.echo.acknowledgehub.repository.CustomTargetGroupEntityRepository;
-import com.echo.acknowledgehub.repository.CustomTargetGroupRepository;
+import com.echo.acknowledgehub.repository.*;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.AllArgsConstructor;
 import org.hibernate.annotations.Check;
@@ -18,6 +18,9 @@ public class CustomTargetGroupEntityService {
 
     private final CustomTargetGroupEntityRepository CUSTOM_TARGET_GROUP_ENTITY_REPOSITORY;
     private final CustomTargetGroupRepository CUSTOM_TARGET_GROUP_REPOSITORY;
+    private final DepartmentRepository DEPARTMENT_REPOSITORY;
+    private final CompanyRepository COMPANY_REPOSITORY;
+    private final EmployeeRepository EMPLOYEE_REPOSITORY;
 
     public List<CustomTargetGroupEntity> getAllGroupEntity (Long groupId) {
         CustomTargetGroup customTargetGroup = CUSTOM_TARGET_GROUP_REPOSITORY.findById(groupId)
@@ -25,5 +28,21 @@ public class CustomTargetGroupEntityService {
         return CUSTOM_TARGET_GROUP_ENTITY_REPOSITORY.findByCustomTargetGroup(customTargetGroup);
     }
 
+    public String findTargetNameByTypeAndId(ReceiverType receiverType, Long receiverId) {
+        switch (receiverType){
+            case DEPARTMENT -> {
+                return DEPARTMENT_REPOSITORY.findDepartmentNameById(receiverId);
+            }
+            case COMPANY -> {
+                return COMPANY_REPOSITORY.findCompanyNameById(receiverId);
+            }
+            case EMPLOYEE -> {
+                return EMPLOYEE_REPOSITORY.findNameById(receiverId);
+            }
+            default -> {
+                return null;
+            }
+        }
+    }
 
 }

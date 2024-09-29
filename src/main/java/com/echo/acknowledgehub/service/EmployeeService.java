@@ -9,11 +9,13 @@ import com.echo.acknowledgehub.entity.Department;
 import com.echo.acknowledgehub.entity.Employee;
 import com.echo.acknowledgehub.exception_handler.DataNotFoundException;
 import com.echo.acknowledgehub.exception_handler.DuplicatedEnteryException;
+import com.echo.acknowledgehub.exception_handler.EmailSenderException;
 import com.echo.acknowledgehub.exception_handler.UpdatePasswordException;
 import com.echo.acknowledgehub.repository.AnnouncementRepository;
 import com.echo.acknowledgehub.repository.CompanyRepository;
 import com.echo.acknowledgehub.repository.DepartmentRepository;
 import com.echo.acknowledgehub.repository.EmployeeRepository;
+import com.echo.acknowledgehub.util.EmailSender;
 import com.google.api.core.ApiFuture;
 import com.google.cloud.firestore.*;
 import com.google.firebase.cloud.FirestoreClient;
@@ -50,6 +52,7 @@ public class EmployeeService {
     private final CompanyRepository COMPANY_REPOSITORY;
     private final CompanyService COMPANY_SERVICE;
     private final DepartmentRepository DEPARTMENT_REPOSITORY;
+    private final EmailSender EMAIL_SENDER;
 
     @Async
     public CompletableFuture<Optional<Employee>> findById(Long id) {
@@ -120,7 +123,32 @@ public class EmployeeService {
     @Transactional
     public CompletableFuture<Integer> changeDefaultPassword(String rawPassword) {
         SYSTEM_DATA_BEAN.setDefaultPassword(rawPassword);
-        List<StringResponseDTO> stringResponseDTOS = EMPLOYEE_REPOSITORY.getDefaultAccountEmails();
+        List<EmailAndNameDTO> stringResponseDTOS = EMPLOYEE_REPOSITORY.getDefaultAccountEmailsAndNames();
+        stringResponseDTOS.parallelStream().forEach((data)->{
+            try {
+                EMAIL_SENDER.sendEmail(new EmailDTO(data.getEmail(),"Update: Default Password Change for Acknowledge Hub","Dear "+data.getName()+",<br>" +
+                        "<br>" +
+                        "I hope this message finds you well.<br>" +
+                        "<br>" +
+                        "We wanted to inform you of an important update regarding the Acknowledge Hub system. As part of our ongoing security enhancements, we have updated the default password used for accessing the system.<br>" +
+                        "<br>" +
+                        "Please note the following changes:<br>" +
+                        "<br>" +
+                        "New Default Password: "+rawPassword+"<br>" +
+                        "For your convenience, the username remains the same as before. We recommend that you log in with the new password and update it to a more secure password of your choice as soon as possible.<br>" +
+                        "<br>" +
+                        "If you encounter any issues or have any questions regarding this update, please do not hesitate to reach out. Our support team is available to assist you.<br>" +
+                        "<br>" +
+                        "Thank you for your attention to this matter and for your continued cooperation.<br>" +
+                        "<br>" +
+                        "Best regards,<br>" +
+                        "<br>" + CHECKING_BEAN.getName() +
+                        "(ADMIN)<br>" +
+                        "<a href='http://127.0.0.1:4200/'> Acknowledge Hub </a>",null));
+            } catch (IOException e) {
+                throw new EmailSenderException("Couldn't send default password change email.");
+            }
+        });
         return CompletableFuture.completedFuture(EMPLOYEE_REPOSITORY.changeDefaultPassword(PASSWORD_ENCODER.encode(rawPassword)));
     }
 
@@ -136,7 +164,7 @@ public class EmployeeService {
     }
 
     @Async
-    private CompletableFuture<Employee> save(UserDTO user) {
+    private CompletableFuture<Employee> save(UserDTO user) throws IOException{
         MAPPER.typeMap(UserDTO.class, Employee.class).addMappings(mapper -> {
             mapper.map(UserDTO::getDepartmentId, (Employee e, Long id) -> e.getDepartment().setId(id));
             mapper.map(UserDTO::getCompanyId, (Employee e, Long id) -> e.getCompany().setId(id));
@@ -149,6 +177,24 @@ public class EmployeeService {
         Employee employee = MAPPER.map(user, Employee.class);
         LOGGER.info(employee.toString());
         employee.setPassword(PASSWORD_ENCODER.encode(SYSTEM_DATA_BEAN.getDefaultPassword()));
+        EMAIL_SENDER.sendEmail(new EmailDTO(employee.getEmail()," Welcome to Acknowledge Hub - Your Login Information","Dear "+employee.getName()+",<br>" +
+                "<br>" +
+                "I hope this message finds you well.<br>" +
+                "<br>" +
+                "Welcome to Acknowledge Hub! As part of our commitment to streamlined communication and efficient management, we have created an account for you in our system.<br>" +
+                "<br>" +
+                "Please find your login details below:<br>" +
+                "<br>" +
+                "Username: Your email address ("+employee.getEmail()+")<br>" +
+                "Temporary Password: "+SYSTEM_DATA_BEAN.getDefaultPassword()+"<br>" +
+                "For your security, we recommend that you log in to your account and change your password as soon as possible. If you encounter any issues or have questions, please do not hesitate to contact our support team.<br>" +
+                "<br>" +
+                "Thank you for your attention to this matter, and we look forward to your active participation in Acknowledge Hub.<br>" +
+                "<br>" +
+                "Best regards,<br>" +
+                "<br>" + CHECKING_BEAN.getName() +
+                "("+CHECKING_BEAN.getRole()+")<br>" +
+                "<a href='http://127.0.0.1:4200/'> Acknowledge Hub </a>",null));
         return CompletableFuture.completedFuture(EMPLOYEE_REPOSITORY.save(employee));
     }
 
@@ -190,7 +236,11 @@ public class EmployeeService {
         users.getUsers().forEach(user -> {
             user.setDepartmentId(department.getId());
             user.setCompanyId(users.getCompanyId());
-            this.save(user).thenAccept(employees::add);
+            try {
+                this.save(user).thenAccept(employees::add);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         });
         return CompletableFuture.completedFuture(employees);
     }
@@ -340,9 +390,11 @@ public class EmployeeService {
     //@Transactional
     public List<UserDTO> getAllUsers() {
         if (CHECKING_BEAN.getRole() == EmployeeRole.MAIN_HR || CHECKING_BEAN.getRole() == EmployeeRole.MAIN_HR_ASSISTANCE) {
-            return mapToDtoList(EMPLOYEE_REPOSITORY.getAllUsers());
+            List<EmployeeRole> excludedRoles = Arrays.asList(EmployeeRole.MAIN_HR, EmployeeRole.MAIN_HR_ASSISTANCE, EmployeeRole.HR, EmployeeRole.HR_ASSISTANCE);
+            return mapToDtoList(EMPLOYEE_REPOSITORY.getAllUsers(excludedRoles));
         }
-        return mapToDtoList((EMPLOYEE_REPOSITORY.getAllUsersByCompany(CHECKING_BEAN.getCompanyId())));
+        List<EmployeeRole> excludedRoles = Arrays.asList(EmployeeRole.HR, EmployeeRole.HR_ASSISTANCE);
+        return mapToDtoList((EMPLOYEE_REPOSITORY.getAllUsersByCompany(CHECKING_BEAN.getCompanyId(),excludedRoles)));
     }
 
     @Transactional
@@ -541,13 +593,13 @@ public class EmployeeService {
         return dto;
     }
 
-    public CompletableFuture<List<Employee>> updateUsers(List<UserDTO> users) {
-        List<Employee> employees = new ArrayList<>();
-        users.forEach(user -> {
-            employees.add(save(user).join());
-        });
-        return CompletableFuture.completedFuture(employees);
-    }
+//    public CompletableFuture<List<Employee>> updateUsers(List<UserDTO> users) {
+//        List<Employee> employees = new ArrayList<>();
+//        users.forEach(user -> {
+//            employees.add(save(user).join());
+//        });
+//        return CompletableFuture.completedFuture(employees);
+//    }
 
     @Async
     public CompletableFuture<List<String>> getEmailsByCompanyId(Long sendTo) {

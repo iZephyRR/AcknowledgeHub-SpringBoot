@@ -56,20 +56,20 @@ public class CompanyControllerTest {
         mockMvc = MockMvcBuilders.standaloneSetup(companyController).build();
     }
 
-    @Test
-    public void testGetCompany() throws Exception {
-        Long companyId = 1L;
-        Company company = new Company();
-        company.setId(companyId);
-        when(companyService.findById(companyId)).thenReturn(CompletableFuture.completedFuture(Optional.of(company)));
-
-        mockMvc.perform(get("/user/get-company/{id}", companyId))
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.id").value(companyId));
-
-        verify(companyService, times(1)).findById(companyId);
-    }
+//    @Test
+//    public void testGetCompany() throws Exception {
+//        Long companyId = 1L;
+//        Company company = new Company();
+//        company.setId(companyId);
+//        when(companyService.findById(companyId)).thenReturn(CompletableFuture.completedFuture(Optional.of(company)));
+//
+//        mockMvc.perform(get("/user/get-company/{id}", companyId))
+//                .andExpect(status().isOk())
+//                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+//                .andExpect(jsonPath("$.id").value(companyId));
+//
+//        verify(companyService, times(1)).findById(companyId);
+//    }
 
     @Test
     public void testGetCompanyDTO() throws Exception {

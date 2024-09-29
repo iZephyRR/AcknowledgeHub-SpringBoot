@@ -649,6 +649,21 @@ public class AnnouncementService {
         LOGGER.info(longMap.toString());
         return longMap;
     }
+
+    public void updateVersionRelated( Announcement announcement){
+        announcement.setVersionRelatedTo(announcement.getId());
+        ANNOUNCEMENT_REPOSITORY.save(announcement);
+    }
+
+    public int nextVersion(Long id) {
+        return ANNOUNCEMENT_REPOSITORY.lastVersion(id) + 1;
+    }
+
+    public List<AnnouncementDTOForReport> getByCustomGroup(Long id) {
+        return ANNOUNCEMENT_REPOSITORY.getByCustomGroup(id);
+    }
+
+
 }
 
 //    private NotedDTO configReceiverForNoted(List<NotedDTO> notedDTOS) {

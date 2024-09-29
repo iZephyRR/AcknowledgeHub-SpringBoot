@@ -8,6 +8,6 @@ import java.util.List;
 public class CustomTargetGroupDTO {
 
     private String title;
-    private List<CustomTargetGroupEntityDTO> entities;
+    private List<CustomTargetGroupEntityDTO> customTargetGroupEntities;
 
 }

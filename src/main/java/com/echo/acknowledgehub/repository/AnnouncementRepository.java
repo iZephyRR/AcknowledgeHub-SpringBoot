@@ -177,4 +177,10 @@ public interface AnnouncementRepository extends JpaRepository<Announcement, Long
     @Query("SELECT a.deadline FROM Announcement a WHERE a.id=:announcementId")
     LocalDateTime getDeadline(@Param("announcementId")Long id);
 
+    @Query("SELECT COUNT(a) FROM Announcement a WHERE a.versionRelatedTo=:id")
+    int lastVersion(@Param("id") Long id);
+
+    @Query("SELECT new com.echo.acknowledgehub.dto.AnnouncementDTOForReport(t.announcement.id,t.announcement.title,t.announcement.category.name, t.announcement.contentType,t.announcement.createdAt,t.announcement.channel,t.announcement.employee.name,t.announcement.employee.role,t.announcement.employee.company.name, t.announcement.selectAll,t.announcement.status) FROM Target t LEFT JOIN CustomTargetGroup c ON c.id = t.sendTo WHERE t.receiverType='CUSTOM'")
+    List<AnnouncementDTOForReport> getByCustomGroup(Long id);
+
 }

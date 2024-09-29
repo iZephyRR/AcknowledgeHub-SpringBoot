@@ -113,16 +113,12 @@ public class TelegramService extends TelegramLongPollingBot {
         EditMessageCaption editMessage = new EditMessageCaption();
         editMessage.setChatId(callbackQuery.getMessage().getChatId().toString());
         editMessage.setMessageId(callbackQuery.getMessage().getMessageId());
-//        String originalCaption = callbackQuery.getMessage().getCaption() + "You have successfully noted this announcement.\n\n" +
-//                "Thank you for acknowledging the announcement";
-//        editMessage.setCaption(originalCaption);
 
         String newCaption = "Hello! You’ve received a new announcement from - <b>" + creator + "</b> regarding - <b>" + title + "</b>.\n\n" +
-                "🔗 <a href='http://127.0.0.1:4200/announcement-page/" + announcementId + "'>[View the full announcement here]</a>\n\n" +
+                "🔗 <a href='http://127.0.0.1:4200/announcement-page/" + announcementId + "'>View the full announcement here</a>\n\n" +
                 "You have successfully noted this announcement.\n\n" +
                 "Thank you for acknowledging the announcement";
         editMessage.setCaption(newCaption);
-
         editMessage.setParseMode("HTML");
         editMessage.setReplyMarkup(null);
         try {
@@ -174,7 +170,7 @@ public class TelegramService extends TelegramLongPollingBot {
                             : telegramUserName;
                     if (normalizedTelegramUsername.equals(username) && telegramUser.getTelegramUserId() == null) {
                         EMPLOYEE_SERVICE.updateTelegramUserId(chatId, username);
-                        String text = "Hello [" + username + "]! \uD83D\uDC4B\n" +
+                        String text = "Hello, " + telegramUser.getName() + "! \uD83D\uDC4B\n" +
                                 "\n" +
                                 "Welcome to ["+BOT_USERNAME+"], your company's official announcement bot.\n" +
                                 "\n" +
@@ -182,10 +178,12 @@ public class TelegramService extends TelegramLongPollingBot {
                                 "\n" +
                                 "\uD83D\uDD14 Keep an eye out for announcements – your acknowledgment will be required for some important updates.\n" +
                                 "\n" +
-                                "Let's get started! Feel free to ask any questions or click below to acknowledge you're ready to receive updates.\n";
+                                "Let's get started! Feel free to ask any questions or click below to acknowledge you're ready to receive updates.\n" +
+                                "🔗 <a href='http://127.0.0.1:4200/'> Visit Our Website </a>\n\n";
                         sendMessage(chatId, text);
                     } else {
-                        String contactMessage = "Hi [" + username + "], for any questions or support, please contact us at teamecho@gmail.com.";
+                        String contactMessage = "Hi ," + telegramUser.getName() + ", for any questions or support, please contact us at teamechofive@gmail.com.\n" +
+                                "🔗 <a href='http://127.0.0.1:4200/'> Contact Us </a>\n\n";
                         sendMessage(chatId, contactMessage);
                     }
                 } else {
@@ -283,6 +281,7 @@ public class TelegramService extends TelegramLongPollingBot {
         SendMessage message = new SendMessage();
         message.setChatId(chatId);
         message.setText(text);
+        message.setParseMode("HTML");
         execute(message);
     }
 
@@ -575,7 +574,7 @@ public class TelegramService extends TelegramLongPollingBot {
 
     private String caption (String creator, String title, Long announcementId) {
         String caption = "Hello! You’ve received a new announcement from - <b>" + creator + "</b> regarding - <b>" + title + "</b>.\n\n" +
-                "🔗 <a href='http://127.0.0.1:4200/announcement-page/" + announcementId + "'>[View the full announcement here]</a>\n\n" +
+                "🔗 <a href='http://127.0.0.1:4200/announcement-page/" + announcementId + "'>View the full announcement here</a>\n\n" +
                 "Please confirm you’ve seen this by clicking the button below.";
 
         return caption;

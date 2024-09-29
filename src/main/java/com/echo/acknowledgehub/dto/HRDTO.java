@@ -12,4 +12,5 @@ public class HRDTO {
     private String hrEmail;
     private String staffId;
     private String companyName;
+    private String telegramUsername;
 }
