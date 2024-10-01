@@ -131,5 +131,16 @@ public class AuthController {
     private BooleanResponseDTO hasRegisteredTelegram(@RequestBody String email) {
         return new BooleanResponseDTO(EMPLOYEE_SERVICE.hasTelegramUserId(email));
     }
+    @GetMapping("/ad/session")
+    private StringResponseDTO getSessionExpire(){
+        return new StringResponseDTO(String.valueOf(SYSTEM_DATA_BEAN.getSessionExpireTime()/3600000));
+    }
+
+    @GetMapping("/ad/session/{hour}")
+    private StringResponseDTO setSessionExpire(@PathVariable("hour") long hour){
+        SYSTEM_DATA_BEAN.setSessionExpireTime(hour*60*60*1000);
+        return new StringResponseDTO(String.valueOf(SYSTEM_DATA_BEAN.getSessionExpireTime()/3600000));
+    }
+//Auth controller
 
 }

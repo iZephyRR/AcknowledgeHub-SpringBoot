@@ -1,6 +1,7 @@
 package com.echo.acknowledgehub.util;
 
 import com.echo.acknowledgehub.bean.CheckingBean;
+import com.echo.acknowledgehub.bean.SystemDataBean;
 import com.echo.acknowledgehub.constant.EmployeeStatus;
 import com.echo.acknowledgehub.controller.EmployeeController;
 import io.jsonwebtoken.Claims;
@@ -24,6 +25,7 @@ public class JWTService {
 
     private static final Logger LOGGER = Logger.getLogger(JWTService.class.getName());
     private final CheckingBean CHECKING_BEAN;
+    private final SystemDataBean SYSTEM_DATA_BEAN;
 
     private SecretKey getSignInKey() {
         final String SECRET_KEY = "1c5644d5b85c1d0a06f470f95b24347c311226902d63397f7512a33329d2c02e";
@@ -35,10 +37,11 @@ public class JWTService {
         return Jwts.builder()
                 .subject(id)
                 .issuedAt(new Date(System.currentTimeMillis()))
-                .expiration(new Date(System.currentTimeMillis()+ 24*60*60*1000))
+                .expiration(new Date(System.currentTimeMillis()+ SYSTEM_DATA_BEAN.getSessionExpireTime()))
                 .signWith(getSignInKey())
                 .compact();
     }
+//JWTService
 
     private Claims extractAllClaims(String token){
             return Jwts
