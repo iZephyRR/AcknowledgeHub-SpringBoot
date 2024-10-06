@@ -31,8 +31,8 @@ app:
 
 telegram:
   bot:
-    username: 
-    token: 
+    username: telegram bot name 
+    token: telegram bot token
 
 #if u need to debug spring security u can use this property.
 logging:
